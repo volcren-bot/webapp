@@ -1,0 +1,113 @@
+import { redirect } from "@sveltejs/kit"
+import { createServerClient } from "@supabase/ssr"
+import { sequence, type Handle, type HandleServerError } from "@sveltejs/kit/hooks"
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from "$app/env/public"
+import type { Database } from "#lib/types/supabase"
+
+// Routes that require a logged in user
+const PROTECTED_PATHS = ["/account"]
+
+const supabase: Handle = async ({ event, resolve }) => {
+	event.locals.supabaseServer = createServerClient<Database>(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
+		cookies: {
+			getAll: () => event.cookies.getAll(),
+			setAll: (cookiesToSet) => {
+				cookiesToSet.forEach(({ name, value, options }) => {
+					event.cookies.set(name, value, { ...options, path: "/" })
+				})
+			}
+		}
+	})
+
+	let sessionPromise: ReturnType<typeof fetchSession> | null = null
+
+	event.locals.safeGetSession = () => (sessionPromise ??= fetchSession())
+	event.locals.resetSession = () => (sessionPromise = null)
+
+	async function fetchSession() {
+		const { supabaseServer } = event.locals
+
+		const promises = await Promise.all([supabaseServer.auth.getSession(), supabaseServer.auth.getUser()])
+
+		const session = promises[0].data.session
+		const user = promises[1].data.user
+
+		if (!session || !user || promises[0].error || promises[1].error) return { session: null, user: null }
+
+		const remadeSession = {
+			access_token: session.access_token,
+			refresh_token: session.refresh_token,
+			expires_at: session.expires_at,
+			expires_in: session.expires_in,
+			provider_token: session.provider_token,
+			provider_refresh_token: session.provider_refresh_token,
+			token_type: session.token_type,
+			user: user
+		}
+
+		return { session: remadeSession, user }
+	}
+
+	return resolve(event, {
+		filterSerializedResponseHeaders(name) {
+			return name === "content-range" || name === "x-supabase-api-version"
+		}
+	})
+}
+
+const authGuard: Handle = async ({ event, resolve }) => {
+	const { session, user } = await event.locals.safeGetSession()
+
+	let profilePromise: ReturnType<typeof fetchProfile> | null = null
+
+	async function fetchProfile() {
+		if (!user) return null
+
+		const { data, error: err } = await event.locals.supabaseServer
+			.from("profiles")
+			.select("id, username, avatar, role")
+			.eq("id", user.id)
+			.single()
+
+		if (err) return null
+		return data
+	}
+
+	event.locals.session = session
+	event.locals.user = user
+
+	event.locals.getProfile = () => (profilePromise ??= fetchProfile())
+
+	if (!event.locals.session && PROTECTED_PATHS.some((path) => event.url.pathname.startsWith(path))) {
+		redirect(303, "/auth")
+	}
+
+	const response = resolve(event)
+	return response
+}
+
+const performanceCheck: Handle = async ({ event, resolve }) => {
+	const start = performance.now()
+	const { url } = event
+	const response = await resolve(event)
+	const loadTime = performance.now() - start
+	console.log(`└🚀 ${url.pathname} took ${loadTime.toFixed(2)} ms to load!`)
+	return response
+}
+
+export const handle: Handle = sequence(supabase, authGuard, performanceCheck)
+
+export const handleError: HandleServerError = ({ error }) => {
+	if (
+		error instanceof Error &&
+		error.constructor.name === "SvelteKitError" &&
+		"status" in error &&
+		error.status === 404
+	) {
+		console.log(error.message)
+		return
+	}
+
+	console.error("Unexpected error ocurred: ", error)
+	return { message: "An unexpected error occurred" }
+}

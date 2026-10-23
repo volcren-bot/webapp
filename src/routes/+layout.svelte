@@ -35,17 +35,16 @@
 
 	<div class="flex min-h-0 grow">
 		<Sidebar />
-		<main class="flex min-w-0 grow flex-col overflow-auto px-4">
-			{@render children()}
-		</main>
-	</div>
+		<div class="flex min-w-0 grow flex-col">
+			<main class="flex min-h-0 grow flex-col overflow-auto px-4">
+				{@render children()}
+			</main>
 
-	<div
-		class="nv-dim shrink-0 px-4 py-1 text-center text-[0.85rem]"
-		role="note"
-	>
-		<p>Volcren is not affiliated with or endorsed by any game developer or publisher.</p>
-		<p>Using our products may violate EULAs you've agreed to, which we do not condone.</p>
+			<div class="nv-dim block shrink-0 px-4 py-1 text-center text-[0.85rem] no-underline" role="note">
+				<p>Volcren is not affiliated with or endorsed by any game developer or publisher.</p>
+				<p>Using our products may violate EULAs you've agreed to, which we do not condone.</p>
+			</div>
+		</div>
 	</div>
 
 	<Footer />

@@ -4,8 +4,27 @@ export const SITE_NAME = "Volcren"
 export const SITE_DESCRIPTION = "Most advanced memory reading bot"
 export const WEBSITE_URL = "https://example.com"
 
-// Add your pages here. "Home" is the first tab and the root route.
-export const NAV_ROUTES = ["Home", "Scripts", "Stats", "Information", "Tutorials"]
+// Any top-level page placed in src/routes/(nav)/<name>/+page.svelte becomes a nav tab.
+// "Home" is the first tab and the root route.
+const navPages = import.meta.glob("/src/routes/**/+page.svelte")
+
+export const NAV_ROUTES = [
+	"Home",
+	...Object.keys(navPages)
+		.filter((p) => /^\/src\/routes\/\(nav\)\/[^/]+\/\+page\.svelte$/.test(p))
+		.map((p) => p.split("/")[4])
+		.filter((name) => !name.includes("["))
+		.sort()
+		.map((name) => name[0].toUpperCase() + name.slice(1))
+]
+
+// Pages nested one level below a nav page, keyed by the lowercase parent name.
+export const NAV_CHILDREN: Record<string, string[]> = {}
+for (const p of Object.keys(navPages)) {
+	const match = p.match(/^\/src\/routes\/\(nav\)\/([^/[]+)\/([^/[]+)\/\+page\.svelte$/)
+	if (match) (NAV_CHILDREN[match[1]] ??= []).push(match[2])
+}
+for (const children of Object.values(NAV_CHILDREN)) children.sort()
 
 export function routeHref(route: string): string {
 	return "/" + route.toLowerCase().replace("home", "")

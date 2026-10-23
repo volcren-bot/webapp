@@ -20,10 +20,14 @@
 		<span class="nv-seg">{page.url.pathname}</span>
 	</span>
 	<span>
-		<span class="nv-seg hidden sm:block">{SITE_NAME.toLowerCase()}</span>
-		<span class="nv-seg alt">{profile ? profile.username : "guest"}</span>
-		<span class="nv-seg" style="background: var(--tn-blue); color: var(--tn-bg-dark)">
+		<a href="/" class="nv-seg hidden sm:block">{SITE_NAME.toLowerCase()}</a>
+		<a href="/account" class="nv-seg alt">{profile ? profile.username : "guest"}</a>
+		<a
+			href="/information"
+			class="nv-seg"
+			style="background: var(--tn-blue); color: var(--tn-bg-dark)"
+		>
 			&copy; {new Date().getFullYear()}
-		</span>
+		</a>
 	</span>
 </footer>

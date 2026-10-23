@@ -40,26 +40,6 @@ dialog::backdrop {
 /* ---------- Neovim / LazyVim layer (tokyonight night) ---------- */
 
 :root,
-[data-nv-theme="tokyonight"] {
-	--tn-bg-dark: #16161e;
-	--tn-bg: #1a1b26;
-	--tn-bg-float: #1f2335;
-	--tn-bg-hl: #292e42;
-	--tn-border: #3b4261;
-	--tn-fg: #c0caf5;
-	--tn-fg-dark: #a9b1d6;
-	--tn-comment: #565f89;
-	--tn-blue: #7aa2f7;
-	--tn-purple: #bb9af7;
-	--tn-cyan: #7dcfff;
-	--tn-green: #9ece6a;
-	--tn-yellow: #e0af68;
-	--tn-orange: #ff9e64;
-	--tn-red: #f7768e;
-	--tn-sel: #2e3c64;
-}
-
-:root,
 [data-nv-theme="catppuccin"] {
 	--tn-bg-dark: #181825;
 	--tn-bg: #1e1e2e;
@@ -77,6 +57,25 @@ dialog::backdrop {
 	--tn-orange: #fab387;
 	--tn-red: #f38ba8;
 	--tn-sel: #45475a;
+}
+
+[data-nv-theme="tokyonight"] {
+	--tn-bg-dark: #16161e;
+	--tn-bg: #1a1b26;
+	--tn-bg-float: #1f2335;
+	--tn-bg-hl: #292e42;
+	--tn-border: #3b4261;
+	--tn-fg: #c0caf5;
+	--tn-fg-dark: #a9b1d6;
+	--tn-comment: #565f89;
+	--tn-blue: #7aa2f7;
+	--tn-purple: #bb9af7;
+	--tn-cyan: #7dcfff;
+	--tn-green: #9ece6a;
+	--tn-yellow: #e0af68;
+	--tn-orange: #ff9e64;
+	--tn-red: #f7768e;
+	--tn-sel: #2e3c64;
 }
 
 [data-nv-theme="gruvbox"] {
@@ -240,6 +239,13 @@ a:hover {
 		background: var(--tn-bg);
 		border-top-color: var(--tn-blue);
 	}
+	.nv-tab:focus-visible {
+		outline: 2px solid var(--tn-yellow);
+		outline-offset: -2px;
+		background: var(--tn-sel);
+		color: var(--tn-fg);
+		text-decoration: none;
+	}
 }
 
 /* Sidebar (neo-tree) */
@@ -248,6 +254,7 @@ a:hover {
 	border-right: 1px solid var(--tn-bg-hl);
 	min-width: 18rem;
 	padding: 0.5rem 0;
+	font-family: "JetBrainsMono Nerd Font", var(--font-mono);
 	font-size: 0.95em;
 }
 .nv-tree a,
@@ -265,6 +272,16 @@ a:hover {
 .nv-tree a.active {
 	background: var(--tn-bg-hl);
 	color: var(--tn-blue);
+}
+.nv-tree a:focus-visible {
+	outline: 2px solid var(--tn-yellow);
+	outline-offset: -2px;
+	background: var(--tn-sel);
+	color: var(--tn-fg);
+	text-decoration: none;
+}
+.nv-tree a.nv-home:not(.active) {
+	color: var(--tn-yellow);
 }
 .nv-tree .nv-root {
 	color: var(--tn-purple);
@@ -292,6 +309,13 @@ a:hover {
 .nv-seg {
 	padding: 0 1.25ch;
 }
+a.nv-seg {
+	color: inherit;
+}
+a.nv-seg:hover {
+	color: inherit;
+	filter: brightness(1.2);
+}
 .nv-mode {
 	background: var(--tn-blue);
 	color: var(--tn-bg-dark);
@@ -308,6 +332,15 @@ a:hover {
 }
 .nv-seg.accent {
 	color: var(--tn-purple);
+}
+
+.nv-guide {
+	color: var(--tn-comment);
+	white-space: pre;
+}
+.nv-icon {
+	font-family: "Symbols Nerd Font Mono", "Symbols Nerd Font", "JetBrainsMono Nerd Font", var(--font-mono);
+	color: var(--tn-blue);
 }
 
 /* Buttons */

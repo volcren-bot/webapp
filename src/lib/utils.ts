@@ -1,7 +1,7 @@
 import type { AuthError, PostgrestError } from "@supabase/supabase-js"
 
 export const SITE_NAME = "Volcren"
-export const SITE_DESCRIPTION = "A botting platform."
+export const SITE_DESCRIPTION = "Most advanced memory reading bot"
 export const WEBSITE_URL = "https://example.com"
 
 // Add your pages here. "Home" is the first tab and the root route.

@@ -2,7 +2,6 @@
 @plugin "@tailwindcss/forms";
 @plugin "@tailwindcss/typography";
 
-
 @theme {
 	--color-success-400: oklch(66% 0.15 130);
 	--color-error-400: oklch(66% 0.16 15);

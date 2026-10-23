@@ -93,14 +93,14 @@
 <section class="mx-auto my-12 flex w-full max-w-3xl grow flex-col items-center justify-center gap-8">
 	<pre
 		class="leading-none select-none"
-		style="font-size: clamp(5px, 1.9vw, 14px)"
+		style="font-size: clamp(3px, 0.7vw, 12px)"
 		aria-hidden="true">{#each logo as line, i (i)}{#each logoRuns(line) as run, j (j)}<span
 					style="color: {run[0] === '@' ? 'var(--tn-fg)' : logoColor(i)}">{run}</span
 				>{/each}{"\n"}{/each}</pre>
 
 	<pre
 		class="leading-tight select-none"
-		style="font-size: clamp(5px, 1.9vw, 14px)"
+		style="font-size: clamp(3px, 0.7vw, 12px)"
 		aria-label={SITE_NAME}>{#each header as line, i (i)}<span style="color: {colors[i]}">{line}</span
 			>{"\n"}{/each}</pre>
 

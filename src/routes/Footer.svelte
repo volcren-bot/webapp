@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state"
 	import { SITE_NAME } from "#lib/utils"
+	import { cheatSheet } from "#lib/shortcuts.svelte.js"
 
 	const { profile } = $derived(page.data)
 
@@ -20,6 +21,15 @@
 		<span class="nv-seg">{page.url.pathname}</span>
 	</span>
 	<span>
+		{#if page.url.pathname !== "/"}
+			<button
+				type="button"
+				class="nv-seg cursor-pointer hover:text-(--tn-blue)"
+				onclick={() => (cheatSheet.open = true)}
+			>
+				<span style="color: var(--tn-orange)">K</span> cheat sheet
+			</button>
+		{/if}
 		<a href="/" class="nv-seg hidden sm:block">{SITE_NAME.toLowerCase()}</a>
 		<a href="/account" class="nv-seg alt">{profile ? profile.username : "guest"}</a>
 		<a

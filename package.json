@@ -5,7 +5,8 @@
 	"type": "module",
 	"imports": {
 		"#lib/*": "./src/lib/*.ts",
-		"#lib/*.svelte": "./src/lib/*.svelte"
+		"#lib/*.svelte": "./src/lib/*.svelte",
+		"#lib/*.svelte.js": "./src/lib/*.svelte.ts"
 	},
 	"scripts": {
 		"gentypes": "supabase gen types typescript --local > src/lib/types/supabase.ts",

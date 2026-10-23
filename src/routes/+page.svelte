@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { onMount } from "svelte"
-	import { goto } from "$app/navigation"
 	import Head from "#lib/components/Head.svelte"
-	import { NAV_ROUTES, SITE_NAME, SITE_DESCRIPTION, routeHref } from "#lib/utils"
+	import { SITE_NAME, SITE_DESCRIPTION } from "#lib/utils"
+	import { cheatSheet } from "#lib/shortcuts.svelte.js"
 
 	const { data } = $props()
 	const { profile } = $derived(data)
+
+	const nl = "\n"
 
 	const header = [
 		"██╗   ██╗ ██████╗ ██╗      ██████╗██████╗ ███████╗███╗   ██╗",
@@ -55,33 +57,51 @@
 	const logoColors = ["var(--tn-yellow)", "var(--tn-orange)", "var(--tn-red)"]
 	const logoWidth = Math.max(...logo.map((line) => line.length))
 	// Deterministic pseudo-random value in [-1, 1) so the render is stable across SSR and hydration
-	const jitter = (i: number, j: number, frame: number) => {
-		const x = Math.sin(i * 12.9898 + j * 78.233 + frame * 37.719) * 43758.5453
+	const jitter = (i: number, j: number) => {
+		const x = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453
 		return (x - Math.floor(x)) * 2 - 1
 	}
 	// Color bands bleed into each other: the position is skewed so red creeps up the left side,
-	// and noise dithers the boundaries instead of leaving straight lines
-	const logoColor = (i: number, j: number, frame: number) => {
-		// The skew slowly breathes so the red creeps up and recedes
-		const breath = 1 + Math.sin(frame * 0.12) * 0.35
-		const skew = (0.5 - j / logoWidth) * 0.25 * breath
-		const t = (i + 0.5) / logo.length + skew + jitter(i, j, frame) * 0.07
+	// and each character's bias (-1 = toward yellow, 1 = toward red) dithers the boundaries
+	const logoColor = (i: number, j: number, bias: number) => {
+		const skew = (0.5 - j / logoWidth) * 0.25
+		const t = (i + 0.5) / logo.length + skew + bias * 0.07
 		return logoColors[Math.max(0, Math.min(2, Math.floor(t * 3)))]
 	}
 	// The inner flame warms to light yellow along its left and bottom edges, stronger further down
-	const innerColor = (i: number, j: number, frame: number) => {
-		let d = 0
-		while (logo[i][j - d - 1] === "@") d++
-		if (logo[i + 1]?.[j] !== "@") d = 0
-		const edge = Math.max(0, 1 - d / 4)
-		const amount = ((i + 0.5) / logo.length - 0.25) * 1.6 * edge + jitter(j, i, frame) * 0.15
+	const innerEdge = logo.map((line, i) =>
+		[...line].map((_, j) => {
+			let d = 0
+			while (logo[i][j - d - 1] === "@") d++
+			if (logo[i + 1]?.[j] !== "@") d = 0
+			return Math.max(0, 1 - d / 4)
+		})
+	)
+	const innerColor = (i: number, j: number, bias: number) => {
+		const amount = ((i + 0.5) / logo.length - 0.25) * 1.6 * innerEdge[i][j] + bias * 0.3
 		const pct = Math.round(Math.max(0, Math.min(0.9, amount)) * 5) * 20
 		return pct ? `color-mix(in srgb, var(--tn-yellow) ${pct}%, var(--tn-fg))` : "var(--tn-fg)"
 	}
-	const logoRuns = (line: string, i: number, frame: number) => {
+	const charColor = (i: number, j: number, bias: number) =>
+		logo[i][j] === "@" ? innerColor(i, j, bias) : logoColor(i, j, bias)
+
+	// Only characters whose color can actually change are worth toggling
+	const outerCells: [number, number][] = []
+	const innerCells: [number, number][] = []
+	logo.forEach((line, i) => {
+		for (let j = 0; j < line.length; j++) {
+			if (line[j] === " ") continue
+			if (charColor(i, j, -1) === charColor(i, j, 1)) continue
+			;(line[j] === "@" ? innerCells : outerCells).push([i, j])
+		}
+	})
+
+	let bias = $state(logo.map((line, i) => [...line].map((_, j) => jitter(i, j))))
+
+	const logoRuns = (line: string, i: number) => {
 		const runs: { text: string; color: string }[] = []
 		for (let j = 0; j < line.length; j++) {
-			const color = line[j] === "@" ? innerColor(i, j, frame) : logoColor(i, j, frame)
+			const color = charColor(i, j, bias[i][j])
 			const last = runs[runs.length - 1]
 			if (last?.color === color) last.text += line[j]
 			else runs.push({ text: line[j], color })
@@ -89,12 +109,50 @@
 		return runs
 	}
 
-	// Re-roll the bleed a few times a second, unless the user prefers reduced motion
-	let frame = $state(0)
+	// Each tick flips a single character toward red and another toward yellow, plus a few inner
+	// flame characters, so the bleed shimmers gently instead of re-rolling all at once
+	const pick = (cells: [number, number][]) => cells[Math.floor(Math.random() * cells.length)]
+	// Writing the same color back would still re-render the whole row, so skip those
+	const setBias = ([i, j]: [number, number], value: number) => {
+		if (charColor(i, j, bias[i][j]) !== charColor(i, j, value)) bias[i][j] = value
+	}
 	onMount(() => {
 		if (matchMedia("(prefers-reduced-motion: reduce)").matches) return
-		const timer = setInterval(() => frame++, 300)
+		const timer = setInterval(() => {
+			setBias(pick(outerCells), 1)
+			setBias(pick(outerCells), -1)
+			for (let n = 0; n < 3; n++) setBias(pick(innerCells), Math.random() < 0.5 ? -1 : 1)
+		}, 30)
 		return () => clearInterval(timer)
+	})
+
+	// Scale the ASCII art so the whole page fits the available height (and width) without scrolling
+	let section: HTMLElement | undefined = $state()
+	let art: HTMLElement | undefined = $state()
+	let fontSize = $state<number>()
+	const maxFont = () => Math.min(innerWidth * 0.007, 12)
+	const fit = () => {
+		const area = section?.parentElement
+		if (!section || !art || !area) return
+		const style = getComputedStyle(area)
+		const available = area.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
+		const sectionStyle = getComputedStyle(section)
+		const margins = parseFloat(sectionStyle.marginTop) + parseFloat(sectionStyle.marginBottom)
+		const gap = parseFloat(sectionStyle.rowGap) || 0
+		// The section grows to fill the page, so its own height says nothing about its content
+		const children = [...section.children] as HTMLElement[]
+		const content = children.reduce((sum, c) => sum + c.offsetHeight, 0) + gap * (children.length - 1)
+		const current = fontSize ?? parseFloat(getComputedStyle(art).fontSize)
+		const perPx = art.offsetHeight / current
+		const fixed = content + margins - art.offsetHeight
+		const next = (available - fixed - 2) / perPx
+		fontSize = Math.max(4, Math.min(maxFont(), Math.floor(next * 10) / 10))
+	}
+	onMount(() => {
+		const observer = new ResizeObserver(fit)
+		if (section?.parentElement) observer.observe(section.parentElement)
+		fit()
+		return () => observer.disconnect()
 	})
 
 	// Gradient across the header rows, like the LazyVim dashboard
@@ -106,56 +164,33 @@
 		"var(--tn-purple)",
 		"var(--tn-purple)"
 	]
-
-	const keys: Record<string, string> = {
-		Home: "h",
-		Scripts: "s",
-		Stats: "d",
-		Information: "i",
-		Tutorials: "t"
-	}
-
-	const items = $derived([
-		...NAV_ROUTES.map((route) => ({ key: keys[route], label: route, href: routeHref(route) })),
-		...(profile ? [{ key: "a", label: "Account", href: "/account" }] : [])
-	])
-
-	function onkeydown(e: KeyboardEvent) {
-		if (e.ctrlKey || e.metaKey || e.altKey) return
-		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-		const item = items.find((i) => i.key === e.key)
-		if (item) goto(item.href)
-	}
 </script>
-
-<svelte:window {onkeydown} />
 
 <Head title={SITE_NAME} description={SITE_DESCRIPTION} />
 
-<section class="mx-auto my-12 flex w-full max-w-3xl grow flex-col items-center justify-center gap-8">
-	<pre
-		class="leading-none select-none"
-		style="font-size: clamp(3px, 0.7vw, 12px)"
-		aria-hidden="true">{#each logo as line, i (i)}{#each logoRuns(line, i, frame) as run, j (j)}<span
-					style="color: {run.color}">{run.text}</span
-				>{/each}{"\n"}{/each}</pre>
+<section
+	bind:this={section}
+	class="mx-auto my-4 flex h-fit w-full max-w-3xl grow flex-col items-center justify-center gap-3"
+>
+	<div
+		bind:this={art}
+		class="flex flex-col items-center gap-2"
+		style="font-size: {fontSize ?? 'clamp(3px, 0.7vw, 12px)'}{fontSize ? 'px' : ''}"
+	>
+		<pre
+			class="text-[0.85em] leading-none select-none"
+			aria-hidden="true">{#each logo as line, i (i)}{#each logoRuns(line, i) as run, j (j)}<span
+						style="color: {run.color}">{run.text}</span
+					>{/each}{nl}{/each}</pre>
 
-	<pre
-		class="leading-tight select-none"
-		style="font-size: clamp(3px, 0.7vw, 12px)"
-		aria-label={SITE_NAME}>{#each header as line, i (i)}<span style="color: {colors[i]}">{line}</span
-			>{"\n"}{/each}</pre>
+		<pre
+			class="leading-tight select-none"
+			style="font-size: max(calc(1em - 1pt), 0.85em)"
+			aria-label={SITE_NAME}>{#each header as line, i (i)}<span style="color: {colors[i]}">{line}</span
+				>{nl}{/each}</pre>
+	</div>
 
 	<p class="nv-dim">{SITE_DESCRIPTION}</p>
-
-	<nav class="nv-menu w-full max-w-xs" aria-label="Dashboard">
-		{#each items as item (item.key)}
-			<a href={item.href}>
-				<span class="nv-key">{item.key}</span>
-				<span>{item.label}</span>
-			</a>
-		{/each}
-	</nav>
 
 	<p class="nv-dim">
 		{#if profile}
@@ -164,4 +199,20 @@
 			open the user panel to log in
 		{/if}<span class="nv-cursor"></span>
 	</p>
+
+	<div class="my-6 flex flex-col items-center gap-2">
+		<p class="nv-dim max-w-md text-center">This is a keyboard centric website.</p>
+		<p class="nv-dim max-w-md text-center">
+			You can navigate with your mouse, but almost everything has a shortcut.
+		</p>
+
+		<button
+			type="button"
+			onclick={() => (cheatSheet.open = true)}
+			class="flex cursor-pointer items-center gap-2 rounded border border-(--tn-blue) p-2 px-[1.5ch] hover:bg-(--tn-bg-hl) hover:text-(--tn-blue)"
+		>
+			<span class="nv-key">K</span>
+			<span>Cheat sheet</span>
+		</button>
+	</div>
 </section>

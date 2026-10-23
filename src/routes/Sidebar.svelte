@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from "$app/state"
+	import { faqs } from "#lib/faqs"
 	import { NAV_CHILDREN, NAV_ROUTES, SITE_NAME, routeHref } from "#lib/utils"
 
 	const { profile } = $derived(page.data)
@@ -40,8 +41,19 @@
 		return open ? ICON_FOLDER_OPEN : ICON_FOLDER
 	}
 
+	const ICON_FILE = "\uf15b"
+
+	// Pages nested two levels down, keyed by "parent/child". Listed by id.
+	const LEAVES: Record<string, string[]> = {
+		"information/faq": faqs.map((f) => f.id)
+	}
+
 	function guide(parentLast: boolean, last: boolean) {
 		return (parentLast ? "  " : "│ ") + (last ? "└─" : "├─")
+	}
+
+	function leafGuide(parentLast: boolean, childLast: boolean, last: boolean) {
+		return (parentLast ? "  " : "│ ") + (childLast ? "  " : "│ ") + (last ? "└─" : "├─")
 	}
 
 	function isChildActive(href: string) {
@@ -86,9 +98,26 @@
 						aria-current={isChildActive(href) ? "page" : undefined}
 					>
 						<span aria-hidden="true" class="nv-guide">{guide(lastRoute, j === children.length - 1)}</span>
-						<span aria-hidden="true" class="nv-icon">{icon(child, isChildActive(href))}</span>
+						<span aria-hidden="true" class="nv-icon"
+							>{icon(child, isChildActive(href) || (`${route.toLowerCase()}/${child}` in LEAVES && page.url.pathname.startsWith(href)))}</span
+						>
 						<span>{child}/</span>
 					</a>
+					{#each page.url.pathname.startsWith(href) ? (LEAVES[`${route.toLowerCase()}/${child}`] ?? []) : [] as leaf, k (leaf)}
+						{@const leafHref = `${href}/${leaf}`}
+						{@const leaves = LEAVES[`${route.toLowerCase()}/${child}`]}
+						<a
+							href={leafHref}
+							class:active={isChildActive(leafHref)}
+							aria-current={isChildActive(leafHref) ? "page" : undefined}
+						>
+							<span aria-hidden="true" class="nv-guide"
+								>{leafGuide(lastRoute, j === children.length - 1, k === leaves.length - 1)}</span
+							>
+							<span aria-hidden="true" class="nv-icon">{ICON_FILE}</span>
+							<span>{leaf}</span>
+						</a>
+					{/each}
 				{/each}
 			</li>
 		{/each}

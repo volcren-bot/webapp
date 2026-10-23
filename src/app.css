@@ -135,10 +135,12 @@ dialog::backdrop {
 	--tn-sel: #403d52;
 }
 
+html {
+	font-size: clamp(12px, 0.4vw + 9px, 16px);
+}
 html,
 body {
 	height: 100%;
-	font-size: 14px;
 	line-height: 1.6;
 	font-variant-ligatures: none;
 	background: var(--tn-bg);
@@ -419,6 +421,10 @@ small.text-success-400::before {
 .nv-menu a:hover {
 	background: var(--tn-bg-hl);
 	text-decoration: none;
+	color: var(--tn-blue);
+}
+.nv-menu a.active {
+	background: var(--tn-bg-hl);
 	color: var(--tn-blue);
 }
 .nv-cursor::after {

@@ -1,64 +1,56 @@
-import { createBrowserClient, isBrowser } from "@supabase/ssr"
-import { createClient } from "@supabase/supabase-js"
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "$app/env/public"
-import type { Database } from "#lib/types/supabase"
+import { browser } from "$app/env"
+import { getSupabaseBrowser } from "#lib/supabase.browser"
 
-export const load = async ({ data, depends, fetch }) => {
+// The server data is already in sync with the session on first load, so the client is only needed
+// once the auth state changes and the layout invalidates
+let hydrated = false
+
+export const load = async ({ data, depends }) => {
 	depends("supabase:auth")
 
-	if (isBrowser()) {
-		const supabaseClient = createBrowserClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
-			global: { fetch }
-		})
-
-		const {
-			data: { session }
-		} = await supabaseClient.auth.getSession()
-
-		if ((session?.user.id ?? null) === data.user) {
-			return {
-				supabaseClient,
-				user: data.user,
-				expiresAt: session?.expires_at ?? null,
-				profile: data.profile
-			}
-		}
-
-		const expiresAt = session?.expires_at ?? null
-		const authUser = (await supabaseClient.auth.getUser()).data.user
-
-		if (authUser) {
-			const { data: profile } = await supabaseClient
-				.from("profiles")
-				.select("id, username, avatar, role")
-				.eq("id", authUser.id)
-				.single()
-
-			return {
-				supabaseClient,
-				user: authUser.id,
-				expiresAt,
-				profile
-			}
-		}
-
+	if (!browser || !hydrated) {
+		hydrated = browser
 		return {
-			supabaseClient,
-			user: null,
-			expiresAt,
-			profile: null
+			user: data.user,
+			expiresAt: data.expiresAt,
+			profile: data.profile
 		}
 	}
 
-	const supabaseClient = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
-		global: { fetch },
-		auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
-	})
+	const supabaseClient = await getSupabaseBrowser()
+
+	const {
+		data: { session }
+	} = await supabaseClient.auth.getSession()
+
+	if ((session?.user.id ?? null) === data.user) {
+		return {
+			user: data.user,
+			expiresAt: session?.expires_at ?? null,
+			profile: data.profile
+		}
+	}
+
+	const expiresAt = session?.expires_at ?? null
+	const authUser = (await supabaseClient.auth.getUser()).data.user
+
+	if (authUser) {
+		const { data: profile } = await supabaseClient
+			.from("profiles")
+			.select("id, username, avatar, role")
+			.eq("id", authUser.id)
+			.single()
+
+		return {
+			user: authUser.id,
+			expiresAt,
+			profile
+		}
+	}
 
 	return {
-		supabaseClient,
-		user: data.user,
-		expiresAt: data.expiresAt,
-		profile: data.profile
+		user: null,
+		expiresAt,
+		profile: null
 	}
 }

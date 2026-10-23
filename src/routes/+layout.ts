@@ -1,13 +1,13 @@
 import { createBrowserClient, isBrowser } from "@supabase/ssr"
 import { createClient } from "@supabase/supabase-js"
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from "$app/env/public"
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "$app/env/public"
 import type { Database } from "#lib/types/supabase"
 
 export const load = async ({ data, depends, fetch }) => {
 	depends("supabase:auth")
 
 	if (isBrowser()) {
-		const supabaseClient = createBrowserClient<Database>(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
+		const supabaseClient = createBrowserClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
 			global: { fetch }
 		})
 
@@ -50,7 +50,7 @@ export const load = async ({ data, depends, fetch }) => {
 		}
 	}
 
-	const supabaseClient = createClient<Database>(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
+	const supabaseClient = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
 		global: { fetch },
 		auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
 	})

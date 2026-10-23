@@ -1,14 +1,14 @@
 import { redirect } from "@sveltejs/kit"
 import { createServerClient } from "@supabase/ssr"
 import { sequence, type Handle, type HandleServerError } from "@sveltejs/kit/hooks"
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from "$app/env/public"
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "$app/env/public"
 import type { Database } from "#lib/types/supabase"
 
 // Routes that require a logged in user
 const PROTECTED_PATHS = ["/account"]
 
 const supabase: Handle = async ({ event, resolve }) => {
-	event.locals.supabaseServer = createServerClient<Database>(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
+	event.locals.supabaseServer = createServerClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
 		cookies: {
 			getAll: () => event.cookies.getAll(),
 			setAll: (cookiesToSet) => {

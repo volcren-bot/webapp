@@ -55,6 +55,16 @@ let lastIndex = 0
  * When several share the key, repeated presses cycle through them in that order.
  */
 export function handleKey(e: KeyboardEvent, globals: Shortcut[]) {
+	if (e.key === "Backspace" && !e.repeat) {
+		const modal = document.querySelector<HTMLDialogElement>("dialog[open]")
+		// Backspace still edits text, so it only closes the modal from an empty or non-text target.
+		const typing = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement
+		if (modal && !(typing && e.target.value !== "")) {
+			e.preventDefault()
+			modal.close()
+			return
+		}
+	}
 	if (cheatSheet.open) return
 	if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return
 	if (e.target instanceof HTMLElement && e.target.closest("input, textarea, select, [contenteditable]"))

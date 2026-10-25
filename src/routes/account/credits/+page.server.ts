@@ -27,14 +27,14 @@ export const load = async ({ locals: { supabaseServer, user } }) => {
 
 export const actions = {
 	default: async ({ request, url: { origin }, locals: { user } }) => {
-		if (!user) return fail(401, { message: "You need to login to add credits." })
+		if (!user) return fail(401, { message: "You need to login to add funds." })
 
 		const eur = Number((await request.formData()).get("amount"))
 		const cents = Math.round(eur * 100)
 
 		if (!Number.isFinite(cents) || cents < MIN_TOPUP_CENTS || cents > MAX_TOPUP_CENTS) {
 			return fail(400, {
-				message: `Amount must be between ${MIN_TOPUP_CENTS / 100} and ${MAX_TOPUP_CENTS / 100} EUR.`
+				message: `Amount must be between €${MIN_TOPUP_CENTS / 100} and €${MAX_TOPUP_CENTS / 100}.`
 			})
 		}
 

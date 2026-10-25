@@ -1,4 +1,6 @@
-export const load = async ({ locals: { safeGetSession, getProfile }, setHeaders }) => {
+const MAX_SIDEBAR_SCRIPTS = 100
+
+export const load = async ({ locals: { safeGetSession, getProfile, supabaseServer }, setHeaders }) => {
 	setHeaders({
 		"Strict-Transport-Security": "max-age=31536000; includeSubDomains",
 		"X-Frame-Options": "SAMEORIGIN",
@@ -9,9 +11,21 @@ export const load = async ({ locals: { safeGetSession, getProfile }, setHeaders 
 
 	const { session, user } = await safeGetSession()
 
+	// Row-level security decides which scripts this user can see.
+	const [profile, { data: scripts }] = await Promise.all([
+		getProfile(),
+		supabaseServer
+			.schema("scripts")
+			.from("scripts")
+			.select("url")
+			.order("url")
+			.limit(MAX_SIDEBAR_SCRIPTS)
+	])
+
 	return {
 		user: user?.id ?? null,
 		expiresAt: session?.expires_at ?? null,
-		profile: await getProfile()
+		profile,
+		sidebarScripts: scripts ?? []
 	}
 }

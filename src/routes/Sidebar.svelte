@@ -1,19 +1,40 @@
 <script lang="ts">
-	import { page } from "$app/state"
+	import { navigating, page } from "$app/state"
 	import { untrack } from "svelte"
 	import { faqs } from "#lib/faqs"
 	import { NAV_CHILDREN, NAV_ROUTES, SITE_NAME, routeHref } from "#lib/utils"
 
 	const { profile } = $derived(page.data)
 
+	// Children only scripters (and staff) may open; hidden from everyone else.
+	const SCRIPTER_ONLY = ["scripts/new"]
+	const isScripter = $derived(!!profile && ["scripter", "moderator", "administrator"].includes(profile.role))
+
+	// Scripts the user can see are listed under /scripts, after "new" when they may create one.
+	function visibleChildren(route: string) {
+		const name = route.toLowerCase()
+		const children = (NAV_CHILDREN[name] ?? []).filter(
+			(c) => isScripter || !SCRIPTER_ONLY.includes(`${name}/${c}`)
+		)
+		if (name !== "scripts") return children
+		const urls = new Set(children)
+		return [
+			...children,
+			...(page.data.sidebarScripts ?? [])
+				.map((s: { url: string }) => s.url)
+				.filter((u: string) => !urls.has(u))
+		]
+	}
+
+	// Use the destination while navigating so the tree updates on click, not after the load finishes.
+	const path = $derived(navigating.to?.url.pathname ?? page.url.pathname)
+
 	// The server row at the top is the home link.
 	const files = $derived([...NAV_ROUTES.filter((r) => r !== "Home"), ...(profile ? ["Account"] : [])])
 
 	function isActive(route: string) {
 		const href = routeHref(route)
-		return href === "/" || route.toLowerCase() in NAV_CHILDREN
-			? page.url.pathname === href
-			: page.url.pathname.startsWith(href)
+		return href === "/" || route.toLowerCase() in NAV_CHILDREN ? path === href : path.startsWith(href)
 	}
 
 	// Manual expand/collapse per parent; unset means "open while the current page is inside it".
@@ -21,16 +42,16 @@
 
 	function isOpen(route: string) {
 		const name = route.toLowerCase()
-		return expanded[name] ?? page.url.pathname.startsWith(routeHref(route))
+		return expanded[name] ?? path.startsWith(routeHref(route))
 	}
 
 	// Leaving a parent drops its manual override so it collapses again.
 	$effect(() => {
-		const path = page.url.pathname
+		const current = path
 		untrack(() => {
 			for (const route of NAV_ROUTES) {
 				const name = route.toLowerCase()
-				if (name in expanded && !path.startsWith(routeHref(route))) delete expanded[name]
+				if (name in expanded && !current.startsWith(routeHref(route))) delete expanded[name]
 			}
 		})
 	})
@@ -39,7 +60,7 @@
 		const name = route.toLowerCase()
 		if (!(name in NAV_CHILDREN)) return
 		// Clicking the page you're on toggles it; arriving from elsewhere always opens it.
-		expanded[name] = page.url.pathname === routeHref(route) ? !isOpen(route) : true
+		expanded[name] = path === routeHref(route) ? !isOpen(route) : true
 	}
 
 	// Nerd Font glyphs, as in neovim's file explorer.
@@ -69,25 +90,20 @@
 	}
 
 	function isChildActive(href: string) {
-		return page.url.pathname === href
+		return path === href
 	}
 </script>
 
 <aside class="nv-tree hidden shrink-0 overflow-auto md:block" aria-label="File explorer">
 	<div class="nv-row nv-root mb-1">explorer</div>
-	<a
-		href="/"
-		class="nv-home"
-		class:active={page.url.pathname === "/"}
-		aria-current={page.url.pathname === "/" ? "page" : undefined}
-	>
+	<a href="/" class="nv-home" class:active={path === "/"} aria-current={path === "/" ? "page" : undefined}>
 		<span aria-hidden="true" class="nv-icon">{ICON_SERVER}</span>
 		<span>{SITE_NAME.toLowerCase()}/</span>
 	</a>
 	<ul>
 		{#each files as route, i (route)}
 			{@const lastRoute = i === files.length - 1}
-			{@const children = NAV_CHILDREN[route.toLowerCase()] ?? []}
+			{@const children = visibleChildren(route)}
 			<li>
 				<a
 					href={routeHref(route)}
@@ -113,13 +129,12 @@
 						<span aria-hidden="true" class="nv-icon"
 							>{icon(
 								child,
-								isChildActive(href) ||
-									(`${route.toLowerCase()}/${child}` in LEAVES && page.url.pathname.startsWith(href))
+								isChildActive(href) || (`${route.toLowerCase()}/${child}` in LEAVES && path.startsWith(href))
 							)}</span
 						>
 						<span>{child}/</span>
 					</a>
-					{#each page.url.pathname.startsWith(href) ? (LEAVES[`${route.toLowerCase()}/${child}`] ?? []) : [] as leaf, k (leaf)}
+					{#each path.startsWith(href) ? (LEAVES[`${route.toLowerCase()}/${child}`] ?? []) : [] as leaf, k (leaf)}
 						{@const leafHref = `${href}/${leaf}`}
 						{@const leaves = LEAVES[`${route.toLowerCase()}/${child}`]}
 						<a

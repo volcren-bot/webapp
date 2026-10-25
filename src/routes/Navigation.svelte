@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from "$app/forms"
-	import { page } from "$app/state"
+	import { navigating, page } from "$app/state"
 	import { NAV_ROUTES, routeHref } from "#lib/utils"
 	import Logo from "./Logo.svelte"
 	import ThemeSwitcher from "./ThemeSwitcher.svelte"
@@ -11,9 +11,12 @@
 
 	const tabs = $derived(profile ? [...NAV_ROUTES, "Account"] : NAV_ROUTES)
 
+	// Use the destination while navigating so the tabs update on click, not after the load finishes.
+	const path = $derived(navigating.to?.url.pathname ?? page.url.pathname)
+
 	function isActive(route: string) {
 		const href = routeHref(route)
-		return href === "/" ? page.url.pathname === "/" : page.url.pathname.startsWith(href)
+		return href === "/" ? path === "/" : path.startsWith(href)
 	}
 </script>
 

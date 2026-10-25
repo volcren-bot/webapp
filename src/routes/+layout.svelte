@@ -1,6 +1,7 @@
 <script lang="ts">
 	import "../app.css"
-	import { goto, invalidate } from "$app/navigation"
+	import { goto, invalidate, preloadCode } from "$app/navigation"
+	import { match } from "$app/paths"
 	import { page } from "$app/state"
 	import { onMount } from "svelte"
 	import Navigation from "./Navigation.svelte"
@@ -64,6 +65,12 @@
 		{ display: "Alt + ←", label: "Go back", scope: "Global" },
 		{ display: "Esc", label: "Close menus and modals", scope: "Global" }
 	])
+
+	// Shortcuts call goto() without the hover preload, so fetch the nav pages' code up front.
+	// Only code, not data: preloading data would run every server load on each page view.
+	onMount(() => {
+		for (const route of NAV_ROUTES) match(routeHref(route)).then((found) => found && preloadCode(found.id))
+	})
 
 	let callTimestamps: number[] = []
 	onMount(() => {

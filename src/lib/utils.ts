@@ -74,3 +74,17 @@ export function groupBy<T, K>(items: T[], key: (item: T) => K) {
 	}
 	return groups
 }
+
+// The database counts in credits (10,000 = 1 EUR); the UI only ever shows EUR.
+export const CREDITS_PER_EUR = 10_000
+export const eurToCredits = (eur: number) => Math.round(eur * CREDITS_PER_EUR)
+
+/** "€1.25". A credit is €0.0001, so extra decimals only show up when the amount needs them. */
+export function formatEur(credits: number) {
+	return "€" + (credits / CREDITS_PER_EUR).toFixed(4).replace(/(\.\d{2}\d*?)0*$/, "$1")
+}
+
+/** PostgREST embeds one-to-one relations as an object, but the generated types describe them as arrays. */
+export function one<T>(value: T[] | T | null | undefined): T | null {
+	return Array.isArray(value) ? (value[0] ?? null) : (value ?? null)
+}

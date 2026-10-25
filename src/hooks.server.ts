@@ -22,28 +22,14 @@ const supabase: Handle = async ({ event, resolve }) => {
 	event.locals.safeGetSession = () => (sessionPromise ??= fetchSession())
 	event.locals.resetSession = () => (sessionPromise = null)
 
+	// getClaims verifies the JWT locally against the cached JWKS, so it skips the Auth server round trip
+	// that getUser makes on every request. Projects still on a symmetric JWT secret fall back to getUser.
 	async function fetchSession() {
-		const { supabaseServer } = event.locals
+		const { data, error: err } = await event.locals.supabaseServer.auth.getClaims()
+		if (err || !data) return { session: null, user: null }
 
-		const promises = await Promise.all([supabaseServer.auth.getSession(), supabaseServer.auth.getUser()])
-
-		const session = promises[0].data.session
-		const user = promises[1].data.user
-
-		if (!session || !user || promises[0].error || promises[1].error) return { session: null, user: null }
-
-		const remadeSession = {
-			access_token: session.access_token,
-			refresh_token: session.refresh_token,
-			expires_at: session.expires_at,
-			expires_in: session.expires_in,
-			provider_token: session.provider_token,
-			provider_refresh_token: session.provider_refresh_token,
-			token_type: session.token_type,
-			user: user
-		}
-
-		return { session: remadeSession, user }
+		const { claims } = data
+		return { session: { expires_at: claims.exp }, user: { id: claims.sub, email: claims.email } }
 	}
 
 	return resolve(event, {

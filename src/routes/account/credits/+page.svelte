@@ -1,24 +1,24 @@
 <script lang="ts">
 	import Head from "#lib/components/Head.svelte"
 	import { enhance } from "$app/forms"
+	import { formatEur } from "#lib/utils"
 
 	const { data, form } = $props()
 
-	// 10,000 credits = 1 EUR
-	const eur = (credits: number) => (credits / 10_000).toFixed(2)
+	const eur = (cents: number) => `€${(cents / 100).toFixed(2)}`
 </script>
 
-<Head title="Credits" description="Add credits to your account." noindex />
+<Head title="Balance" description="Add funds to your account." noindex />
 
 <main class="mx-auto my-6 flex w-full max-w-3xl flex-col">
 	<header class="my-8 flex flex-col">
-		<h1 class="text-2xl font-bold">Credits</h1>
-		<p class="nv-dim">{data.credits.toLocaleString()} credits ({eur(data.credits)} EUR)</p>
+		<h1 class="text-2xl font-bold">Balance</h1>
+		<p class="nv-dim">{formatEur(data.credits)}</p>
 	</header>
 
 	<form class="nv-float flex w-full flex-col" method="POST" use:enhance>
-		<span class="nv-title">add credits</span>
-		<p class="nv-dim">Pay with crypto through Bitcart. 1 EUR = 10,000 credits.</p>
+		<span class="nv-title">add funds</span>
+		<p class="nv-dim">Pay with crypto through Bitcart.</p>
 
 		{#if form?.message}
 			<small class="text-error-400">{form.message}</small>
@@ -49,8 +49,7 @@
 					<li class="flex justify-between">
 						<span>{new Date(payment.created_at).toLocaleString()}</span>
 						<span>
-							{(payment.amount / 100).toFixed(2)}
-							{payment.currency} ·
+							{eur(payment.amount)} ·
 							{#if payment.status === "pending"}
 								<a class="underline" href="/account/credits/{payment.id}">pay</a>
 							{:else}

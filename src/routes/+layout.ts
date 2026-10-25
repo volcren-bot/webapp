@@ -13,7 +13,8 @@ export const load = async ({ data, depends }) => {
 		return {
 			user: data.user,
 			expiresAt: data.expiresAt,
-			profile: data.profile
+			profile: data.profile,
+			sidebarScripts: data.sidebarScripts
 		}
 	}
 
@@ -27,7 +28,8 @@ export const load = async ({ data, depends }) => {
 		return {
 			user: data.user,
 			expiresAt: session?.expires_at ?? null,
-			profile: data.profile
+			profile: data.profile,
+			sidebarScripts: data.sidebarScripts
 		}
 	}
 
@@ -45,13 +47,15 @@ export const load = async ({ data, depends }) => {
 		return {
 			user: authUser.id,
 			expiresAt,
-			profile
+			profile,
+			sidebarScripts: data.sidebarScripts
 		}
 	}
 
 	return {
 		user: null,
 		expiresAt,
-		profile: null
+		profile: null,
+		sidebarScripts: data.sidebarScripts
 	}
 }

@@ -5,6 +5,8 @@
 
 	const { data } = $props()
 
+	const eur = (cents: number) => `€${(cents / 100).toFixed(2)}`
+
 	const payment = $derived(data.payment)
 	const invoice = $derived(data.invoice)
 
@@ -42,15 +44,15 @@
 
 <main class="mx-auto my-6 flex w-full max-w-3xl flex-col">
 	<header class="my-8 flex flex-col">
-		<h1 class="text-2xl font-bold">Add {payment.credits.toLocaleString()} credits</h1>
-		<p class="nv-dim">{(payment.amount / 100).toFixed(2)} {payment.currency}</p>
+		<h1 class="text-2xl font-bold">Add {eur(payment.amount)}</h1>
+		<p class="nv-dim">{payment.currency}</p>
 	</header>
 
 	{#if payment.status === "paid"}
 		<section class="nv-float flex w-full flex-col">
 			<span class="nv-title">paid</span>
-			<p class="text-success-400">Your {payment.credits.toLocaleString()} credits have been added.</p>
-			<a class="btn my-2 mr-auto" href="/account/credits">back to credits</a>
+			<p class="text-success-400">Your {eur(payment.amount)} has been added to your balance.</p>
+			<a class="btn my-2 mr-auto" href="/account/credits">back to balance</a>
 		</section>
 	{:else if payment.status === "expired" || payment.status === "invalid" || !pending}
 		<section class="nv-float flex w-full flex-col">

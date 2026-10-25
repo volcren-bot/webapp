@@ -1,6 +1,10 @@
-import type { Session, SupabaseClient, User } from "@supabase/supabase-js"
+import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "#lib/types/supabase"
 import type { ProfileBase } from "#lib/types/profile"
+
+// Built from the verified JWT claims rather than the full Auth server objects.
+type Session = { expires_at: number }
+type User = { id: string; email?: string }
 
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces

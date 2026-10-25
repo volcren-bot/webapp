@@ -22,7 +22,7 @@ export const GET = async ({ url: { origin, searchParams }, cookies, locals: { su
 
 	const code = searchParams.get("code")
 	if (code) {
-		// The profile row is created by the database trigger in supabase/schema.sql.
+		// The profile row is created by the database trigger (see the database repo).
 		const { error: err } = await supabaseServer.auth.exchangeCodeForSession(code)
 		if (err) error(401, formatError(err))
 	}

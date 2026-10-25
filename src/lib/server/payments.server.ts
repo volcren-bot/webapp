@@ -24,3 +24,27 @@ export async function syncPayment(paymentId: string, invoiceId: string): Promise
 
 	return invoice
 }
+
+/**
+ * The user's payments that can still be paid. Rows are only marked expired when something syncs
+ * them, so each pending one is checked with Bitcart first and the stale ones drop out.
+ */
+export async function openPayments(userId: string) {
+	const payments = supabaseAdmin().schema("payments")
+
+	const { data, error } = await payments
+		.from("payments")
+		.select("id, provider_id, amount")
+		.eq("user_id", userId)
+		.eq("status", "pending")
+		.order("created_at", { ascending: false })
+	if (error) throw error
+
+	const open = await Promise.all(
+		data.map(async (payment) => {
+			const invoice = await syncPayment(payment.id, payment.provider_id)
+			return invoice.status === "pending" ? payment : null
+		})
+	)
+	return open.filter((payment) => payment !== null)
+}

@@ -6,7 +6,7 @@ A SvelteKit starter with Supabase auth, Tailwind 4 UI, dark mode.
 
 - SvelteKit 2 / Svelte 5 with `adapter-node`
 - Supabase SSR auth (OAuth login/logout, session handling in `src/hooks.server.ts`)
-- A `profiles` table with a role, created automatically on sign up (`supabase/schema.sql`)
+- A `profiles` table with a role, created automatically on sign up (schema lives in the `database` repo)
 - Tailwind 4 with a fixed dark mode and a Neovim-style theme (`src/app.css`)
 - Account page (`/account`) to change email/password using Superforms + Zod
 - SEO `<Head>` component, security headers and a CSP in `svelte.config.js`
@@ -20,7 +20,7 @@ A SvelteKit starter with Supabase auth, Tailwind 4 UI, dark mode.
    bun install
    ```
 
-2. Create a Supabase project, run `supabase/schema.sql` in its SQL editor and enable an OAuth provider
+2. Create a Supabase project, apply the migrations from the `database` repo and enable an OAuth provider
    (`Navigation.svelte` uses Discord by default, change the `provider` there to use another one).
    Add `http://localhost:5173/auth/callback/` to the allowed redirect URLs.
 

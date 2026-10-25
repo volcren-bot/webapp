@@ -4,6 +4,8 @@ import { BITCART_API_URL, BITCART_API_TOKEN, BITCART_STORE_ID } from "$app/env/p
 export const CREDITS_PER_CENT = 100
 export const MIN_TOPUP_CENTS = 500
 export const MAX_TOPUP_CENTS = 50_000
+// Keep in sync with payments.limit_pending_payments (supabase/payments-pending-limit.sql)
+export const MAX_PENDING_PAYMENTS = 3
 
 export type BitcartStatus = "pending" | "paid" | "complete" | "expired" | "invalid"
 

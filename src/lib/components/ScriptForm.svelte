@@ -3,8 +3,7 @@
 	import { superForm, type Infer, type SuperValidated } from "sveltekit-superforms"
 	import { zod4Client } from "sveltekit-superforms/adapters"
 	import { CATEGORIES, CATEGORY_ICONS, MAX_PRICE, STAGES, TYPES, scriptSchema } from "#lib/scripts"
-	import { CREDITS_PER_EUR, eurToCredits } from "#lib/utils"
-
+	
 	let {
 		data,
 		action = "",
@@ -111,7 +110,7 @@
 	</fieldset>
 
 	<div class="cli-field">
-		<label for="f-price" class="cli-q">price <span class="nv-dim">EUR per minute</span></label>
+		<label for="f-price" class="cli-q">price <span class="nv-dim">credits per minute</span></label>
 		<div class="cli-line">
 			<span class="cli-prompt" aria-hidden="true">❯</span>
 			<input
@@ -119,10 +118,10 @@
 				class="cli-input"
 				type="number"
 				min="0"
-				max={MAX_PRICE / CREDITS_PER_EUR}
-				step="0.0001"
+				max={MAX_PRICE}
+				step="1"
 				disabled={$form.type === "free"}
-				bind:value={() => $form.price / CREDITS_PER_EUR, (eur) => ($form.price = eurToCredits(eur))}
+				bind:value={$form.price}
 			/>
 		</div>
 		{#each $errors.price ?? [] as err (err)}<div class="cli-err">error: {err}</div>{/each}

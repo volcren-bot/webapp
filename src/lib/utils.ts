@@ -8,15 +8,20 @@ export const WEBSITE_URL = "https://example.com"
 // "Home" is the first tab and the root route.
 const navPages = import.meta.glob("/src/routes/**/+page.svelte")
 
-export const NAV_ROUTES = [
-	"Home",
-	...Object.keys(navPages)
-		.filter((p) => /^\/src\/routes\/\(nav\)\/[^/]+\/\+page\.svelte$/.test(p))
+function topLevelPages(group: string) {
+	const re = new RegExp(`^/src/routes/\\(${group}\\)/[^/]+/\\+page\\.svelte$`)
+	return Object.keys(navPages)
+		.filter((p) => re.test(p))
 		.map((p) => p.split("/")[4])
 		.filter((name) => !name.includes("["))
 		.sort()
 		.map((name) => name[0].toUpperCase() + name.slice(1))
-]
+}
+
+export const NAV_ROUTES = ["Home", ...topLevelPages("nav")]
+
+// Any top-level page placed in src/routes/(user)/<name>/+page.svelte is a nav tab for logged-in users only.
+export const USER_ROUTES = topLevelPages("user")
 
 // Pages nested one level below a nav page, keyed by the lowercase parent name.
 export const NAV_CHILDREN: Record<string, string[]> = {}
@@ -75,14 +80,9 @@ export function groupBy<T, K>(items: T[], key: (item: T) => K) {
 	return groups
 }
 
-// The database counts in credits (10,000 = 1 EUR); the UI only ever shows EUR.
-export const CREDITS_PER_EUR = 10_000
-export const eurToCredits = (eur: number) => Math.round(eur * CREDITS_PER_EUR)
-
-/** "€1.25". A credit is €0.0001, so extra decimals only show up when the amount needs them. */
-export function formatEur(credits: number) {
-	return "€" + (credits / CREDITS_PER_EUR).toFixed(4).replace(/(\.\d{2}\d*?)0*$/, "$1")
-}
+/** "1,250 credits" */
+export const formatCredits = (credits: number) =>
+	`${credits.toLocaleString("en-US")} ${credits === 1 ? "credit" : "credits"}`
 
 /** PostgREST embeds one-to-one relations as an object, but the generated types describe them as arrays. */
 export function one<T>(value: T[] | T | null | undefined): T | null {

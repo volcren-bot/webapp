@@ -1,5 +1,5 @@
 export const THEMES = [
-	{ id: "catppuccin", name: "Catppuccin Mocha" },
+	{ id: "catppuccin", name: "Catppuccin" },
 	{ id: "tokyonight", name: "Tokyo Night" },
 	{ id: "gruvbox", name: "Gruvbox Dark" },
 	{ id: "nord", name: "Nord" },

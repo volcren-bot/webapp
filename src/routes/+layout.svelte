@@ -109,12 +109,12 @@
 <CheatSheet {globals} />
 <KeyPopups />
 
-<div class="flex h-full flex-col">
+<div class="flex h-full flex-col overflow-hidden">
 	<Navigation />
 
 	<div class="flex min-h-0 grow">
 		<Sidebar />
-		<div class="flex min-w-0 grow flex-col">
+		<div class="flex min-h-0 min-w-0 grow flex-col">
 			<main class="flex min-h-0 grow flex-col overflow-auto px-4">
 				{@render children()}
 			</main>

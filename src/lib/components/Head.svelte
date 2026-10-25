@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from "$app/state"
-	import { SITE_NAME, WEBSITE_URL } from "#lib/utils"
+	import { SITE_NAME } from "#lib/utils"
 
 	interface Props {
 		title: string
@@ -22,10 +22,10 @@
 		description,
 		keywords = undefined,
 		author = undefined,
-		img = "/favicon.png",
-		imgWidth = undefined,
-		imgHeight = undefined,
-		imgAlt = undefined,
+		img = "/logo-bg.webp",
+		imgWidth = img === "/logo-bg.webp" ? 1024 : undefined,
+		imgHeight = img === "/logo-bg.webp" ? 1024 : undefined,
+		imgAlt = img === "/logo-bg.webp" ? `${SITE_NAME} logo` : undefined,
 		card = "summary",
 		type = "website",
 		noindex = false,
@@ -42,13 +42,13 @@
 	}
 
 	const fullTitle = $derived(title.includes(SITE_NAME) ? title : title + " - " + SITE_NAME)
-	const imgUrl = $derived(img.startsWith("/") ? WEBSITE_URL + img : img)
+	const imgUrl = $derived(img.startsWith("/") ? page.url.origin + img : img)
 	const imgType = $derived(imageTypes[new URL(imgUrl).pathname.split(".").at(-1)?.toLowerCase() ?? ""])
 
 	const canonical = $derived.by(() => {
 		const pageNumber = Number(page.url.searchParams.get("page"))
 		const path = page.url.pathname === "/" ? "" : page.url.pathname
-		return WEBSITE_URL + path + (pageNumber > 1 ? "?page=" + pageNumber : "")
+		return page.url.origin + path + (pageNumber > 1 ? "?page=" + pageNumber : "")
 	})
 
 	const structuredData = $derived(
@@ -64,6 +64,8 @@
 <svelte:head>
 	<title>{fullTitle}</title>
 	<meta name="description" content={description} />
+	<meta name="theme-color" content="#1a1b26" />
+	<link rel="apple-touch-icon" href="/favicon.png" />
 	{#if keywords}
 		<meta name="keywords" content={keywords} />
 	{/if}

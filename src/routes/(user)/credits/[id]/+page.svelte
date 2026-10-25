@@ -2,10 +2,9 @@
 	import Head from "#lib/components/Head.svelte"
 	import { invalidateAll } from "$app/navigation"
 	import { onMount } from "svelte"
+	import { formatCredits } from "#lib/utils"
 
 	const { data } = $props()
-
-	const eur = (cents: number) => `€${(cents / 100).toFixed(2)}`
 
 	const payment = $derived(data.payment)
 	const invoice = $derived(data.invoice)
@@ -44,15 +43,15 @@
 
 <main class="mx-auto my-6 flex w-full max-w-3xl flex-col">
 	<header class="my-8 flex flex-col">
-		<h1 class="text-2xl font-bold">Add {eur(payment.amount)}</h1>
+		<h1 class="text-2xl font-bold">Add {formatCredits(payment.credits)}</h1>
 		<p class="nv-dim">{payment.currency}</p>
 	</header>
 
 	{#if payment.status === "paid"}
 		<section class="nv-float flex w-full flex-col">
 			<span class="nv-title">paid</span>
-			<p class="text-success-400">Your {eur(payment.amount)} has been added to your balance.</p>
-			<a class="btn my-2 mr-auto" href="/account/credits">back to balance</a>
+			<p class="text-success-400">Your {formatCredits(payment.credits)} have been added to your balance.</p>
+			<a class="btn my-2 mr-auto" href="/credits">back to balance</a>
 		</section>
 	{:else if payment.status === "expired" || payment.status === "invalid" || !pending}
 		<section class="nv-float flex w-full flex-col">
@@ -60,7 +59,7 @@
 			<p class="nv-dim">
 				This invoice can no longer be paid. If you already sent a payment, contact support.
 			</p>
-			<a class="btn my-2 mr-auto" href="/account/credits">new payment</a>
+			<a class="btn my-2 mr-auto" href="/credits">new payment</a>
 		</section>
 	{:else if method}
 		<section class="nv-float flex w-full flex-col">

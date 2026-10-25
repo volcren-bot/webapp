@@ -5,6 +5,7 @@
 	import { superForm } from "sveltekit-superforms"
 	import UUID from "#lib/components/UUID.svelte"
 	import { untrack } from "svelte"
+	import { formatCredits } from "#lib/utils"
 
 	const { data, form } = $props()
 	const profile = $derived(data.profile!)
@@ -35,7 +36,7 @@
 
 	<form class="nv-float flex w-full flex-col" method="POST" use:enhance>
 		<span class="nv-title">credentials</span>
-		<p class="nv-dim">Your email is permanent. You can change your password.</p>
+		<p class="nv-dim">Your email is permanent. Your password is only used for API access.</p>
 
 		{#if $errors._errors}
 			{#each $errors._errors as err (err)}
@@ -49,7 +50,7 @@
 
 		<label class="label my-3">
 			<span class="label-text">email</span>
-			<input class="input" value={$authForm.email ?? ""} readonly aria-readonly="true" />
+			<input class="input" value={$authForm.email ?? ""} disabled />
 		</label>
 		<label class="label my-3">
 			<span class="label-text">password</span>
@@ -63,4 +64,30 @@
 
 		<button type="submit" class="btn my-2 mr-auto"> update </button>
 	</form>
+
+	<section class="nv-float mt-6 flex w-full flex-col">
+		<span class="nv-title">balance</span>
+		<p class="my-2 text-lg font-bold">{formatCredits(data.credits)}</p>
+		<a class="btn my-2 mr-auto" href="/credits">add funds</a>
+
+		<span class="nv-title mt-4">history</span>
+		{#if data.ledger.length}
+			<ul class="my-3 flex flex-col gap-1">
+				{#each data.ledger as entry (entry.id)}
+					<li class="flex justify-between gap-4">
+						<span>
+							{new Date(entry.created_at).toLocaleString()} · {entry.kind}
+							{#if entry.note}<span class="nv-dim">({entry.note})</span>{/if}
+						</span>
+						<span class={entry.amount < 0 ? "text-error-400" : "text-success-400"}>
+							{entry.amount > 0 ? "+" : ""}{entry.amount.toLocaleString("en-US")}
+							<span class="nv-dim">→ {entry.balance_after.toLocaleString("en-US")}</span>
+						</span>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="nv-dim">No transactions yet.</p>
+		{/if}
+	</section>
 </main>

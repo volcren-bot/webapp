@@ -7,6 +7,8 @@
 	import User from "@lucide/svelte/icons/user"
 	import Clock from "@lucide/svelte/icons/clock"
 	import FileCode from "@lucide/svelte/icons/file-code"
+	import { goto } from "$app/navigation"
+	import { listKey, useShortcuts } from "#lib/shortcuts.svelte.js"
 	import { CATEGORIES, CATEGORY_ICONS, STAGE_COLORS, TYPES, formatPrice } from "#lib/scripts"
 
 	const { data } = $props()
@@ -15,6 +17,79 @@
 		profile != null && ["scripter", "moderator", "administrator"].includes(profile.role)
 	)
 	const filters = $derived(data.filters)
+
+	// Row highlighted by the arrow keys; -1 until one is pressed.
+	let selected = $state(-1)
+	let list = $state<HTMLElement>()
+	let search = $state<HTMLInputElement>()
+
+	$effect(() => {
+		data.scripts
+		selected = -1
+	})
+
+	$effect(() => {
+		if (selected >= 0) list?.children[selected]?.scrollIntoView({ block: "nearest" })
+	})
+
+	const open = (i: number) => {
+		const script = data.scripts[i]
+		if (script) goto(`/scripts/${script.url}`)
+	}
+
+	useShortcuts(() => {
+		const keys = data.scripts.flatMap((_, i) => listKey(i) ?? [])
+		return [
+			{
+				display: "↑ ↓",
+				label: "Previous / next script",
+				scope: "This page",
+				keys: ["ArrowUp", "ArrowDown"],
+				run: (e) => {
+					const last = data.scripts.length - 1
+					if (last < 0) return
+					selected =
+						e.key === "ArrowDown"
+							? Math.min(selected + 1, last)
+							: selected < 0
+								? last
+								: Math.max(selected - 1, 0)
+				}
+			},
+			{
+				display: "Enter",
+				label: "Open the highlighted script",
+				scope: "This page",
+				keys: ["Enter"],
+				run: () => open(selected)
+			},
+			{
+				display: keys.length ? `${keys[0]}–${keys[keys.length - 1]}` : "0–9",
+				label: "Open that script",
+				scope: "This page",
+				keys,
+				run: (e) => open(data.scripts.findIndex((_, i) => listKey(i) === e.key))
+			},
+			{
+				display: "/",
+				label: "Focus the search box",
+				scope: "This page",
+				keys: ["/"],
+				run: () => search?.focus()
+			},
+			...(canCreate
+				? [
+						{
+							display: "n",
+							label: "Create a new script",
+							scope: "This page",
+							keys: ["n"],
+							run: () => goto("/scripts/new")
+						}
+					]
+				: [])
+		]
+	})
 </script>
 
 <Head title="Scripts" description="Browse and manage available scripts." />
@@ -39,6 +114,7 @@
 			<input
 				class="input"
 				name="q"
+				bind:this={search}
 				type="search"
 				value={filters.q ?? ""}
 				placeholder="title or description"
@@ -79,15 +155,20 @@
 			<p class="nv-dim">No scripts found.</p>
 		</div>
 	{:else}
-		<ul class="flex flex-col gap-3">
-			{#each data.scripts as script (script.url)}
+		<ul bind:this={list} class="flex flex-col gap-3">
+			{#each data.scripts as script, i (script.url)}
 				<li>
 					<a
 						href="/scripts/{script.url}"
-						class="flex flex-col gap-1 rounded-md border border-(--tn-bg-hl) bg-(--tn-bg-float) px-4 py-3 text-(--tn-fg) hover:border-(--tn-blue) hover:no-underline"
+						aria-current={selected === i ? "true" : undefined}
+						class="flex flex-col gap-1 rounded-md border bg-(--tn-bg-float) px-4 py-3 text-(--tn-fg) hover:border-(--tn-blue) hover:no-underline {selected ===
+						i
+							? 'border-(--tn-blue)'
+							: 'border-(--tn-bg-hl)'}"
 					>
 						<div class="flex items-center justify-between gap-3">
 							<span class="flex items-center gap-2 font-bold text-(--tn-blue)">
+								{#if listKey(i)}<span class="nv-key">{listKey(i)}</span>{/if}
 								<FileCode class="h-4 shrink-0" />
 								{script.title}
 							</span>

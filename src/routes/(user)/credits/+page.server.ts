@@ -50,7 +50,7 @@ export const actions = {
 				cents,
 				orderId: paymentId,
 				notificationUrl: `${origin}/api/bitcart`,
-				redirectUrl: `${origin}/account/credits/${paymentId}`
+				redirectUrl: `${origin}/credits/${paymentId}`
 			})
 		} catch (e) {
 			return fail(502, { message: errorRef("Could not create the invoice", e) })
@@ -66,6 +66,6 @@ export const actions = {
 		})
 		if (err) return fail(500, { message: errorRef("Could not record the payment", err) })
 
-		redirect(303, `/account/credits/${paymentId}`)
+		redirect(303, `/credits/${paymentId}`)
 	}
 }

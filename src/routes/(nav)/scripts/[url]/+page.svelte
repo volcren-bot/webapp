@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { enhance } from "$app/forms"
 	import Head from "#lib/components/Head.svelte"
-	import ScriptForm from "#lib/components/ScriptForm.svelte"
+	import ScriptWizard from "#lib/components/ScriptWizard.svelte"
+	import UUID from "#lib/components/UUID.svelte"
 	import RevisionUpload from "./RevisionUpload.svelte"
 	import Lock from "@lucide/svelte/icons/lock"
 	import LockOpen from "@lucide/svelte/icons/lock-open"
@@ -21,39 +22,65 @@
 
 <Head title={script.title} description={metaDescription(script.description)} noindex={!script.published} />
 
-<section class="mx-auto my-8 flex w-full max-w-3xl flex-col gap-6">
-	<header class="flex flex-col gap-1">
-		<a href="/scripts" class="nv-dim">← scripts</a>
-		<h1 class="text-2xl font-bold">{script.title}</h1>
+<section class="mx-auto my-8 flex w-full max-w-5xl flex-col gap-6">
+	<a href="/scripts" class="nv-dim">← scripts</a>
+
+	<header class="flex flex-col gap-2">
+		<h1 class="text-3xl font-bold">{script.title}</h1>
 		<p class="nv-dim">{script.description}</p>
-		<div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-			<span style="color: {STAGE_COLORS[script.stage]}">{script.stage}</span>
-			<span
-				class="flex items-center gap-1 {script.type === 'premium'
-					? 'text-(--tn-yellow)'
-					: 'text-(--tn-green)'}"
-			>
-				{#if script.type === "premium"}<Lock class="h-4" />{:else}<LockOpen class="h-4" />{/if}
-				{formatPrice(script.price)}
-			</span>
+		<div class="mt-1 flex flex-wrap items-center gap-2 text-sm">
+			<span class="nv-pill" style="color: {STAGE_COLORS[script.stage]}">{script.stage}</span>
 			{#each script.categories as category (category)}
 				{@const Icon = CATEGORY_ICONS[category]}
-				<span class="flex items-center gap-1 text-(--tn-purple)"><Icon class="h-4" /> {category}</span>
+				<span class="nv-pill flex items-center gap-1 text-(--tn-purple)">
+					<Icon class="h-4" />
+					{category}
+				</span>
 			{/each}
-			<span class="nv-dim flex items-center gap-1"><User class="h-4" /> {script.author}</span>
-			<span class="nv-dim flex items-center gap-1">
-				<Clock class="h-4" /> updated {new Date(script.updatedAt).toLocaleDateString()}
-			</span>
-			<span class="nv-dim flex items-center gap-1">
-				<FileCode class="h-4" />
-				{script.revision ? `revision ${script.revision}` : "no revision yet"}
-			</span>
+			{#if !script.published}
+				<span class="nv-pill nv-dim flex items-center gap-1"><EyeOff class="h-4" /> hidden</span>
+			{/if}
 		</div>
 	</header>
 
-	<div class="nv-float">
-		<span class="nv-title">about</span>
-		<p class="whitespace-pre-wrap">{script.content}</p>
+	<div class="flex flex-col gap-6 md:flex-row">
+		<aside class="nv-float w-full shrink-0 md:w-64">
+			<span class="nv-title">info</span>
+			<dl class="flex flex-col gap-3 text-sm">
+				<div>
+					<dt class="nv-dim">id</dt>
+					<dd><UUID uuid={script.id} /></dd>
+				</div>
+				<div>
+					<dt class="nv-dim">price</dt>
+					<dd
+						class="flex items-center gap-1 text-lg font-bold {script.type === 'premium'
+							? 'text-(--tn-yellow)'
+							: 'text-(--tn-green)'}"
+					>
+						{#if script.type === "premium"}<Lock class="h-4" />{:else}<LockOpen class="h-4" />{/if}
+						{formatPrice(script.price)}
+					</dd>
+				</div>
+				<div>
+					<dt class="nv-dim flex items-center gap-1"><User class="h-4" /> author</dt>
+					<dd>{script.author}</dd>
+				</div>
+				<div>
+					<dt class="nv-dim flex items-center gap-1"><FileCode class="h-4" /> revision</dt>
+					<dd>{script.revision ? `#${script.revision}` : "none yet"}</dd>
+				</div>
+				<div>
+					<dt class="nv-dim flex items-center gap-1"><Clock class="h-4" /> updated</dt>
+					<dd>{new Date(script.updatedAt).toLocaleDateString()}</dd>
+				</div>
+			</dl>
+		</aside>
+
+		<div class="nv-float min-h-96 min-w-0 grow">
+			<span class="nv-title">about</span>
+			<p class="whitespace-pre-wrap">{script.content}</p>
+		</div>
 	</div>
 
 	{#if data.canEdit && data.form}
@@ -105,7 +132,16 @@
 			{/if}
 		</div>
 
-		<ScriptForm data={data.form} action="?/update" submit="save changes" minStage={script.stage} />
+		<ScriptWizard
+			data={data.form}
+			action="?/update"
+			boxed
+			label="Edit script"
+			heading="volcren script editor"
+			confirm="Save these changes?"
+			progress="Saving changes..."
+			minStage={script.stage}
+		/>
 	{/if}
 
 	{#if data.canDelete}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Head from "#lib/components/Head.svelte"
 	import { enhance } from "$app/forms"
-	import { formatEur } from "#lib/utils"
+	import { formatCredits } from "#lib/utils"
 
 	const { data, form } = $props()
 
@@ -13,7 +13,7 @@
 <main class="mx-auto my-6 flex w-full max-w-3xl flex-col">
 	<header class="my-8 flex flex-col">
 		<h1 class="text-2xl font-bold">Balance</h1>
-		<p class="nv-dim">{formatEur(data.credits)}</p>
+		<p class="nv-dim">{formatCredits(data.credits)}</p>
 	</header>
 
 	<form class="nv-float flex w-full flex-col" method="POST" use:enhance>
@@ -49,9 +49,9 @@
 					<li class="flex justify-between">
 						<span>{new Date(payment.created_at).toLocaleString()}</span>
 						<span>
-							{eur(payment.amount)} ·
+							{formatCredits(payment.credits)} ({eur(payment.amount)}) ·
 							{#if payment.status === "pending"}
-								<a class="underline" href="/account/credits/{payment.id}">pay</a>
+								<a class="underline" href="/credits/{payment.id}">pay</a>
 							{:else}
 								{payment.status}
 							{/if}

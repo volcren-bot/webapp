@@ -12,6 +12,15 @@ export type Shortcut = {
 	run?: (e: KeyboardEvent) => void
 }
 
+// Letters other shortcuts use, so numbered lists skip them.
+const RESERVED_LETTERS = "vsditakun"
+const LIST_KEYS = [..."0123456789abcdefghijklmnopqrstuvwxyz"].filter((k) => !RESERVED_LETTERS.includes(k))
+
+/** The key that jumps to the nth row of a list: 0–9, then letters. Undefined once they run out. */
+export function listKey(index: number): string | undefined {
+	return LIST_KEYS[index]
+}
+
 export const cheatSheet = $state({ open: false })
 
 // Shortcuts registered by whichever page or component is currently mounted.
@@ -68,6 +77,9 @@ export function handleKey(e: KeyboardEvent, globals: Shortcut[]) {
 	if (cheatSheet.open) return
 	if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return
 	if (e.target instanceof HTMLElement && e.target.closest("input, textarea, select, [contenteditable]"))
+		return
+	// Enter on a focused link or button belongs to that element.
+	if (e.key === "Enter" && e.target instanceof HTMLElement && e.target.closest("a, button, summary"))
 		return
 	const all = [...localShortcuts(), ...globals].filter((s) => s.run && s.keys?.includes(e.key))
 	const elsewhere = all.filter((s) => s.href !== page.url.pathname)

@@ -16,6 +16,16 @@ export const load = async ({ params, locals: { supabaseServer, user, getProfile 
 		)
 		.eq("url", params.url)
 		.maybeSingle()
+	if (!script) {
+		// A slug from before a rename: send the visitor to the current one.
+		const { data: old } = await scripts
+			.from("slugs")
+			.select("scripts(url)")
+			.eq("slug", params.url)
+			.maybeSingle()
+		const current = one(old?.scripts)?.url
+		if (current && current !== params.url) redirect(301, `/scripts/${current}`)
+	}
 	const metadata = one(script?.metadata)
 	const info = one(script?.protected)
 	if (!script || !metadata || !info) error(404, "Script not found")
@@ -92,6 +102,10 @@ export const actions = {
 
 		const meta = await scripts.from("metadata").update({ type, price, stage, categories }).eq("id", script.id)
 		if (meta.error) return message(form, errorRef("Could not save the script", meta.error), { status: 400 })
+
+		// The slug follows the title, so a rename moves the page.
+		const { data: renamed } = await scripts.from("scripts").select("url").eq("id", script.id).single()
+		if (renamed && renamed.url !== params.url) redirect(303, `/scripts/${renamed.url}`)
 
 		return message(form, "Saved.")
 	},

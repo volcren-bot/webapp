@@ -22,7 +22,7 @@ import Zap from "@lucide/svelte/icons/zap"
 import Target from "@lucide/svelte/icons/target"
 import Anvil from "@lucide/svelte/icons/anvil"
 import Sailboat from "@lucide/svelte/icons/sailboat"
-import { formatEur } from "#lib/utils"
+import { formatCredits } from "#lib/utils"
 import { Constants, type Database } from "#lib/types/supabase"
 
 export type ScriptCategory = Database["scripts"]["Enums"]["category"]
@@ -72,8 +72,8 @@ export const MAX_PRICE = 10_000
 export const MAX_FILES = 50
 export const MAX_FILE_BYTES = 5 * 1024 * 1024
 
-/** Prices are stored as credits per minute and shown in EUR. */
-export const formatPrice = (credits: number) => (credits === 0 ? "free" : `${formatEur(credits)}/min`)
+/** Prices are in credits per minute. */
+export const formatPrice = (credits: number) => (credits === 0 ? "free" : `${formatCredits(credits)}/min`)
 
 export const scriptSchema = z
 	.object({
@@ -95,13 +95,13 @@ export const scriptSchema = z
 		type: z.enum(TYPES),
 		price: z
 			.number("Must be a number.")
-			.int("Must be a multiple of €0.0001.")
+			.int("Must be a whole number of credits.")
 			.min(0)
-			.max(MAX_PRICE, `Must be at most ${formatEur(MAX_PRICE)} per minute.`),
+			.max(MAX_PRICE, `Must be at most ${formatCredits(MAX_PRICE)} per minute.`),
 		stage: z.enum(STAGES),
 		categories: z.array(z.enum(CATEGORIES)).max(5, "Pick at most 5 categories.")
 	})
 	.refine((s) => (s.type === "free") === (s.price === 0), {
 		path: ["price"],
-		message: `Free scripts cost nothing, premium scripts cost at least ${formatEur(1)} per minute.`
+		message: `Free scripts cost nothing, premium scripts cost at least ${formatCredits(1)} per minute.`
 	})

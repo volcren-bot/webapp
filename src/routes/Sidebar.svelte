@@ -2,7 +2,7 @@
 	import { navigating, page } from "$app/state"
 	import { untrack } from "svelte"
 	import { faqs } from "#lib/faqs"
-	import { NAV_CHILDREN, NAV_ROUTES, SITE_NAME, routeHref } from "#lib/utils"
+	import { NAV_CHILDREN, NAV_ROUTES, SITE_NAME, USER_ROUTES, routeHref } from "#lib/utils"
 
 	const { profile } = $derived(page.data)
 
@@ -30,7 +30,9 @@
 	const path = $derived(navigating.to?.url.pathname ?? page.url.pathname)
 
 	// The server row at the top is the home link.
-	const files = $derived([...NAV_ROUTES.filter((r) => r !== "Home"), ...(profile ? ["Account"] : [])])
+	const files = $derived(
+		[...NAV_ROUTES.filter((r) => r !== "Home"), ...(profile ? USER_ROUTES : [])].sort((a, b) => a.localeCompare(b))
+	)
 
 	function isActive(route: string) {
 		const href = routeHref(route)

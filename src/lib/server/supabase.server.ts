@@ -6,7 +6,7 @@ import { formatError } from "#lib/utils"
 export const LOGIN_REDIRECT_COOKIE = "login_redirect"
 
 // Routes that require a logged in user
-export const PROTECTED_PATHS = ["/account"]
+export const PROTECTED_PATHS = ["/account", "/credits"]
 
 export const isProtected = (pathname: string) => PROTECTED_PATHS.some((path) => pathname.startsWith(path))
 

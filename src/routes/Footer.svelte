@@ -28,7 +28,7 @@
 
 <svelte:window onfocusin={(e) => (insert = isField(e.target))} onfocusout={() => (insert = false)} />
 
-<footer class="nv-statusline">
+<footer class="nv-statusline shrink-0">
 	<span>
 		<span class="nv-mode" class:insert>{insert ? "INSERT" : "NORMAL"}</span>
 		<span class="nv-seg accent">⎇ main</span>
@@ -51,6 +51,14 @@
 				<span style="color: var(--tn-orange)">K</span> cheat sheet
 			</button>
 		{/if}
+		<a
+			href="https://discord.gg/pGfe2zhJph"
+			target="_blank"
+			rel="noopener noreferrer"
+			class="nv-seg hover:text-(--tn-blue)"
+		>
+			discord
+		</a>
 		<a href="/" class="nv-seg hidden sm:block">{SITE_NAME.toLowerCase()}</a>
 		<a href="/account" class="nv-seg alt">{profile ? profile.username : "guest"}</a>
 		<a href="/information" class="nv-seg" style="background: var(--tn-blue); color: var(--tn-bg-dark)">

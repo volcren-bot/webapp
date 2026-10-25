@@ -4,9 +4,23 @@ import { redirect } from "@sveltejs/kit"
 import { setError, superValidate } from "sveltekit-superforms"
 import { zod4 } from "sveltekit-superforms/adapters"
 
-export const load = async ({ locals: { user } }) => {
+export const load = async ({ locals: { user, supabaseServer } }) => {
 	if (!user) redirect(303, "/")
+
+	const payments = supabaseServer.schema("payments")
+	const [account, ledger] = await Promise.all([
+		payments.from("accounts").select("credits").eq("user_id", user.id).maybeSingle(),
+		payments
+			.from("credits_ledger")
+			.select("id, kind, amount, balance_after, note, created_at")
+			.eq("user_id", user.id)
+			.order("created_at", { ascending: false })
+			.limit(50)
+	])
+
 	return {
+		credits: account.data?.credits ?? 0,
+		ledger: ledger.data ?? [],
 		form: await superValidate({ email: user.email }, zod4(profileSchema))
 	}
 }

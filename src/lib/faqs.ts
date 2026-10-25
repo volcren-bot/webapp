@@ -1,3 +1,5 @@
+import { listKey } from "./shortcuts.svelte.js"
+
 export const faqs = [
 	{
 		q: "What is this?",
@@ -31,4 +33,4 @@ export const faqs = [
 		q: "Can I stop a script at any time?",
 		a: "Yes. You can stop a script whenever you like from the app, and you are always in control."
 	}
-].map((f, i) => ({ ...f, id: String(i), key: String(i % 10) }))
+].map((f, i) => ({ ...f, id: String(i), key: listKey(i) }))

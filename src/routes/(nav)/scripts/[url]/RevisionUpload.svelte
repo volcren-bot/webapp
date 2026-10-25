@@ -31,8 +31,9 @@
 			const created = await supabase
 				.schema("scripts")
 				.from("versions")
-				// The revision number is assigned by a trigger; the generated type just doesn't know it's optional.
-				.insert({ id, revision: 0, files: files.map((f) => f.name) })
+				// Clients may only insert id + files (column grants); a trigger assigns the revision, so the
+				// generated type's required `revision` is cast away. Sending it would be a 403.
+				.insert({ id, files: files.map((f) => f.name) } as { id: string; files: string[]; revision: number })
 				.select("revision")
 				.single()
 			if (created.error) throw created.error

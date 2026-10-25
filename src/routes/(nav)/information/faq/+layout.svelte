@@ -25,10 +25,10 @@
 			}
 		},
 		{
-			display: `0–${faqs.length - 1}`,
+			display: `${faqs[0].key}–${faqs[faqs.length - 1].key}`,
 			label: "Open that question",
 			scope: "This page",
-			keys: faqs.map((f) => f.key),
+			keys: faqs.flatMap((f) => (f.key ? [f.key] : [])),
 			run: (e) => goto(`/information/faq/${faqs.find((f) => f.key === e.key)?.id}`)
 		}
 	])

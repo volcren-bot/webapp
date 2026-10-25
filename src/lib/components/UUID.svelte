@@ -6,7 +6,8 @@
 </script>
 
 <button
-	class="nv-dim cursor-pointer text-xs hover:text-(--tn-blue)"
+	class="btn inline-flex w-fit items-center gap-1 self-start text-xs"
+	title={uuid}
 	type="button"
 	onclick={async (e) => {
 		e.preventDefault()
@@ -15,10 +16,10 @@
 		setTimeout(() => (copied = false), 2000)
 	}}
 >
-	ID: <span class="w-18 truncate">{uuid}</span>
+	ID: {uuid.split("-")[0]}…
 	{#if copied}
-		<ClipboardCheck class="h-4" />
+		<ClipboardCheck class="h-3" />
 	{:else}
-		<Clipboard class="h-4" />
+		<Clipboard class="h-3" />
 	{/if}
 </button>

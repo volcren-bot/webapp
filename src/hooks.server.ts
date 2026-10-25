@@ -3,9 +3,7 @@ import { createServerClient } from "@supabase/ssr"
 import { sequence, type Handle, type HandleServerError } from "@sveltejs/kit/hooks"
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "$app/env/public"
 import type { Database } from "#lib/types/supabase"
-
-// Routes that require a logged in user
-const PROTECTED_PATHS = ["/account"]
+import { isProtected } from "#lib/server/supabase.server"
 
 const supabase: Handle = async ({ event, resolve }) => {
 	event.locals.supabaseServer = createServerClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -64,6 +62,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
 		if (!user) return null
 
 		const { data, error: err } = await event.locals.supabaseServer
+			.schema("profiles")
 			.from("profiles")
 			.select("id, username, avatar, role")
 			.eq("id", user.id)
@@ -78,7 +77,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
 
 	event.locals.getProfile = () => (profilePromise ??= fetchProfile())
 
-	if (!event.locals.session && PROTECTED_PATHS.some((path) => event.url.pathname.startsWith(path))) {
+	if (!event.locals.session && isProtected(event.url.pathname)) {
 		redirect(303, "/auth")
 	}
 

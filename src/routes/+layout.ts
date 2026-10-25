@@ -36,6 +36,7 @@ export const load = async ({ data, depends }) => {
 
 	if (authUser) {
 		const { data: profile } = await supabaseClient
+			.schema("profiles")
 			.from("profiles")
 			.select("id, username, avatar, role")
 			.eq("id", authUser.id)

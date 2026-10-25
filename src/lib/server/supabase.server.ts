@@ -1,8 +1,14 @@
+import { SUPABASE_URL } from "$app/env/public"
 import type { AuthError, PostgrestError, SupabaseClient, Provider } from "@supabase/supabase-js"
 import { error, redirect } from "@sveltejs/kit"
 import { formatError } from "#lib/utils"
 
 export const LOGIN_REDIRECT_COOKIE = "login_redirect"
+
+// Routes that require a logged in user
+export const PROTECTED_PATHS = ["/account"]
+
+export const isProtected = (pathname: string) => PROTECTED_PATHS.some((path) => pathname.startsWith(path))
 
 /** Logs the error with a short reference id and returns a message that can be shown to the user. */
 export function errorRef(message: string, detail?: unknown) {
@@ -21,7 +27,6 @@ export async function doLogin(
 	searchParams: URLSearchParams
 ): Promise<never> {
 	const provider = searchParams.get("provider") as Provider | null
-
 	if (!provider) error(403, "Failed to login! Provider not specified!")
 
 	const { data, error: err } = await supabase.auth.signInWithOAuth({
@@ -31,7 +36,8 @@ export async function doLogin(
 
 	if (err) error(400, formatError(err as AuthError | PostgrestError))
 
-	redirect(303, data.url)
+	// The authorize URL lives on the Supabase origin, so only that origin is allowed
+	redirect(303, data.url, { external: [new URL(SUPABASE_URL).origin] })
 }
 
 /** Only same-origin absolute paths, so the post-login redirect can't leave the site. */

@@ -57,20 +57,26 @@
 				<a href="/account" aria-label="Open account page" onclick={() => (showProfile = false)}>
 					account settings
 				</a>
-				<button name="Logout" aria-label="Logout" class="btn" formaction="/auth?/logout"> logout </button>
+				<button
+					name="Logout"
+					aria-label="Logout"
+					class="btn"
+					formaction="/auth?/logout&path={encodeURIComponent(page.url.pathname + page.url.search)}"
+				>
+					logout
+				</button>
 			</div>
 		{:else}
 			<span class="nv-title">log in</span>
-			<!-- Change the provider to whichever OAuth provider you enabled in Supabase -->
 			<button
 				name="Login"
 				aria-label="Login to your account"
 				class="btn"
-				formaction="/auth?/login&provider=github&path={encodeURIComponent(
+				formaction="/auth?/login&provider=discord&path={encodeURIComponent(
 					page.url.pathname + page.url.search
 				)}"
 			>
-				login with github
+				login with discord
 			</button>
 		{/if}
 	</form>

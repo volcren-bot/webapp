@@ -9,14 +9,6 @@
 
 	const nl = "\n"
 
-	const header = [
-		"██╗   ██╗ ██████╗ ██╗      ██████╗██████╗ ███████╗███╗   ██╗",
-		"██║   ██║██╔═══██╗██║     ██╔════╝██╔══██╗██╔════╝████╗  ██║",
-		"██║   ██║██║   ██║██║     ██║     ██████╔╝█████╗  ██╔██╗ ██║",
-		"╚██╗ ██╔╝██║   ██║██║     ██║     ██╔══██╗██╔══╝  ██║╚██╗██║",
-		" ╚████╔╝ ╚██████╔╝███████╗╚██████╗██║  ██║███████╗██║ ╚████║",
-		"  ╚═══╝   ╚═════╝ ╚══════╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝"
-	]
 	const logo = [
 		"                      .=-",
 		"                    .+%@",
@@ -53,6 +45,7 @@
 		"        .-+*%##################=",
 		"            .:=+*##%####%%#*+-."
 	]
+
 	// Outer flame fades from yellow at the tip to red at the base, the inner flame ("@") stays bright
 	const logoColors = ["var(--tn-yellow)", "var(--tn-orange)", "var(--tn-red)"]
 	const logoWidth = Math.max(...logo.map((line) => line.length))
@@ -154,16 +147,6 @@
 		fit()
 		return () => observer.disconnect()
 	})
-
-	// Gradient across the header rows, like the LazyVim dashboard
-	const colors = [
-		"var(--tn-blue)",
-		"var(--tn-blue)",
-		"var(--tn-cyan)",
-		"var(--tn-cyan)",
-		"var(--tn-purple)",
-		"var(--tn-purple)"
-	]
 </script>
 
 <Head title={SITE_NAME} description={SITE_DESCRIPTION} />
@@ -178,16 +161,20 @@
 		style="font-size: {fontSize ?? 'clamp(3px, 0.7vw, 12px)'}{fontSize ? 'px' : ''}"
 	>
 		<pre
-			class="text-[0.85em] leading-none select-none"
+			class="text-[0.85em] leading-none"
 			aria-hidden="true">{#each logo as line, i (i)}{#each logoRuns(line, i) as run, j (j)}<span
 						style="color: {run.color}">{run.text}</span
-					>{/each}{nl}{/each}</pre>
-
-		<pre
-			class="leading-tight select-none"
-			style="font-size: max(calc(1em - 1pt), 0.85em)"
-			aria-label={SITE_NAME}>{#each header as line, i (i)}<span style="color: {colors[i]}">{line}</span
-				>{nl}{/each}</pre>
+					>{/each}{nl}{/each}
+			</pre>
+		<!-- prettier-ignore -->
+		<pre class="leading-tight" style="font-size: max(calc(1em - 1pt), 0.85em)" aria-label={SITE_NAME}>
+<span style="color: var(--tn-blue)">██╗   ██╗ ██████╗ ██╗      ██████╗██████╗ ███████╗███╗   ██╗</span>
+<span style="color: var(--tn-blue)">██║   ██║██╔═══██╗██║     ██╔════╝██╔══██╗██╔════╝████╗  ██║</span>
+<span style="color: var(--tn-cyan)">██║   ██║██║   ██║██║     ██║     ██████╔╝█████╗  ██╔██╗ ██║</span>
+<span style="color: var(--tn-cyan)">╚██╗ ██╔╝██║   ██║██║     ██║     ██╔══██╗██╔══╝  ██║╚██╗██║</span>
+<span style="color: var(--tn-purple)"> ╚████╔╝ ╚██████╔╝███████╗╚██████╗██║  ██║███████╗██║ ╚████║</span>
+<span style="color: var(--tn-purple)">  ╚═══╝   ╚═════╝ ╚══════╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝</span>
+		</pre>
 	</div>
 
 	<p class="nv-dim">{SITE_DESCRIPTION}</p>

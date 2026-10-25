@@ -21,7 +21,7 @@ A SvelteKit starter with Supabase auth, Tailwind 4 UI, dark mode.
    ```
 
 2. Create a Supabase project, run `supabase/schema.sql` in its SQL editor and enable an OAuth provider
-   (`Navigation.svelte` uses GitHub by default, change the `provider` there to use another one).
+   (`Navigation.svelte` uses Discord by default, change the `provider` there to use another one).
    Add `http://localhost:5173/auth/callback/` to the allowed redirect URLs.
 
 3. Copy `.env.example` to `.env` and fill in your Supabase URL and anon key.

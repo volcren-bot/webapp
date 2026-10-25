@@ -34,13 +34,12 @@ const sveltekitConfig: Config = {
 	csp: {
 		mode: "auto",
 		directives: {
-			// Add your Supabase domain (and any other services you use) here.
 			"connect-src": [
 				"self",
 				"ws://localhost:*",
 				"http://localhost:*",
-				"https://*.supabase.co",
-				"wss://*.supabase.co"
+				"https://db.volcren.com",
+				"wss://db.volcren.com"
 			],
 			"script-src": ["self", "unsafe-inline", "wasm-unsafe-eval"],
 			"img-src": [
@@ -48,10 +47,8 @@ const sveltekitConfig: Config = {
 				"data:",
 				"blob:",
 				"http://localhost:*",
-				"https://*.supabase.co",
-				"https://cdn.discordapp.com",
-				"https://avatars.githubusercontent.com",
-				"https://api.dicebear.com"
+				"https://db.volcren.com",
+				"https://cdn.discordapp.com"
 			],
 			"base-uri": ["self"],
 			"object-src": ["none"]

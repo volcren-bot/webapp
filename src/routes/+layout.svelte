@@ -7,6 +7,7 @@
 	import Footer from "./Footer.svelte"
 	import Sidebar from "./Sidebar.svelte"
 	import CheatSheet from "./CheatSheet.svelte"
+	import KeyPopups from "./KeyPopups.svelte"
 	import { cheatSheet, handleKey, type Shortcut } from "#lib/shortcuts.svelte.js"
 	import { NAV_ROUTES, routeHref } from "#lib/utils"
 	import { getSupabaseBrowser } from "#lib/supabase.browser"
@@ -28,6 +29,7 @@
 			label: `Go to ${route.toLowerCase()}`,
 			scope: "Global",
 			keys: [NAV_KEYS[route]],
+			href: routeHref(route),
 			run: () => goto(routeHref(route))
 		})),
 		...(data.profile
@@ -37,6 +39,7 @@
 						label: "Go to account",
 						scope: "Global",
 						keys: ["a"],
+						href: "/account",
 						run: () => goto("/account")
 					}
 				]
@@ -97,6 +100,7 @@
 <svelte:window onkeydown={(e) => handleKey(e, globals)} />
 
 <CheatSheet {globals} />
+<KeyPopups />
 
 <div class="flex h-full flex-col">
 	<Navigation />

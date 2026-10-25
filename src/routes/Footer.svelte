@@ -7,6 +7,20 @@
 
 	let insert = $state(false)
 
+	let copied = $state(false)
+	let copiedTimer: ReturnType<typeof setTimeout>
+
+	async function copyUrl() {
+		try {
+			await navigator.clipboard.writeText(page.url.href)
+		} catch {
+			return
+		}
+		copied = true
+		clearTimeout(copiedTimer)
+		copiedTimer = setTimeout(() => (copied = false), 1500)
+	}
+
 	function isField(el: EventTarget | null) {
 		return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement
 	}
@@ -18,7 +32,14 @@
 	<span>
 		<span class="nv-mode" class:insert>{insert ? "INSERT" : "NORMAL"}</span>
 		<span class="nv-seg accent">⎇ main</span>
-		<span class="nv-seg">{page.url.pathname}</span>
+		<button
+			type="button"
+			class="nv-seg cursor-pointer hover:text-(--tn-blue)"
+			title="Copy URL"
+			onclick={copyUrl}
+		>
+			{copied ? "copied!" : page.url.pathname}
+		</button>
 	</span>
 	<span>
 		{#if page.url.pathname !== "/"}

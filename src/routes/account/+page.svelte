@@ -35,7 +35,7 @@
 
 	<form class="nv-float flex w-full flex-col" method="POST" use:enhance>
 		<span class="nv-title">credentials</span>
-		<p class="nv-dim">Change your email or password.</p>
+		<p class="nv-dim">Your email is permanent. You can change your password.</p>
 
 		{#if $errors._errors}
 			{#each $errors._errors as err (err)}
@@ -43,23 +43,13 @@
 			{/each}
 		{/if}
 
-		{#if form?.email}
-			<small class="text-success-400">
-				You've received a link on both emails. Open them both to confirm the change.
-			</small>
-		{/if}
 		{#if form?.password}
 			<small class="text-success-400">Your password has been updated.</small>
 		{/if}
 
 		<label class="label my-3">
 			<span class="label-text">email</span>
-			<input class="input" class:border-error-500={$errors.email} bind:value={$authForm.email} />
-			{#if $errors.email}
-				{#each $errors.email as err (err)}
-					<small class="text-error-400">{err}</small>
-				{/each}
-			{/if}
+			<input class="input" value={$authForm.email ?? ""} readonly aria-readonly="true" />
 		</label>
 		<label class="label my-3">
 			<span class="label-text">password</span>

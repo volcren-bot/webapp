@@ -1,12 +1,7 @@
 <script lang="ts">
 	import Head from "#lib/components/Head.svelte"
 	import SubRoutes from "#lib/components/SubRoutes.svelte"
-
-	const pages = [
-		{ key: "f", href: "/information/faq", label: "Frequently asked questions" },
-		{ key: "t", href: "/information/terms", label: "Terms of service" },
-		{ key: "p", href: "/information/privacy", label: "Privacy policy" }
-	]
+	import { informationPages } from "#lib/information"
 </script>
 
 <Head title="Information" description="What this platform is and how it works." />
@@ -25,5 +20,5 @@
 		<p>Using our products may violate EULAs you've agreed to, which we do not condone.</p>
 	</div>
 
-	<SubRoutes items={pages} />
+	<SubRoutes items={informationPages} />
 </section>

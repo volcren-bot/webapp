@@ -12,22 +12,21 @@ export const load = async ({ locals: { user } }) => {
 }
 
 export const actions = {
-	default: async ({ request, url: { origin }, locals: { user, supabaseServer } }) => {
+	default: async ({ request, locals: { user, supabaseServer } }) => {
 		const form = await superValidate(request, zod4(profileSchema))
 
 		if (!user) return setError(form, "", "You need to login to update your account.")
 		if (!form.valid) return setError(form, "", "Form is not valid!")
 
-		if (form.data.email === "" || user.email == form.data.email) form.data.email = undefined
-		if (form.data.password === "") form.data.password = undefined
+		// Emails are permanent: whatever the client sends for it is ignored.
+		form.data.email = user.email
+		const password = form.data.password || undefined
 
-		if (form.data.email || form.data.password) {
-			const { error: err } = await supabaseServer.auth.updateUser(form.data, {
-				emailRedirectTo: origin + "/account"
-			})
+		if (password) {
+			const { error: err } = await supabaseServer.auth.updateUser({ password })
 			if (err) return setError(form, "", formatError(err))
 		}
 
-		return { form, email: form.data.email != null, password: form.data.password != null }
+		return { form, password: password != null }
 	}
 }

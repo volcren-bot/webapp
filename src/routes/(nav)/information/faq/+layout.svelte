@@ -52,7 +52,7 @@
 
 	<nav
 		bind:this={list}
-		class="flex max-h-[calc(5*2.25rem+2px)] flex-col divide-y overflow-y-auto divide-(--tn-bg-hl) rounded-md border border-(--tn-bg-hl)"
+		class="flex max-h-[calc(5*2.25rem+2px)] flex-col divide-y divide-(--tn-bg-hl) overflow-y-auto rounded-md border border-(--tn-bg-hl)"
 		aria-label="Questions"
 	>
 		{#each faqs as faq (faq.id)}

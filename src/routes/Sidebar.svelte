@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from "$app/state"
+	import { untrack } from "svelte"
 	import { faqs } from "#lib/faqs"
 	import { NAV_CHILDREN, NAV_ROUTES, SITE_NAME, routeHref } from "#lib/utils"
 
@@ -22,6 +23,17 @@
 		const name = route.toLowerCase()
 		return expanded[name] ?? page.url.pathname.startsWith(routeHref(route))
 	}
+
+	// Leaving a parent drops its manual override so it collapses again.
+	$effect(() => {
+		const path = page.url.pathname
+		untrack(() => {
+			for (const route of NAV_ROUTES) {
+				const name = route.toLowerCase()
+				if (name in expanded && !path.startsWith(routeHref(route))) delete expanded[name]
+			}
+		})
+	})
 
 	function onParentClick(route: string) {
 		const name = route.toLowerCase()
@@ -99,7 +111,11 @@
 					>
 						<span aria-hidden="true" class="nv-guide">{guide(lastRoute, j === children.length - 1)}</span>
 						<span aria-hidden="true" class="nv-icon"
-							>{icon(child, isChildActive(href) || (`${route.toLowerCase()}/${child}` in LEAVES && page.url.pathname.startsWith(href)))}</span
+							>{icon(
+								child,
+								isChildActive(href) ||
+									(`${route.toLowerCase()}/${child}` in LEAVES && page.url.pathname.startsWith(href))
+							)}</span
 						>
 						<span>{child}/</span>
 					</a>

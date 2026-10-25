@@ -52,7 +52,7 @@
 			<small class="text-success-400">Your password has been updated.</small>
 		{/if}
 
-		<label class="my-3 label">
+		<label class="label my-3">
 			<span class="label-text">email</span>
 			<input class="input" class:border-error-500={$errors.email} bind:value={$authForm.email} />
 			{#if $errors.email}
@@ -61,7 +61,7 @@
 				{/each}
 			{/if}
 		</label>
-		<label class="my-3 label">
+		<label class="label my-3">
 			<span class="label-text">password</span>
 			<input class="input" class:border-error-500={$errors.password} bind:value={$authForm.password} />
 			{#if $errors.password}
@@ -71,6 +71,6 @@
 			{/if}
 		</label>
 
-		<button type="submit" class="my-2 mr-auto btn"> update </button>
+		<button type="submit" class="btn my-2 mr-auto"> update </button>
 	</form>
 </main>

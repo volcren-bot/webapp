@@ -31,7 +31,8 @@ export function useShortcuts(get: () => Shortcut[]) {
 export function handleKey(e: KeyboardEvent, globals: Shortcut[]) {
 	if (cheatSheet.open) return
 	if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return
-	if (e.target instanceof HTMLElement && e.target.closest("input, textarea, select, [contenteditable]")) return
+	if (e.target instanceof HTMLElement && e.target.closest("input, textarea, select, [contenteditable]"))
+		return
 	const match = [...localShortcuts(), ...globals].find((s) => s.keys?.includes(e.key))
 	if (!match?.run) return
 	e.preventDefault()

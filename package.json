@@ -9,7 +9,7 @@
 		"#lib/*.svelte.js": "./src/lib/*.svelte.ts"
 	},
 	"scripts": {
-		"gentypes": "supabase gen types typescript --local > src/lib/types/supabase.ts",
+		"gentypes": "bun run src/lib/types/update.ts",
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
@@ -28,6 +28,7 @@
 		"@tailwindcss/forms": "^0.5.11",
 		"@tailwindcss/typography": "^0.5.20",
 		"@types/node": "^26.6.5",
+		"@types/qrcode": "^1.5.6",
 		"eslint": "^10.13.0",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.23.1",
@@ -51,6 +52,7 @@
 		"@sveltejs/adapter-node": "^6.0.0",
 		"@tailwindcss/vite": "^4.3.3",
 		"mdsvex": "^0.12.8",
+		"qrcode": "^1.5.4",
 		"shiki": "^4.5.0"
 	}
 }

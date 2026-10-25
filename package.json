@@ -9,7 +9,7 @@
 		"#lib/*.svelte.js": "./src/lib/*.svelte.ts"
 	},
 	"scripts": {
-		"gentypes": "bun run src/lib/types/update.ts",
+		"gentypes": "bun src/lib/types/update.ts",
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",

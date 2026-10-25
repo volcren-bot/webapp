@@ -17,7 +17,7 @@ A SvelteKit starter with Supabase auth, Tailwind 4 UI, dark mode.
 1. Use this repository as a template and install dependencies:
 
    ```bash
-   pnpm install
+   bun install
    ```
 
 2. Create a Supabase project, run `supabase/schema.sql` in its SQL editor and enable an OAuth provider
@@ -29,7 +29,7 @@ A SvelteKit starter with Supabase auth, Tailwind 4 UI, dark mode.
 4. Start the dev server:
 
    ```bash
-   pnpm dev
+   bun dev
    ```
 
 ## Making it yours
@@ -42,15 +42,15 @@ A SvelteKit starter with Supabase auth, Tailwind 4 UI, dark mode.
 - `svelte.config.js`: allow any extra domains your app talks to in the CSP
 - `static/robots.txt`: add your sitemap
 
-After changing the database, regenerate the types with `pnpm gentypes` (needs the Supabase CLI).
+After changing the database, regenerate the types with `bun gentypes` (needs the Supabase CLI).
 
 ## Scripts
 
-| Command       | Description                   |
-| ------------- | ----------------------------- |
-| `pnpm dev`    | Start the dev server          |
-| `pnpm build`  | Build for production          |
-| `pnpm start`  | Run the production build      |
-| `pnpm check`  | Type check with svelte-check  |
-| `pnpm lint`   | Prettier + ESLint             |
-| `pnpm format` | Format the code with Prettier |
+| Command      | Description                   |
+| ------------ | ----------------------------- |
+| `bun dev`    | Start the dev server          |
+| `bun build`  | Build for production          |
+| `bun start`  | Run the production build      |
+| `bun check`  | Type check with svelte-check  |
+| `bun lint`   | Prettier + ESLint             |
+| `bun format` | Format the code with Prettier |

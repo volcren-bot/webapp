@@ -87,12 +87,7 @@
 			>{status}</small
 		>
 	{/if}
-	<button
-		type="button"
-		class="btn flex items-center gap-1 self-start"
-		disabled={busy || !files.length || !!problem}
-		onclick={upload}
-	>
-		<Upload class="h-4" /> upload revision
+	<button type="button" class="btn self-start" disabled={busy || !files.length || !!problem} onclick={upload}>
+		<Upload class="size-4 shrink-0" /> upload revision
 	</button>
 </div>

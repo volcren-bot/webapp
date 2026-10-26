@@ -2,7 +2,8 @@
 	let { items }: { items: { key: string; label: string; href: string }[] } = $props()
 </script>
 
-<nav class="nv-menu w-full max-w-xs self-center" aria-label="Sub pages">
+<!-- Pulled out by the links' padding, so their text lines up with the content around the menu -->
+<nav class="nv-menu -mx-[1.5ch] flex flex-col" aria-label="Sub pages">
 	{#each items as item (item.key)}
 		<a href={item.href}>
 			<span class="nv-key">{item.key}</span>

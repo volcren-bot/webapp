@@ -11,7 +11,9 @@
 	import Eye from "@lucide/svelte/icons/eye"
 	import EyeOff from "@lucide/svelte/icons/eye-off"
 	import FileCode from "@lucide/svelte/icons/file-code"
-	import { CATEGORY_ICONS, STAGE_COLORS, } from "#lib/scripts"
+	import Hash from "@lucide/svelte/icons/hash"
+	import Coins from "@lucide/svelte/icons/coins"
+	import { CATEGORY_ICONS, STAGE_COLORS } from "#lib/scripts"
 	import { metaDescription } from "#lib/utils"
 	import { page } from "$app/state"
 
@@ -32,22 +34,21 @@
 <Head title={script.title} description={metaDescription(script.description)} noindex={!script.published} />
 
 <section class="mx-auto my-8 flex w-full max-w-5xl flex-col gap-6">
-	<a href="/scripts" class="nv-dim">← scripts</a>
-
-	<header class="flex flex-col gap-2">
-		<h1 class="text-3xl font-bold">{script.title}</h1>
+	<header class="flex flex-col">
+		<a href="/scripts" class="nv-dim self-start">← scripts</a>
+		<h1 class="text-2xl font-bold">{script.title}</h1>
 		<p class="nv-dim">{script.description}</p>
-		<div class="mt-1 flex flex-wrap items-center gap-2 text-sm">
+		<div class="mt-3 flex flex-wrap items-center gap-2 text-sm">
 			<span class="nv-pill" style="color: {STAGE_COLORS[script.stage]}">{script.stage}</span>
 			{#each script.categories as category (category)}
 				{@const Icon = CATEGORY_ICONS[category]}
 				<span class="nv-pill flex items-center gap-1 text-(--tn-purple)">
-					<Icon class="h-4" />
+					<Icon class="size-4 shrink-0" />
 					{category}
 				</span>
 			{/each}
 			{#if !script.published}
-				<span class="nv-pill nv-dim flex items-center gap-1"><EyeOff class="h-4" /> hidden</span>
+				<span class="nv-pill nv-dim flex items-center gap-1"><EyeOff class="size-4 shrink-0" /> hidden</span>
 			{/if}
 		</div>
 	</header>
@@ -57,30 +58,32 @@
 			<span class="nv-title">info</span>
 			<dl class="flex flex-col gap-3 text-sm">
 				<div>
-					<dt class="nv-dim">id</dt>
+					<dt class="nv-dim flex items-center gap-1"><Hash class="size-4 shrink-0" /> id</dt>
 					<dd><UUID uuid={script.id} /></dd>
 				</div>
 				<div>
-					<dt class="nv-dim">price</dt>
+					<dt class="nv-dim flex items-center gap-1"><Coins class="size-4 shrink-0" /> price</dt>
 					<dd
 						class="flex items-center gap-1 text-lg font-bold {script.type === 'premium'
 							? 'text-(--tn-yellow)'
 							: 'text-(--tn-green)'}"
 					>
-						{#if script.type === "premium"}<Lock class="h-4" />{:else}<LockOpen class="h-4" />{/if}
+						{#if script.type === "premium"}<Lock class="size-4 shrink-0" />{:else}<LockOpen
+								class="size-4 shrink-0"
+							/>{/if}
 						{fmt.price(script.price)}
 					</dd>
 				</div>
 				<div>
-					<dt class="nv-dim flex items-center gap-1"><User class="h-4" /> author</dt>
+					<dt class="nv-dim flex items-center gap-1"><User class="size-4 shrink-0" /> author</dt>
 					<dd>{script.author}</dd>
 				</div>
 				<div>
-					<dt class="nv-dim flex items-center gap-1"><FileCode class="h-4" /> revision</dt>
+					<dt class="nv-dim flex items-center gap-1"><FileCode class="size-4 shrink-0" /> revision</dt>
 					<dd>{script.revision ? `#${script.revision}` : "none yet"}</dd>
 				</div>
 				<div>
-					<dt class="nv-dim flex items-center gap-1"><Clock class="h-4" /> updated</dt>
+					<dt class="nv-dim flex items-center gap-1"><Clock class="size-4 shrink-0" /> updated</dt>
 					<dd>{fmt.date(script.updatedAt)}</dd>
 				</div>
 			</dl>
@@ -103,7 +106,7 @@
 		>
 			<span class="nv-title">visibility</span>
 			<p class="flex items-center gap-2">
-				{#if script.published}<Eye class="h-4" /> Public{:else}<EyeOff class="h-4" /> Hidden{/if}
+				{#if script.published}<Eye class="size-4 shrink-0" /> Public{:else}<EyeOff class="size-4 shrink-0" /> Hidden{/if}
 				<span class="nv-dim">
 					{script.published
 						? "Everyone allowed by its stage can see it."
@@ -121,13 +124,13 @@
 			{/if}
 		</form>
 
-		<div class="nv-float">
+		<div class="nv-float flex flex-col gap-3">
 			<span class="nv-title">revisions</span>
-			<p class="nv-dim mb-3">Uploading creates a new revision and makes it live once every file is stored.</p>
+			<p class="nv-dim">Uploading creates a new revision and makes it live once every file is stored.</p>
 			<RevisionUpload id={script.id} />
 
 			{#if data.versions.length}
-				<ul class="mt-4 flex flex-col gap-1 text-sm">
+				<ul class="mt-1 flex flex-col gap-1 border-t border-(--tn-bg-hl) pt-3 text-sm">
 					{#each data.versions as version (version.revision)}
 						<li class="flex flex-wrap items-baseline gap-x-3">
 							<span class="font-bold">#{version.revision}</span>
@@ -178,9 +181,7 @@
 							<span class="font-bold">{token.name}</span>
 							<span class="nv-dim">created {fmt.date(token.created_at)}</span>
 							<span class="nv-dim">
-								{token.last_used_at
-									? `last used ${fmt.dateTime(token.last_used_at)}`
-									: "never used"}
+								{token.last_used_at ? `last used ${fmt.dateTime(token.last_used_at)}` : "never used"}
 							</span>
 							<form
 								method="POST"
@@ -191,7 +192,7 @@
 								}}
 							>
 								<input type="hidden" name="id" value={token.id} />
-								<button type="submit" class="btn text-error-400">revoke</button>
+								<button type="submit" class="btn btn-danger">revoke</button>
 							</form>
 						</li>
 					{/each}
@@ -199,7 +200,8 @@
 			{/if}
 
 			<p class="nv-dim">Upload a revision with it (one <code>-F</code> per file):</p>
-			<pre class="overflow-x-auto text-xs"><code>{deployCommand}</code></pre>
+			<pre class="overflow-x-auto rounded-md bg-(--tn-bg-dark) px-3 py-2 text-sm"><code>{deployCommand}</code
+				></pre>
 		</div>
 
 		<!-- Loaded only for editors, so visitors don't download the form and validation code -->
@@ -221,19 +223,19 @@
 		<form
 			method="POST"
 			action="?/delete"
-			class="nv-float flex flex-wrap items-center gap-3"
+			class="nv-float nv-danger flex flex-wrap items-center gap-3"
 			use:enhance={({ cancel }) => {
 				if (!confirm(`Permanently delete ${page.params.url} and all of its data?`)) cancel()
 				return async ({ update }) => update({ reset: false })
 			}}
 		>
-			<span class="nv-title text-error-400">delete</span>
+			<span class="nv-title">delete</span>
 			<p class="nv-dim w-full">
 				Permanently removes the script, every revision file and its stats. This can't be undone. Type
 				<b>{page.params.url}</b> to confirm.
 			</p>
 			<input name="confirm" class="input" autocomplete="off" placeholder={page.params.url} />
-			<button type="submit" class="btn text-error-400">delete script</button>
+			<button type="submit" class="btn btn-danger">delete script</button>
 			{#if page.form?.message && !page.form?.form && page.form.message.includes("delete")}
 				<small class="w-full text-error-400">{page.form.message}</small>
 			{/if}

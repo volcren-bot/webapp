@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "#lib/types/supabase"
-import type { ProfileBase } from "#lib/types/profile"
+import type { SessionProfile } from "#lib/types/profile"
 
 // Built from the verified JWT claims rather than the full Auth server objects.
 type Session = { expires_at: number }
@@ -17,13 +17,13 @@ declare global {
 			resetSession: () => void
 			session: Session | null
 			user: User | null
-			getProfile: () => Promise<ProfileBase | null> | null
+			getProfile: () => Promise<SessionProfile | null> | null
 		}
 		interface PageData {
 			locale: string
 			user: string | null
 			expiresAt: number | null
-			profile: ProfileBase | null
+			profile: SessionProfile | null
 		}
 		// interface PageState {}
 		// interface Platform {}

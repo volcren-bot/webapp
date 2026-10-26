@@ -1,12 +1,8 @@
 <script lang="ts">
 	import Head from "#lib/components/Head.svelte"
-	import VersionedDocument, { type DocumentVersion } from "#lib/components/VersionedDocument.svelte"
+	import VersionedDocument from "#lib/components/VersionedDocument.svelte"
 
-	// Placeholder data until versions are loaded from the database.
-	const versions: DocumentVersion[] = [
-		{ version: "v2", publishedAt: "2026-10-01", content: "Terms of service, version 2." },
-		{ version: "v1", publishedAt: "2026-01-01", content: "Terms of service, version 1." }
-	]
+	const { data } = $props()
 </script>
 
 <Head title="Terms of service" description="The terms for using this platform." />
@@ -17,5 +13,9 @@
 		<h1 class="text-2xl font-bold">Terms of service</h1>
 	</header>
 
-	<VersionedDocument id="terms" title="Terms of service" {versions} />
+	{#each [data.user.error, data.scripter.error] as err}
+		{#if err}<small class="text-error-400">{err}</small>{/if}
+	{/each}
+	<VersionedDocument id="terms" title="Terms of service" versions={data.user.versions} />
+	<VersionedDocument id="scripter-terms" title="Scripter terms of service" versions={data.scripter.versions} />
 </section>

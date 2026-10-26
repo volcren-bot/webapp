@@ -6,7 +6,7 @@
 </script>
 
 <button
-	class="btn inline-flex w-fit items-center gap-1 self-start text-xs"
+	class="btn w-fit text-sm"
 	title={uuid}
 	type="button"
 	onclick={async (e) => {
@@ -18,8 +18,8 @@
 >
 	ID: {uuid.split("-")[0]}…
 	{#if copied}
-		<ClipboardCheck class="h-3" />
+		<ClipboardCheck class="size-3.5 shrink-0" />
 	{:else}
-		<Clipboard class="h-3" />
+		<Clipboard class="size-3.5 shrink-0" />
 	{/if}
 </button>

@@ -37,7 +37,7 @@
 			bind:value={query}
 			placeholder="Search shortcuts…"
 			aria-label="Search shortcuts"
-			class="rounded border border-(--tn-bg-hl) bg-transparent px-2 py-1 outline-none focus:border-(--tn-blue)"
+			class="input"
 		/>
 
 		<div class="max-h-[50vh] overflow-y-auto">
@@ -63,6 +63,6 @@
 			</table>
 		</div>
 
-		<p class="nv-dim text-[0.85rem]"><span class="nv-key">Esc</span> to close</p>
+		<p class="nv-dim text-sm"><span class="nv-key">Esc</span> to close</p>
 	</div>
 </dialog>

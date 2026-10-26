@@ -20,34 +20,36 @@
 
 <Head title="Balance" description="Add funds to your account." noindex />
 
-<main class="mx-auto my-6 flex w-full max-w-3xl flex-col">
-	<header class="my-8 flex flex-col">
+<section class="mx-auto my-8 flex w-full max-w-3xl flex-col gap-6">
+	<header>
 		<h1 class="text-2xl font-bold">Balance</h1>
 		<p class="nv-dim">{fmt.credits(data.credits)}</p>
 	</header>
 
-	<form class="nv-float flex w-full flex-col" method="POST" use:enhance>
+	<form class="nv-float flex flex-col gap-3 text-center" method="POST" use:enhance>
 		<span class="nv-title">add funds</span>
-		<p class="nv-dim">Pay with crypto through Bitcart.</p>
-		<p class="my-2 font-semibold">{fmt.credits(CREDITS_PER_EUR)} = {fmt.eur(100)}</p>
+		<p>
+			<span class="nv-dim">Pay with crypto through Bitcart.</span>
+			<span class="font-bold">{fmt.credits(CREDITS_PER_EUR)} = {fmt.eur(100)}</span>
+		</p>
 
 		{#if form?.message}
 			<small class="text-error-400">{form.message}</small>
 		{/if}
 
-		<div class="my-3 flex flex-wrap gap-2">
+		<div class="mx-auto flex w-full max-w-md flex-col gap-2">
 			{#each presets as preset (preset)}
-				<button type="button" class="btn" onclick={() => (amount = preset)}>
+				<button type="button" class="btn w-full" onclick={() => (amount = preset)}>
 					{fmt.credits(preset * CREDITS_PER_EUR)} · {fmt.eur(preset * 100)}
 				</button>
 			{/each}
 		</div>
 
-		<div class="my-3 grid gap-3 sm:grid-cols-2">
+		<div class="mx-auto grid w-full max-w-md grid-cols-1 gap-3">
 			<label class="label">
 				<span class="label-text">credits</span>
 				<input
-					class="input"
+					class="input text-center"
 					type="number"
 					step="100"
 					min={data.limits.min * CREDITS_PER_CENT}
@@ -59,7 +61,7 @@
 			<label class="label">
 				<span class="label-text">amount (EUR)</span>
 				<input
-					class="input"
+					class="input text-center"
 					name="amount"
 					type="number"
 					step="0.01"
@@ -71,41 +73,43 @@
 			</label>
 		</div>
 
-		<p class="nv-dim">
-			The average paid script costs about {fmt.credits(data.averagePerMonth)}
-			(≈ {fmt.eur(data.averagePerMonth / CREDITS_PER_CENT)}) to run 24/7 for 30 days.
-		</p>
-		<small class="nv-dim">All sales are final. Refunds are not possible.</small>
-
 		{#if valid}
-			<dl class="nv-dim my-4 grid max-w-sm grid-cols-[1fr_auto] gap-x-6">
-				<dt>Cost</dt>
+			<dl class="mx-auto grid w-full max-w-md grid-cols-[1fr_auto] gap-x-6 rounded-md bg-(--tn-bg-dark) px-3 py-2">
+				<dt class="nv-dim">cost</dt>
 				<dd class="text-right">{fmt.eur(cents)}</dd>
-				<dt>Credits</dt>
-				<dd class="text-right font-semibold">{fmt.credits(purchase.total)}</dd>
-				<dt>Bonus ({fmt.percent(bonusRate(cents))})</dt>
+				<dt class="nv-dim">bonus ({fmt.percent(bonusRate(cents))})</dt>
 				<dd class="text-right">
-					+{fmt.credits(purchase.bonus)} (≈ {fmt.eur(purchase.bonus / CREDITS_PER_CENT)})
+					+{fmt.credits(purchase.bonus)}
+					<span class="nv-dim">≈ {fmt.eur(purchase.bonus / CREDITS_PER_CENT)}</span>
 				</dd>
+				<dt class="nv-dim">you get</dt>
+				<dd class="text-right font-bold text-(--tn-green)">{fmt.credits(purchase.total)}</dd>
 			</dl>
 		{/if}
 
-		<button type="submit" class="btn my-2 mr-auto">Pay</button>
+		<p class="nv-dim">
+			The average paid script costs about {fmt.credits(data.averagePerMonth)}
+			(≈ {fmt.eur(data.averagePerMonth / CREDITS_PER_CENT)}) to run 24/7 for 30 days. All sales are final.
+			Refunds are not possible.
+		</p>
+
+		<button type="submit" class="btn mx-auto mt-1 w-full max-w-md">pay</button>
 	</form>
 
 	{#if data.payments.length}
-		<section class="nv-float mt-6 flex w-full flex-col">
+		<section class="nv-float">
 			<span class="nv-title">recent payments</span>
-			<ul class="my-3 flex flex-col gap-1">
+			<ul class="flex flex-col gap-1">
 				{#each data.payments as payment (payment.id)}
-					<li class="flex justify-between">
-						<span>{fmt.dateTime(payment.created_at)}</span>
+					<li class="flex flex-wrap justify-between gap-x-4" class:line-through={payment.status === "expired"} class:opacity-50={payment.status === "expired"}>
+						<span class="nv-dim">{fmt.dateTime(payment.created_at)}</span>
 						<span>
-							{fmt.credits(payment.credits)}{payment.bonus ? ` incl. ${fmt.number(payment.bonus)} bonus` : ""} ({fmt.eur(
-								payment.amount
-							)}) ·
+							{fmt.credits(payment.credits)}{#if payment.bonus}<span class="nv-dim">
+									incl. {fmt.number(payment.bonus)} bonus</span
+								>{/if}
+							<span class="nv-dim">({fmt.eur(payment.amount)}) ·</span>
 							{#if payment.status === "pending"}
-								<a class="underline" href="/credits/{payment.id}">pay</a>
+								<a href="/credits/{payment.id}">pay</a>
 							{:else}
 								{payment.status}
 							{/if}
@@ -115,4 +119,4 @@
 			</ul>
 		</section>
 	{/if}
-</main>
+</section>

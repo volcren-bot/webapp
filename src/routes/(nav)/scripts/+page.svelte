@@ -102,9 +102,7 @@
 			<p class="nv-dim">Browse and manage available scripts.</p>
 		</div>
 		{#if canCreate}
-			<a href="/scripts/new" class="btn flex items-center gap-1 hover:no-underline"
-				><Plus class="h-4" /> new script</a
-			>
+			<a href="/scripts/new" class="btn"><Plus class="size-4 shrink-0" /> new script</a>
 		{/if}
 	</header>
 
@@ -140,12 +138,12 @@
 			</select>
 		</label>
 		{#if profile}
-			<label class="flex items-center gap-2 pb-1">
+			<label class="flex h-[2.25em] cursor-pointer items-center gap-2">
 				<input type="checkbox" name="mine" value="1" checked={filters.mine} />
 				<span>mine</span>
 			</label>
 		{/if}
-		<button type="submit" class="btn flex items-center gap-1"><Search class="h-4" /> search</button>
+		<button type="submit" class="btn"><Search class="size-4 shrink-0" /> search</button>
 	</form>
 
 	{#if data.error}
@@ -170,7 +168,7 @@
 						<div class="flex items-center justify-between gap-3">
 							<span class="flex items-center gap-2 font-bold text-(--tn-blue)">
 								{#if listKey(i)}<span class="nv-key">{listKey(i)}</span>{/if}
-								<FileCode class="h-4 shrink-0" />
+								<FileCode class="size-4 shrink-0" />
 								{script.title}
 							</span>
 							<span class="flex shrink-0 items-center gap-3 text-sm">
@@ -183,7 +181,9 @@
 										? 'text-(--tn-yellow)'
 										: 'text-(--tn-green)'}"
 								>
-									{#if script.type === "premium"}<Lock class="h-4" />{:else}<LockOpen class="h-4" />{/if}
+									{#if script.type === "premium"}<Lock class="size-4 shrink-0" />{:else}<LockOpen
+											class="size-4 shrink-0"
+										/>{/if}
 									{fmt.price(script.price)}
 								</span>
 							</span>
@@ -192,12 +192,15 @@
 						<div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
 							{#each script.categories as category (category)}
 								{@const Icon = CATEGORY_ICONS[category]}
-								<span class="flex items-center gap-1 text-(--tn-purple)"><Icon class="h-4" /> {category}</span
+								<span class="flex items-center gap-1 text-(--tn-purple)"
+									><Icon class="size-4 shrink-0" /> {category}</span
 								>
 							{/each}
-							<span class="nv-dim ml-auto flex items-center gap-1"><User class="h-4" /> {script.author}</span>
+							<span class="nv-dim ml-auto flex items-center gap-1"
+								><User class="size-4 shrink-0" /> {script.author}</span
+							>
 							<span class="nv-dim flex items-center gap-1">
-								<Clock class="h-4" />
+								<Clock class="size-4 shrink-0" />
 								{fmt.date(script.updatedAt)}
 							</span>
 						</div>

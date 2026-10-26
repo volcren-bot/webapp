@@ -43,43 +43,44 @@
 
 <Head title="Payment" description="Pay an invoice." noindex />
 
-<main class="mx-auto my-6 flex w-full max-w-3xl flex-col">
-	<header class="my-8 flex flex-col">
+<section class="mx-auto my-8 flex w-full max-w-3xl flex-col gap-6">
+	<header>
+		<a href="/credits" class="nv-dim">← balance</a>
 		<h1 class="text-2xl font-bold">Add {fmt.credits(payment.credits)}</h1>
 		<p class="nv-dim">{payment.currency}</p>
 	</header>
 
 	{#if payment.status === "paid"}
-		<section class="nv-float flex w-full flex-col">
+		<section class="nv-float flex flex-col items-start gap-3">
 			<span class="nv-title">paid</span>
 			<p class="text-success-400">Your {fmt.credits(payment.credits)} have been added to your balance.</p>
-			<a class="btn my-2 mr-auto" href="/credits">back to balance</a>
+			<a class="btn" href="/credits">back to balance</a>
 		</section>
 	{:else if confirming}
-		<section class="nv-float flex w-full flex-col">
+		<section class="nv-float flex flex-col items-start gap-3">
 			<span class="nv-title">confirming</span>
 			<p class="nv-dim">
 				Your payment was received and is waiting for network confirmations. Your
-				{fmt.credits(payment.credits)} are added once it's confirmed, which can take a while depending on the
-				currency. You can leave this page.
+				{fmt.credits(payment.credits)} are added once it's confirmed, which can take a while depending on the currency.
+				You can leave this page.
 			</p>
-			<a class="btn my-2 mr-auto" href="/credits">back to balance</a>
+			<a class="btn" href="/credits">back to balance</a>
 		</section>
 	{:else if payment.status === "expired" || payment.status === "invalid" || !pending}
-		<section class="nv-float flex w-full flex-col">
+		<section class="nv-float nv-danger flex flex-col items-start gap-3">
 			<span class="nv-title">{payment.status === "invalid" ? "invalid" : "expired"}</span>
 			<p class="nv-dim">
 				This invoice can no longer be paid. If you already sent a payment, contact support.
 			</p>
-			<a class="btn my-2 mr-auto" href="/credits">new payment</a>
+			<a class="btn" href="/credits">new payment</a>
 		</section>
 	{:else if method}
-		<section class="nv-float flex w-full flex-col">
+		<section class="nv-float flex flex-col gap-3">
 			<span class="nv-title">pay with</span>
 
-			<div class="my-3 flex gap-2">
+			<div class="flex flex-wrap gap-2" role="group" aria-label="Payment method">
 				{#each invoice!.methods as m, i (m.id)}
-					<button class="btn" class:opacity-50={i !== selected} onclick={() => (selected = i)}>
+					<button class="btn" aria-pressed={i === selected} onclick={() => (selected = i)}>
 						{m.name}
 					</button>
 				{/each}
@@ -92,7 +93,7 @@
 				</small>
 			{/if}
 
-			<div class="my-3 flex flex-col items-center gap-3">
+			<div class="flex flex-col items-center gap-2 py-2">
 				<a href={method.uri} title="Open in wallet">
 					<img
 						class="rounded bg-white"
@@ -106,18 +107,24 @@
 				<p class="nv-dim">{method.rate}</p>
 			</div>
 
-			<label class="label my-3">
-				<span class="label-text">address</span>
+			<div class="label">
+				<label for="pay-address" class="label-text">address</label>
 				<div class="flex gap-2">
-					<input class="input" readonly value={method.address} onclick={(e) => e.currentTarget.select()} />
+					<input
+						id="pay-address"
+						class="input min-w-0 grow"
+						readonly
+						value={method.address}
+						onclick={(e) => e.currentTarget.select()}
+					/>
 					<button class="btn" onclick={() => copy(method.address)}>{copied ? "copied" : "copy"}</button>
 				</div>
-			</label>
+			</div>
 
 			<p class="nv-dim">
-				Send exactly this amount. Expires in {clock(secondsLeft)}. This page updates by itself once the
-				payment is detected.
+				Send exactly this amount. Expires in <span class="text-(--tn-fg)">{clock(secondsLeft)}</span>. This
+				page updates by itself once the payment is detected.
 			</p>
 		</section>
 	{/if}
-</main>
+</section>

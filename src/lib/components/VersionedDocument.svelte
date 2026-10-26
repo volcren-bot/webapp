@@ -11,11 +11,11 @@
 	const current = $derived(versions.find((v) => v.version === selected) ?? versions[0])
 </script>
 
-<div class="nv-float" {id}>
+<div class="nv-float flex flex-col gap-3" {id}>
 	<span class="nv-title">{title.toLowerCase()}</span>
 
 	{#if current}
-		<label class="flex items-center gap-2">
+		<label class="flex items-center gap-2 self-start">
 			<span class="label-text">version</span>
 			<select
 				class="input cursor-pointer"

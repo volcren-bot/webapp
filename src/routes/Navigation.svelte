@@ -75,8 +75,12 @@
 </nav>
 
 {#if showProfile}
-	<form method="POST" bind:this={panel}
-		class="nv-float absolute! top-9 right-3 z-50 mt-0 w-64 shadow-xl!" use:enhance>
+	<form
+		method="POST"
+		bind:this={panel}
+		class="nv-float absolute! top-9 right-3 z-50 mt-0 w-64 border-(--tn-blue) shadow-xl!"
+		use:enhance
+	>
 		{#if profile}
 			<span class="nv-title">{profile.username}</span>
 			<div class="flex flex-col items-start gap-3">

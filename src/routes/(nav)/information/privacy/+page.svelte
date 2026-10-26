@@ -1,12 +1,8 @@
 <script lang="ts">
 	import Head from "#lib/components/Head.svelte"
-	import VersionedDocument, { type DocumentVersion } from "#lib/components/VersionedDocument.svelte"
+	import VersionedDocument from "#lib/components/VersionedDocument.svelte"
 
-	// Placeholder data until versions are loaded from the database.
-	const versions: DocumentVersion[] = [
-		{ version: "v2", publishedAt: "2026-10-01", content: "Privacy policy, version 2." },
-		{ version: "v1", publishedAt: "2026-01-01", content: "Privacy policy, version 1." }
-	]
+	const { data } = $props()
 </script>
 
 <Head title="Privacy policy" description="How this platform handles your data." />
@@ -17,5 +13,8 @@
 		<h1 class="text-2xl font-bold">Privacy policy</h1>
 	</header>
 
-	<VersionedDocument id="privacy" title="Privacy policy" {versions} />
+	{#if data.privacy.error}
+		<small class="text-error-400">{data.privacy.error}</small>
+	{/if}
+	<VersionedDocument id="privacy" title="Privacy policy" versions={data.privacy.versions} />
 </section>

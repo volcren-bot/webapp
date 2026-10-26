@@ -409,7 +409,8 @@
 		overflow-y: auto;
 		display: flex;
 		flex-direction: column;
-		padding: 1rem;
+		/* Matches .nv-float's padding, so the text lines up with the box title when boxed */
+		padding: 1.25rem;
 		cursor: text;
 	}
 	/* margin-top:auto pins the text to the bottom, so new lines push the older ones up. */

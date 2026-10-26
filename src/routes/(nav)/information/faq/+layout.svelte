@@ -52,14 +52,14 @@
 
 	<nav
 		bind:this={list}
-		class="flex max-h-[calc(5*2.25rem+2px)] flex-col divide-y divide-(--tn-bg-hl) overflow-y-auto rounded-md border border-(--tn-bg-hl)"
+		class="flex max-h-[calc(5*2.25rem+2px)] flex-col divide-y divide-(--tn-bg-hl) overflow-y-auto rounded-md border border-(--tn-bg-hl) bg-(--tn-bg-float)"
 		aria-label="Questions"
 	>
 		{#each faqs as faq (faq.id)}
 			{@const active = page.params.id === faq.id}
 			<a
 				href="/information/faq/{faq.id}"
-				class="grid h-9 shrink-0 grid-cols-[4ch_1fr] items-center gap-4 px-3 hover:bg-(--tn-bg-hl) hover:no-underline {active
+				class="grid h-9 shrink-0 grid-cols-[4ch_1fr] items-center gap-4 px-3 text-(--tn-fg) hover:bg-(--tn-bg-hl) hover:text-(--tn-blue) hover:no-underline {active
 					? 'bg-(--tn-bg-hl)'
 					: ''}"
 				aria-current={active ? "page" : undefined}

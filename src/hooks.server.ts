@@ -43,6 +43,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
 	const { session, user } = await event.locals.safeGetSession()
 
 	let profilePromise: ReturnType<typeof fetchProfile> | null = null
+	let deleted = false
 
 	async function fetchProfile() {
 		if (!user) return null
@@ -50,11 +51,12 @@ const authGuard: Handle = async ({ event, resolve }) => {
 		const { data, error: err } = await event.locals.supabaseServer
 			.schema("profiles")
 			.from("profiles")
-			.select("id, username, avatar, role")
+			.select("id, username, avatar, role, banned_at")
 			.eq("id", user.id)
 			.single()
 
-		if (err) return null
+		// No row: the account was deleted while this token was still valid
+		if (err) deleted = err.code === "PGRST116"
 		return data
 	}
 
@@ -62,6 +64,19 @@ const authGuard: Handle = async ({ event, resolve }) => {
 	event.locals.user = user
 
 	event.locals.getProfile = () => (profilePromise ??= fetchProfile())
+
+	// Auth refuses to refresh a banned or deleted account's session, but its access token stays
+	// valid until it expires, so the session ends here instead
+	if (user) {
+		const profile = await event.locals.getProfile()
+		if (deleted || profile?.banned_at) {
+			await event.locals.supabaseServer.auth.signOut({ scope: "local" })
+			event.locals.safeGetSession = () => Promise.resolve({ session: null, user: null })
+			event.locals.session = null
+			event.locals.user = null
+			profilePromise = Promise.resolve(null)
+		}
+	}
 
 	if (!event.locals.session && isProtected(event.url.pathname)) {
 		redirect(303, "/auth")

@@ -6,9 +6,9 @@
 <Head title="Error {page.status}" description={page.error?.message ?? "Something went wrong."} noindex />
 
 {#if page.error}
-	<section class="nv-float mx-auto my-24 w-full max-w-2xl" style="border-color: var(--tn-red)">
-		<span class="nv-title" style="background: var(--tn-red)">error {page.status}</span>
-		<p style="color: var(--tn-red)">✗ {page.error.message}</p>
-		<p class="mt-4"><a href="/">press enter to return home</a></p>
+	<section class="nv-float nv-danger mx-auto my-24 flex w-full max-w-3xl flex-col gap-3">
+		<span class="nv-title">error {page.status}</span>
+		<p class="text-error-400">✗ {page.error.message}</p>
+		<p><a href="/">press enter to return home</a></p>
 	</section>
 {/if}

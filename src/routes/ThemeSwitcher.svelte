@@ -49,7 +49,10 @@
 			class="fixed inset-0 z-30 cursor-default"
 			onclick={() => (open = false)}
 		></button>
-		<div class="nv-float nv-themes fixed top-9 right-3 z-40 mt-0 w-56" role="menu">
+		<div
+			class="nv-float nv-themes fixed top-9 right-3 z-40 mt-0 w-56 border-(--tn-blue) shadow-xl"
+			role="menu"
+		>
 			<span class="nv-title">colorscheme</span>
 			{#each THEMES as theme (theme.id)}
 				<button

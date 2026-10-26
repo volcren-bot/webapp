@@ -1,4 +1,4 @@
-import { fail, redirect } from "@sveltejs/kit"
+import { fail, redirect, type RequestEvent } from "@sveltejs/kit"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
 
@@ -8,7 +8,7 @@ export const load = async ({ locals: { user, getProfile } }) => {
 	if (profile?.role !== "administrator") redirect(303, "/")
 
 	const admin = supabaseAdmin()
-	const [{ data: ledger }, { data: logins }] = await Promise.all([
+	const [{ data: ledger }, { data: logins }, { data: bans }] = await Promise.all([
 		admin
 			.schema("payments")
 			.from("credits_ledger")
@@ -21,13 +21,19 @@ export const load = async ({ locals: { user, getProfile } }) => {
 			.from("impersonations")
 			.select("id, admin_id, user_id, created_at")
 			.order("id", { ascending: false })
+			.limit(50),
+		admin
+			.schema("profiles")
+			.from("bans")
+			.select("id, admin_id, user_id, banned, reason, created_at")
+			.order("id", { ascending: false })
 			.limit(50)
 	])
 
 	const ids = [
 		...new Set([
 			...(ledger ?? []).flatMap((row) => [row.user_id, row.granted_by ?? []].flat()),
-			...(logins ?? []).flatMap((row) => [row.admin_id, row.user_id])
+			...[...(logins ?? []), ...(bans ?? [])].flatMap((row) => [row.admin_id, row.user_id])
 		])
 	]
 	const { data: profiles } = ids.length
@@ -45,13 +51,80 @@ export const load = async ({ locals: { user, getProfile } }) => {
 			...row,
 			user: names.get(row.user_id) ?? row.user_id,
 			admin: names.get(row.admin_id) ?? row.admin_id
+		})),
+		bans: (bans ?? []).map((row) => ({
+			...row,
+			user: names.get(row.user_id) ?? row.user_id,
+			admin: names.get(row.admin_id) ?? row.admin_id
 		}))
 	}
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
+// Auth takes a duration, not "forever"
+const BAN_DURATION = "876000h"
+
+/**
+ * The database ban (profiles.set_banned) decides what the account can do and records who did it.
+ * The Auth ban on top stops it signing in or refreshing a session. It's applied even when the
+ * database had nothing to change, so repeating a ban or unban retries a failed Auth update.
+ */
+async function setBanned(banned: boolean, { request, locals: { user, getProfile } }: RequestEvent) {
+	if (!user) return fail(401, { message: "You need to login.", ban: true })
+	const profile = await getProfile()
+	if (profile?.role !== "administrator") return fail(403, { message: "Administrators only.", ban: true })
+
+	const data = await request.formData()
+	const userId = String(data.get("user") ?? "").trim()
+	const reason = String(data.get("reason") ?? "").trim()
+
+	if (!UUID.test(userId)) return fail(400, { message: "Enter a valid user UUID.", ban: true })
+	if (!reason) return fail(400, { message: "A reason is required.", ban: true })
+	if (reason.length > 500) return fail(400, { message: "Keep the reason under 500 characters.", ban: true })
+
+	const admin = supabaseAdmin()
+	const { data: target, error: lookup } = await admin
+		.schema("profiles")
+		.from("profiles")
+		.select("id, username")
+		.eq("id", userId)
+		.maybeSingle()
+	if (lookup) return fail(500, { message: errorRef("Could not look up the user", lookup), ban: true })
+	if (!target) return fail(404, { message: `No user with the UUID ${userId}.`, ban: true })
+
+	const { data: changed, error: err } = await admin.schema("profiles").rpc("set_banned", {
+		p_admin: user.id,
+		p_user: target.id,
+		p_banned: banned,
+		p_reason: reason
+	})
+	if (err?.code === "42501") return fail(403, { message: "Administrators can't be banned.", ban: true })
+	if (err) return fail(500, { message: errorRef("Could not record the ban", err), ban: true })
+
+	const { error: authErr } = await admin.auth.admin.updateUserById(target.id, {
+		ban_duration: banned ? BAN_DURATION : "none"
+	})
+	if (authErr) {
+		const message = banned
+			? `${target.username} is banned, but could not be blocked from signing in. Ban again to retry`
+			: `${target.username} is unbanned, but is still blocked from signing in. Unban again to retry`
+		return fail(500, { message: errorRef(message, authErr), ban: true })
+	}
+
+	console.log(`Admin ${user.id} ${banned ? "banned" : "unbanned"} ${target.id}`)
+	const verb = banned ? "banned" : "unbanned"
+	return {
+		message: changed ? `Done: ${target.username} is ${verb}.` : `${target.username} was already ${verb}.`,
+		ok: true,
+		ban: true
+	}
+}
+
 export const actions = {
+	ban: (event) => setBanned(true, event),
+	unban: (event) => setBanned(false, event),
+
 	adjust: async ({ request, locals: { user, getProfile } }) => {
 		if (!user) return fail(401, { message: "You need to login." })
 		const profile = await getProfile()

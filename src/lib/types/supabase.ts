@@ -325,6 +325,7 @@ export type Database = {
         Returns: number
       }
       end_stale_sessions: { Args: Record<PropertyKey, never>; Returns: number }
+      end_user_sessions: { Args: { p_user: string }; Returns: number }
       heartbeat_session: { Args: { p_session: string }; Returns: boolean }
       post_credits: {
         Args: {
@@ -377,6 +378,34 @@ export type Database = {
   }
   profiles: {
     Tables: {
+      bans: {
+        Row: {
+          admin_id: string
+          banned: boolean
+          created_at: string
+          id: number
+          reason: string
+          user_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          admin_id: string
+          banned: boolean
+          created_at?: string
+          id?: never
+          reason: string
+          user_id: string
+        }
+        Update: {
+          admin_id?: string
+          banned?: boolean
+          created_at?: string
+          id?: never
+          reason?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       impersonations: {
         Row: {
           admin_id: string
@@ -402,6 +431,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar: string
+          banned_at: string | null
           created_at: string
           id: string
           role: Database["profiles"]["Enums"]["roles"]
@@ -410,6 +440,7 @@ export type Database = {
         ComputedFields: never
         Insert: {
           avatar?: string
+          banned_at?: string | null
           created_at?: string
           id: string
           role?: Database["profiles"]["Enums"]["roles"]
@@ -417,6 +448,7 @@ export type Database = {
         }
         Update: {
           avatar?: string
+          banned_at?: string | null
           created_at?: string
           id?: string
           role?: Database["profiles"]["Enums"]["roles"]
@@ -440,6 +472,7 @@ export type Database = {
         Args: { provider: string; provider_id: string }
         Returns: string
       }
+      is_banned: { Args: { user_id: string }; Returns: boolean }
       is_role:
         | {
             Args: { target_role: Database["profiles"]["Enums"]["roles"] }
@@ -460,6 +493,15 @@ export type Database = {
         Args: {
           target_role: Database["profiles"]["Enums"]["roles"]
           user_id: string
+        }
+        Returns: boolean
+      }
+      set_banned: {
+        Args: {
+          p_admin: string
+          p_banned: boolean
+          p_reason: string
+          p_user: string
         }
         Returns: boolean
       }

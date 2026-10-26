@@ -2,6 +2,7 @@ import { error, fail, redirect } from "@sveltejs/kit"
 import { message, superValidate } from "sveltekit-superforms"
 import { zod4 } from "sveltekit-superforms/adapters"
 import { scriptSchema } from "#lib/scripts"
+import { newDeployToken } from "#lib/server/deploy.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
 import { one } from "#lib/utils"
@@ -34,7 +35,7 @@ export const load = async ({ params, locals: { supabaseServer, user, getProfile 
 	const own = user != null && info.author === user.id
 	const canEdit = own || (profile != null && ["moderator", "administrator"].includes(profile.role))
 
-	const [{ data: author }, { data: versions }] = await Promise.all([
+	const [{ data: author }, { data: versions }, { data: tokens }] = await Promise.all([
 		supabaseServer.schema("profiles").from("profiles").select("username").eq("id", info.author).maybeSingle(),
 		canEdit
 			? scripts
@@ -42,6 +43,13 @@ export const load = async ({ params, locals: { supabaseServer, user, getProfile 
 					.select("revision, status, files, created_at, published_at")
 					.eq("id", script.id)
 					.order("revision", { ascending: false })
+			: Promise.resolve({ data: [] }),
+		canEdit
+			? scripts
+					.from("deploy_tokens")
+					.select("id, name, created_at, last_used_at")
+					.eq("script_id", script.id)
+					.order("created_at")
 			: Promise.resolve({ data: [] })
 	])
 
@@ -61,6 +69,7 @@ export const load = async ({ params, locals: { supabaseServer, user, getProfile 
 		canEdit,
 		canDelete: profile?.role === "administrator",
 		versions: versions ?? [],
+		tokens: tokens ?? [],
 		form: canEdit
 			? await superValidate(
 					{
@@ -124,6 +133,48 @@ export const actions = {
 		if (!data.length) return fail(403, { message: "You can't edit this script." })
 
 		return { message: published ? "Script is public." : "Script is hidden." }
+	},
+
+	// The token is returned once, here; only its hash is stored.
+	createToken: async ({ request, params, locals: { user, supabaseServer } }) => {
+		if (!user) return fail(401, { tokenError: "You need to login." })
+		const name = String((await request.formData()).get("name") ?? "").trim()
+		if (!name || name.length > 64) return fail(400, { tokenError: "Name the token (at most 64 characters)." })
+
+		const scripts = supabaseServer.schema("scripts")
+		const { data: script } = await scripts.from("scripts").select("id").eq("url", params.url).maybeSingle()
+		if (!script) return fail(404, { tokenError: "Script not found." })
+
+		const { token, hash } = newDeployToken()
+		const { error: err } = await scripts
+			.from("deploy_tokens")
+			.insert({ script_id: script.id, name, token_hash: hash })
+		// 42501 is the RLS check: only the author and moderators manage tokens
+		if (err?.code === "42501") return fail(403, { tokenError: "You can't manage this script's tokens." })
+		if (err) return fail(500, { tokenError: errorRef("Could not create the token", err) })
+
+		return { token, tokenName: name }
+	},
+
+	revokeToken: async ({ request, params, locals: { user, supabaseServer } }) => {
+		if (!user) return fail(401, { tokenError: "You need to login." })
+		const id = String((await request.formData()).get("id") ?? "")
+
+		const scripts = supabaseServer.schema("scripts")
+		const { data: script } = await scripts.from("scripts").select("id").eq("url", params.url).maybeSingle()
+		if (!script) return fail(404, { tokenError: "Script not found." })
+
+		// RLS lets only the author and moderators through; zero rows means the delete was refused.
+		const { data, error: err } = await scripts
+			.from("deploy_tokens")
+			.delete()
+			.eq("id", id)
+			.eq("script_id", script.id)
+			.select("id")
+		if (err) return fail(500, { tokenError: errorRef("Could not revoke the token", err) })
+		if (!data.length) return fail(404, { tokenError: "Token not found." })
+
+		return { tokenMessage: "Token revoked." }
 	},
 
 	delete: async ({ request, params, locals: { user, getProfile, supabaseServer } }) => {

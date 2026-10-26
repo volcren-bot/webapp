@@ -495,6 +495,44 @@ export type Database = {
         }
         Relationships: []
       }
+      deploy_tokens: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          last_used_at: string | null
+          name: string
+          script_id: string
+          token_hash: string
+        }
+        ComputedFields: never
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          last_used_at?: string | null
+          name: string
+          script_id: string
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          script_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deploy_tokens_script_id_fkey"
+            columns: ["script_id"]
+            referencedRelation: "scripts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metadata: {
         Row: {
           categories: Database["scripts"]["Enums"]["category"][]
@@ -701,6 +739,10 @@ export type Database = {
         Returns: undefined
       }
       safe_uuid: { Args: { value: string }; Returns: string }
+      use_deploy_token: {
+        Args: { p_script: string; p_token_hash: string }
+        Returns: string
+      }
     }
     Enums: {
       category:

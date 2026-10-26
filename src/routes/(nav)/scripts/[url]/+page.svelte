@@ -18,6 +18,15 @@
 	const { data, form: result } = $props()
 	const script = $derived(data.script)
 	const statusColor = { live: "var(--tn-green)", pending: "var(--tn-yellow)", discarded: "var(--tn-comment)" }
+
+	// The Origin header gets the multipart upload past SvelteKit's CSRF check; the token is the auth
+	const deployCommand = $derived(
+		`curl --fail-with-body -sS \\
+  -H "Authorization: Bearer $VOLCREN_TOKEN" \\
+  -H "Origin: ${page.url.origin}" \\
+  -F files=@main.luau -F files=@lib.luau \\
+  ${page.url.origin}/api/scripts/${script.id}/revisions`
+	)
 </script>
 
 <Head title={script.title} description={metaDescription(script.description)} noindex={!script.published} />
@@ -130,6 +139,67 @@
 					{/each}
 				</ul>
 			{/if}
+		</div>
+
+		<div class="nv-float flex flex-col gap-3">
+			<span class="nv-title">deploy tokens</span>
+			<p class="nv-dim">
+				Let CI (e.g. a GitHub Actions secret) upload revisions of this script without logging in. A token only
+				works for this script and is shown once.
+			</p>
+
+			{#if result?.token}
+				<div class="flex flex-col gap-1">
+					<p class="text-success-400">
+						Token <b>{result.tokenName}</b> created. Copy it now, it won't be shown again:
+					</p>
+					<code class="break-all select-all">{result.token}</code>
+				</div>
+			{/if}
+
+			<form method="POST" action="?/createToken" class="flex flex-wrap items-center gap-2" use:enhance>
+				<input
+					name="name"
+					class="input"
+					placeholder="github actions"
+					maxlength="64"
+					required
+					autocomplete="off"
+				/>
+				<button type="submit" class="btn">create token</button>
+			</form>
+			{#if result?.tokenError}<small class="text-error-400">{result.tokenError}</small>{/if}
+			{#if result?.tokenMessage}<small class="text-success-400">{result.tokenMessage}</small>{/if}
+
+			{#if data.tokens.length}
+				<ul class="flex flex-col gap-1 text-sm">
+					{#each data.tokens as token (token.id)}
+						<li class="flex flex-wrap items-center gap-x-3">
+							<span class="font-bold">{token.name}</span>
+							<span class="nv-dim">created {new Date(token.created_at).toLocaleDateString()}</span>
+							<span class="nv-dim">
+								{token.last_used_at
+									? `last used ${new Date(token.last_used_at).toLocaleString()}`
+									: "never used"}
+							</span>
+							<form
+								method="POST"
+								action="?/revokeToken"
+								class="ml-auto"
+								use:enhance={({ cancel }) => {
+									if (!confirm(`Revoke ${token.name}? Anything using it stops working.`)) cancel()
+								}}
+							>
+								<input type="hidden" name="id" value={token.id} />
+								<button type="submit" class="btn text-error-400">revoke</button>
+							</form>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+
+			<p class="nv-dim">Upload a revision with it (one <code>-F</code> per file):</p>
+			<pre class="overflow-x-auto text-xs"><code>{deployCommand}</code></pre>
 		</div>
 
 		<ScriptWizard

@@ -13,9 +13,8 @@
 		<h1 class="text-2xl font-bold">Terms of service</h1>
 	</header>
 
-	{#each [data.user.error, data.scripter.error] as err}
-		{#if err}<small class="text-error-400">{err}</small>{/if}
-	{/each}
+	{#if data.user.error}
+		<small class="text-error-400">{data.user.error}</small>
+	{/if}
 	<VersionedDocument id="terms" title="Terms of service" versions={data.user.versions} />
-	<VersionedDocument id="scripter-terms" title="Scripter terms of service" versions={data.scripter.versions} />
 </section>

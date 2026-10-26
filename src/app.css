@@ -329,7 +329,7 @@ dialog::backdrop {
 	.nv-tree {
 		background: var(--tn-bg-dark);
 		border-right: 1px solid var(--tn-bg-hl);
-		min-width: 18rem;
+		width: 18rem;
 		padding: 0.5rem 0;
 		font-size: 0.95em;
 	}
@@ -339,6 +339,17 @@ dialog::backdrop {
 		gap: 1ch;
 		padding: 0 1.5ch;
 		color: var(--tn-fg-dark);
+	}
+	/* A fixed-width tree: guides and icons keep their size, the name is cut off with an ellipsis */
+	.nv-tree a > span:last-child {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.nv-tree a > .nv-guide,
+	.nv-tree a > .nv-icon {
+		flex: none;
 	}
 	.nv-tree a:hover {
 		background: var(--tn-bg-hl);

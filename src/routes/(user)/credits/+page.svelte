@@ -73,8 +73,17 @@
 			</label>
 		</div>
 
-		{#if valid}
-			<dl class="mx-auto grid w-full max-w-md grid-cols-[1fr_auto] gap-x-6 rounded-md bg-(--tn-bg-dark) px-3 py-2">
+		<div class="mx-auto flex w-full max-w-md flex-col gap-1">
+			{#if !valid}
+				<small class="text-error-400">
+					{#if cents > data.limits.max}
+						Maximum is {fmt.credits(data.limits.max * CREDITS_PER_CENT)} ({fmt.eur(data.limits.max)})
+					{:else}
+						Minimum is {fmt.credits(data.limits.min * CREDITS_PER_CENT)} ({fmt.eur(data.limits.min)})
+					{/if}
+				</small>
+			{/if}
+			<dl class="grid w-full grid-cols-[1fr_auto] gap-x-6 rounded-md bg-(--tn-bg-dark) px-3 py-2 text-left" class:line-through={!valid} class:opacity-60={!valid}>
 				<dt class="nv-dim">cost</dt>
 				<dd class="text-right">{fmt.eur(cents)}</dd>
 				<dt class="nv-dim">bonus ({fmt.percent(bonusRate(cents))})</dt>
@@ -85,7 +94,7 @@
 				<dt class="nv-dim">you get</dt>
 				<dd class="text-right font-bold text-(--tn-green)">{fmt.credits(purchase.total)}</dd>
 			</dl>
-		{/if}
+		</div>
 
 		<p class="nv-dim">
 			The average paid script costs about {fmt.credits(data.averagePerMonth)}

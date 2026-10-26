@@ -162,6 +162,7 @@
 						{@const leaves = LEAVES[`${route.toLowerCase()}/${child}`]}
 						<a
 							href={leafHref}
+							title={leaf}
 							class:active={isChildActive(leafHref)}
 							aria-current={isChildActive(leafHref) ? "page" : undefined}
 						>

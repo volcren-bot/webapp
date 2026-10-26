@@ -303,6 +303,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_credits: {
+        Args: {
+          p_admin: string
+          p_amount: number
+          p_note: string
+          p_user: string
+        }
+        Returns: number
+      }
       charge_session: {
         Args: { p_minutes: number; p_session: string }
         Returns: number
@@ -315,10 +324,6 @@ export type Database = {
         Returns: number
       }
       end_stale_sessions: { Args: Record<PropertyKey, never>; Returns: number }
-      adjust_credits: {
-        Args: { p_admin: string; p_amount: number; p_note: string; p_user: string }
-        Returns: number
-      }
       heartbeat_session: { Args: { p_session: string }; Returns: boolean }
       post_credits: {
         Args: {

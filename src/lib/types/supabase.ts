@@ -1053,6 +1053,16 @@ export type Database = {
           users: number
         }[]
       }
+      report_session: {
+        Args: {
+          p_custom?: number[]
+          p_experience: number
+          p_gold: number
+          p_minutes: number
+          p_session: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

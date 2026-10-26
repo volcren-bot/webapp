@@ -2,6 +2,7 @@
 	import { navigating, page } from "$app/state"
 	import { untrack } from "svelte"
 	import { faqs } from "#lib/faqs"
+	import { sidebar } from "#lib/sidebar.svelte.js"
 	import { NAV_CHILDREN, NAV_ROUTES, SITE_NAME, USER_ROUTES, routeHref } from "#lib/utils"
 
 	const { profile } = $derived(page.data)
@@ -100,7 +101,22 @@
 	}
 </script>
 
-<aside class="nv-tree hidden shrink-0 overflow-auto md:block" aria-label="File explorer">
+<!-- Below md the sidebar is a drawer under the nav bar, closed by the backdrop, Esc or the nav button -->
+{#if sidebar.open}
+	<button
+		type="button"
+		tabindex="-1"
+		aria-label="Close the sidebar"
+		class="fixed inset-x-0 top-9 bottom-0 z-30 cursor-default bg-black/50 md:hidden"
+		onclick={() => (sidebar.open = false)}
+	></button>
+{/if}
+
+<aside
+	class="nv-tree shrink-0 overflow-auto max-md:fixed max-md:top-9 max-md:bottom-0 max-md:left-0 max-md:z-40 max-md:max-w-[85vw] max-md:shadow-xl md:block"
+	class:max-md:hidden={!sidebar.open}
+	aria-label="File explorer"
+>
 	<div class="nv-row nv-root mb-1">explorer</div>
 	<a href="/" class="nv-home" class:active={path === "/"} aria-current={path === "/" ? "page" : undefined}>
 		<span aria-hidden="true" class="nv-icon">{ICON_SERVER}</span>

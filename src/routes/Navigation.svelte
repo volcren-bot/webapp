@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { enhance } from "$app/forms"
 	import { navigating, page } from "$app/state"
-	import { NAV_ROUTES, USER_ROUTES, routeHref } from "#lib/utils"
+	import { routeHref } from "#lib/utils"
+	import { sidebar } from "#lib/sidebar.svelte.js"
 	import { useShortcuts } from "#lib/shortcuts.svelte.js"
 	import Logo from "./Logo.svelte"
 	import ThemeSwitcher from "./ThemeSwitcher.svelte"
@@ -11,8 +12,6 @@
 	let toggle = $state<HTMLButtonElement>()
 
 	const { profile } = $derived(page.data)
-
-	const tabs = $derived(profile ? [...NAV_ROUTES, ...USER_ROUTES] : NAV_ROUTES)
 
 	// Use the destination while navigating so the tabs update on click, not after the load finishes.
 	const path = $derived(navigating.to?.url.pathname ?? page.url.pathname)
@@ -26,11 +25,6 @@
 			run: () => (showProfile = !showProfile)
 		}
 	])
-
-	function isActive(route: string) {
-		const href = routeHref(route)
-		return href === "/" ? path === "/" : path.startsWith(href)
-	}
 </script>
 
 <svelte:window
@@ -38,27 +32,29 @@
 		const target = e.target as Node
 		if (showProfile && !panel?.contains(target) && !toggle?.contains(target)) showProfile = false
 	}}
-	onkeydown={(e) => e.key === "Escape" && (showProfile = false)}
+	onkeydown={(e) => {
+		if (e.key !== "Escape") return
+		showProfile = false
+		sidebar.open = false
+	}}
 />
 
 <nav class="nv-bufferline relative shrink-0">
-	<!-- Only the page tabs scroll, so the user and theme buttons stay reachable on narrow screens -->
+	<!-- Wide screens link home from here; narrow ones open the sidebar, which holds every page -->
 	<div class="flex min-w-0 grow overflow-x-auto">
-		{#each tabs as route (route)}
-			<a
-				href={routeHref(route)}
-				class="nv-tab"
-				class:md:hidden={route !== "Home"}
-				class:active={isActive(route)}
-				aria-label={route === "Home" ? "Navigate to home page" : route}
-			>
-				{#if route === "Home"}
-					<Logo selected={isActive(route)} />
-				{:else}
-					<span>{route.toLowerCase()}</span>
-				{/if}
-			</a>
-		{/each}
+		<a href="/" class="nv-tab max-md:hidden" class:active={path === "/"} aria-label="Navigate to home page">
+			<Logo selected={path === "/"} />
+		</a>
+		<button
+			type="button"
+			class="nv-tab cursor-pointer md:hidden"
+			class:active={sidebar.open}
+			aria-label="Toggle the sidebar"
+			aria-expanded={sidebar.open}
+			onclick={() => (sidebar.open = !sidebar.open)}
+		>
+			<Logo selected={sidebar.open} />
+		</button>
 	</div>
 
 	<button
@@ -66,7 +62,7 @@
 		name="User panel"
 		aria-label="Open user panel"
 		aria-expanded={showProfile}
-		class="nv-tab shrink-0 cursor-pointer"
+		class="nv-tab ml-auto shrink-0 cursor-pointer"
 		class:active={showProfile}
 		onclick={() => (showProfile = !showProfile)}
 	>

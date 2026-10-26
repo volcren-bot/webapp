@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
-import MarkdownIt from "markdown-it"
+import { readFileSync } from "node:fs"
+import { fileURLToPath } from "node:url"
+import { initSync, markdownToHtml, type Options } from "comrak-wasm"
 import type { Database } from "#lib/types/supabase"
 import type { DocumentVersion } from "#lib/components/VersionedDocument.svelte"
 import { errorRef } from "#lib/server/supabase.server"
@@ -9,12 +11,18 @@ type Kind = Database["info"]["Enums"]["kind"]
 const MAX_CACHED = 64
 const rendered = new Map<string, string>()
 
-// Links are an allowlist (markdown-it's own check is a denylist); images are never loaded from a document.
+initSync({ module: readFileSync(fileURLToPath(import.meta.resolve("comrak-wasm/comrak_wasm_bg.wasm"))) })
+
+// Links are an allowlist (comrak's own check is a denylist); anything else, and every image, gets an empty URL.
 const SAFE_LINK = /^(https?:|mailto:|#|(?!\/\/)[^:]*$)/i
 
-const md = new MarkdownIt({ html: false, linkify: false, typographer: false })
-md.validateLink = (url) => SAFE_LINK.test(url.trim())
-md.disable("image")
+const OPTIONS: Options = {
+	render: { unsafe: false, escape: true },
+	extension: {
+		linkUrlRewriter: (url) => (SAFE_LINK.test(url.trim()) ? url : ""),
+		imageUrlRewriter: () => ""
+	}
+}
 
 /**
  * Markdown to HTML. Raw HTML in the source is escaped and only allowlisted link protocols survive,
@@ -23,7 +31,7 @@ md.disable("image")
 function render(content: string) {
 	const hit = rendered.get(content)
 	if (hit !== undefined) return hit
-	const html = md.render(content)
+	const html = markdownToHtml(content, OPTIONS)
 	if (rendered.size >= MAX_CACHED) rendered.delete(rendered.keys().next().value!)
 	rendered.set(content, html)
 	return html

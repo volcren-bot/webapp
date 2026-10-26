@@ -32,7 +32,7 @@
 		<div
 			class="prose max-w-none text-(--tn-fg) prose-headings:text-(--tn-fg) prose-a:text-(--tn-blue) prose-strong:text-(--tn-fg)"
 		>
-			<!-- eslint-disable-next-line svelte/no-at-html-tags -- rendered server-side by markdown-it with raw HTML escaped -->
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -- rendered server-side by comrak with raw HTML escaped -->
 			{@html current.html}
 		</div>
 	{:else}

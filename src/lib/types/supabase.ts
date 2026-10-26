@@ -121,6 +121,7 @@ export type Database = {
           amount: number
           balance_after: number
           created_at: string
+          granted_by: string | null
           id: number
           kind: Database["payments"]["Enums"]["credit_kind"]
           minutes: number | null
@@ -135,6 +136,7 @@ export type Database = {
           amount: number
           balance_after: number
           created_at?: string
+          granted_by?: string | null
           id?: never
           kind: Database["payments"]["Enums"]["credit_kind"]
           minutes?: number | null
@@ -148,6 +150,7 @@ export type Database = {
           amount?: number
           balance_after?: number
           created_at?: string
+          granted_by?: string | null
           id?: never
           kind?: Database["payments"]["Enums"]["credit_kind"]
           minutes?: number | null
@@ -209,6 +212,7 @@ export type Database = {
       payments: {
         Row: {
           amount: number
+          bonus: number
           created_at: string
           credits: number
           currency: string
@@ -222,6 +226,7 @@ export type Database = {
         ComputedFields: never
         Insert: {
           amount: number
+          bonus?: number
           created_at?: string
           credits: number
           currency?: string
@@ -234,6 +239,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          bonus?: number
           created_at?: string
           credits?: number
           currency?: string
@@ -309,9 +315,14 @@ export type Database = {
         Returns: number
       }
       end_stale_sessions: { Args: Record<PropertyKey, never>; Returns: number }
+      adjust_credits: {
+        Args: { p_admin: string; p_amount: number; p_note: string; p_user: string }
+        Returns: number
+      }
       heartbeat_session: { Args: { p_session: string }; Returns: boolean }
       post_credits: {
         Args: {
+          p_actor?: string
           p_amount: number
           p_kind: Database["payments"]["Enums"]["credit_kind"]
           p_minutes?: number

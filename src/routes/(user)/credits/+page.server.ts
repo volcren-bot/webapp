@@ -1,7 +1,6 @@
 import { fail, redirect } from "@sveltejs/kit"
 import {
 	createInvoice,
-	CREDITS_PER_CENT,
 	MAX_PENDING_PAYMENTS,
 	MAX_TOPUP_CENTS,
 	MIN_TOPUP_CENTS
@@ -9,25 +8,44 @@ import {
 import { openPayments } from "#lib/server/payments.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
+import { creditsFor } from "#lib/credits"
+import { one } from "#lib/utils"
+
+const MINUTES_PER_MONTH = 30 * 24 * 60
 
 export const load = async ({ locals: { supabaseServer, user } }) => {
 	if (!user) redirect(303, "/auth")
 
 	const payments = supabaseServer.schema("payments")
 
-	const [account, history] = await Promise.all([
+	const [account, history, prices] = await Promise.all([
 		payments.from("accounts").select("credits, earnings").eq("user_id", user.id).maybeSingle(),
 		payments
 			.from("payments")
-			.select("id, status, credits, amount, currency, created_at, paid_at")
+			.select("id, status, credits, bonus, amount, currency, created_at, paid_at")
 			.order("created_at", { ascending: false })
-			.limit(20)
+			.limit(20),
+		// Only paid, published scripts: free ones would drag the average down
+		supabaseAdmin()
+			.schema("scripts")
+			.from("scripts")
+			.select("metadata!inner(price)")
+			.eq("published", true)
+			.gt("metadata.price", 0)
 	])
+
+	if (prices.error) console.error("Could not load script prices", prices.error)
+
+	const paid = (prices.data ?? []).flatMap((s) => one(s.metadata)?.price ?? [])
+	const averagePerMonth = paid.length
+		? Math.round((paid.reduce((sum, price) => sum + price, 0) / paid.length) * MINUTES_PER_MONTH)
+		: 0
 
 	return {
 		credits: account.data?.credits ?? 0,
 		earnings: account.data?.earnings ?? 0,
 		payments: history.data ?? [],
+		averagePerMonth,
 		limits: { min: MIN_TOPUP_CENTS, max: MAX_TOPUP_CENTS }
 	}
 }
@@ -64,7 +82,7 @@ export const actions = {
 			})
 		}
 
-		const credits = cents * CREDITS_PER_CENT
+		const { total: credits, bonus } = creditsFor(cents)
 
 		// The row id doubles as Bitcart's order_id; provider_id is filled in once the invoice exists
 		const paymentId = crypto.randomUUID()
@@ -87,6 +105,7 @@ export const actions = {
 			provider: "bitcart",
 			provider_id: invoice.id,
 			credits,
+			bonus,
 			amount: cents
 		})
 		// 23514 is the database-side limit, which also catches simultaneous requests

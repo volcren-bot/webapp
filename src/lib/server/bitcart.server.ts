@@ -1,9 +1,6 @@
 import { BITCART_API_URL, BITCART_API_TOKEN, BITCART_STORE_ID } from "$app/env/private"
 
-// 1 EUR = 10,000 credits, amounts are stored in cents (see database/CLAUDE.md)
-export const CREDITS_PER_CENT = 100
-export const MIN_TOPUP_CENTS = 500
-export const MAX_TOPUP_CENTS = 50_000
+export { CREDITS_PER_CENT, MAX_TOPUP_CENTS, MIN_TOPUP_CENTS } from "#lib/credits"
 // Keep in sync with payments.limit_pending_payments (supabase/payments-pending-limit.sql)
 export const MAX_PENDING_PAYMENTS = 3
 

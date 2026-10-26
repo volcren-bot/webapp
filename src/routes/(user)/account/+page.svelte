@@ -5,7 +5,7 @@
 	import { superForm } from "sveltekit-superforms"
 	import UUID from "#lib/components/UUID.svelte"
 	import { untrack } from "svelte"
-	import { formatCredits } from "#lib/utils"
+	import { creditSource, formatCredits } from "#lib/utils"
 
 	const { data, form } = $props()
 	const profile = $derived(data.profile!)
@@ -76,7 +76,10 @@
 				{#each data.ledger as entry (entry.id)}
 					<li class="flex justify-between gap-4">
 						<span>
-							{new Date(entry.created_at).toLocaleString()} · {entry.kind}
+							{new Date(entry.created_at).toLocaleString()} · {creditSource(entry)}
+							{#if entry.bonus}
+								<span class="nv-dim">(incl. {formatCredits(entry.bonus)} bonus)</span>
+							{/if}
 							{#if entry.note}<span class="nv-dim">({entry.note})</span>{/if}
 						</span>
 						<span class={entry.amount < 0 ? "text-error-400" : "text-success-400"}>

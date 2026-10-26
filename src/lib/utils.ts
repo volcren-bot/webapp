@@ -80,6 +80,26 @@ export function groupBy<T, K>(items: T[], key: (item: T) => K) {
 	return groups
 }
 
+const PROVIDER_NAMES: Record<string, string> = { bitcart: "Bitcart", stripe: "Stripe", molly: "Mollie" }
+
+/** Where a credits ledger entry came from, in words a user understands. */
+export const creditSource = (entry: { kind: string; provider: string | null }) => {
+	switch (entry.kind) {
+		case "topup":
+			return entry.provider ? `Top-up via ${PROVIDER_NAMES[entry.provider] ?? entry.provider}` : "Top-up"
+		case "usage":
+			return "Script usage"
+		case "transfer":
+			return "Moved from earnings"
+		case "refund":
+			return "Refund"
+		case "adjustment":
+			return "Adjusted by staff"
+		default:
+			return entry.kind
+	}
+}
+
 /** "1,250 credits" */
 export const formatCredits = (credits: number) =>
 	`${credits.toLocaleString("en-US")} ${credits === 1 ? "credit" : "credits"}`

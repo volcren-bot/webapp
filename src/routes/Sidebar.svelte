@@ -31,7 +31,11 @@
 
 	// The server row at the top is the home link.
 	const files = $derived(
-		[...NAV_ROUTES.filter((r) => r !== "Home"), ...(profile ? USER_ROUTES : [])].sort((a, b) => a.localeCompare(b))
+		[
+			...NAV_ROUTES.filter((r) => r !== "Home"),
+			...(profile ? USER_ROUTES : []),
+			...(profile?.role === "administrator" ? ["Admin"] : [])
+		].sort((a, b) => a.localeCompare(b))
 	)
 
 	function isActive(route: string) {

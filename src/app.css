@@ -305,7 +305,6 @@ dialog::backdrop {
 		display: flex;
 		background: var(--tn-bg-dark);
 		border-bottom: 1px solid var(--tn-bg-hl);
-		overflow-x: auto;
 	}
 	.nv-tab {
 		display: flex;

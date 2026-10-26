@@ -42,32 +42,35 @@
 />
 
 <nav class="nv-bufferline relative shrink-0">
-	{#each tabs as route (route)}
-		<a
-			href={routeHref(route)}
-			class="nv-tab"
-			class:md:hidden={route !== "Home"}
-			class:active={isActive(route)}
-			aria-label={route === "Home" ? "Navigate to home page" : route}
-		>
-			{#if route === "Home"}
-				<Logo selected={isActive(route)} />
-			{:else}
-				<span>{route.toLowerCase()}</span>
-			{/if}
-		</a>
-	{/each}
+	<!-- Only the page tabs scroll, so the user and theme buttons stay reachable on narrow screens -->
+	<div class="flex min-w-0 grow overflow-x-auto">
+		{#each tabs as route (route)}
+			<a
+				href={routeHref(route)}
+				class="nv-tab"
+				class:md:hidden={route !== "Home"}
+				class:active={isActive(route)}
+				aria-label={route === "Home" ? "Navigate to home page" : route}
+			>
+				{#if route === "Home"}
+					<Logo selected={isActive(route)} />
+				{:else}
+					<span>{route.toLowerCase()}</span>
+				{/if}
+			</a>
+		{/each}
+	</div>
 
 	<button
 		bind:this={toggle}
 		name="User panel"
 		aria-label="Open user panel"
 		aria-expanded={showProfile}
-		class="nv-tab ml-auto cursor-pointer"
+		class="nv-tab shrink-0 cursor-pointer"
 		class:active={showProfile}
 		onclick={() => (showProfile = !showProfile)}
 	>
-		<span class:nv-dim={!profile}>{profile ? profile.username : "guest"}</span>
+		<span class="max-w-[8rem] truncate" class:nv-dim={!profile}>{profile ? profile.username : "guest"}</span>
 		<span aria-hidden="true">{showProfile ? "▴" : "▾"}</span>
 	</button>
 

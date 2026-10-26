@@ -29,23 +29,23 @@
 <svelte:window onfocusin={(e) => (insert = isField(e.target))} onfocusout={() => (insert = false)} />
 
 <footer class="nv-statusline shrink-0">
-	<span>
+	<span class="min-w-0">
 		<span class="nv-mode" class:insert>{insert ? "INSERT" : "NORMAL"}</span>
-		<span class="nv-seg accent">⎇ main</span>
+		<span class="nv-seg accent max-sm:hidden">⎇ main</span>
 		<button
 			type="button"
-			class="nv-seg cursor-pointer hover:text-(--tn-blue)"
+			class="nv-seg min-w-0 cursor-pointer hover:text-(--tn-blue)"
 			title="Copy URL"
 			onclick={copyUrl}
 		>
-			{copied ? "copied!" : page.url.pathname}
+			<span class="truncate">{copied ? "copied!" : page.url.pathname}</span>
 		</button>
 	</span>
-	<span>
+	<span class="shrink-0">
 		{#if page.url.pathname !== "/"}
 			<button
 				type="button"
-				class="nv-seg cursor-pointer hover:text-(--tn-blue)"
+				class="nv-seg cursor-pointer hover:text-(--tn-blue) max-sm:hidden"
 				onclick={() => (cheatSheet.open = true)}
 			>
 				<span style="color: var(--tn-orange)">K</span> cheat sheet
@@ -72,7 +72,7 @@
 				/>
 				<path d="M9 18c-4.51 2-5-2-7-2" />
 			</svg>
-			github
+			<span class="max-sm:sr-only">github</span>
 		</a>
 		<a
 			href="https://discord.gg/pGfe2zhJph"
@@ -81,9 +81,9 @@
 			class="nv-seg inline-flex items-center gap-1 hover:text-(--tn-blue)"
 		>
 			<MessageCircle class="size-3.5" aria-hidden="true" />
-			discord
+			<span class="max-sm:sr-only">discord</span>
 		</a>
-		<a href="/account" class="nv-seg alt">{profile ? profile.username : "guest"}</a>
+		<a href="/account" class="nv-seg alt max-sm:hidden">{profile ? profile.username : "guest"}</a>
 		<a href="/information" class="nv-seg" style="background: var(--tn-blue); color: var(--tn-bg-dark)">
 			&copy; {new Date().getFullYear()}
 		</a>

@@ -119,7 +119,7 @@
 				{@render children()}
 			</main>
 
-			<div class="nv-dim shrink-0 px-4 py-1 text-center text-sm leading-snug" role="note">
+			<div class="nv-dim shrink-0 px-4 py-1 text-center text-[0.625rem] leading-snug sm:text-[0.75rem] md:text-[0.8125rem] lg:text-[0.875rem]" role="note">
 				<p>VOLCREN is not affiliated with or endorsed by any game developer or publisher.</p>
 				<p>Using our products may violate EULAs you've agreed to, which we do not condone.</p>
 			</div>

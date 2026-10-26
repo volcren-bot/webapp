@@ -16,10 +16,23 @@
 		<span class="nv-title">about</span>
 
 		<p>VOLCREN is a botting platform made to automate repetitive tasks in video games.</p>
-		<p class="nv-dim">
-			We are not affiliated with or endorsed by any game developer or publisher. Using our products may
-			violate EULAs you've agreed to, which we do not condone.
-		</p>
+		<div class="nv-dim flex flex-col gap-2">
+			<p>
+				We are not affiliated with or endorsed by any game developer or publisher. Using our products may
+				violate EULAs you've agreed to, which we do not condone.
+			</p>
+			<p>
+				Everything is provided as is, with no guarantees of any kind. Using our products may get your account
+				banned in the games you use them on, and you do so at your own risk.
+			</p>
+			<p>
+				We do not collect any information about our users. Everything is open source, so you can review the <a
+					href="https://github.com/volcren-bot"
+					target="_blank"
+					rel="noopener noreferrer">code</a
+				> yourself and verify our claims.
+			</p>
+		</div>
 	</div>
 
 	<div class="nv-float">

@@ -312,6 +312,7 @@ export type Database = {
         }
         Returns: number
       }
+      average_price: { Args: Record<PropertyKey, never>; Returns: number }
       charge_session: {
         Args: { p_minutes: number; p_session: string }
         Returns: number
@@ -376,6 +377,28 @@ export type Database = {
   }
   profiles: {
     Tables: {
+      impersonations: {
+        Row: {
+          admin_id: string
+          created_at: string
+          id: number
+          user_id: string
+        }
+        ComputedFields: never
+        Insert: {
+          admin_id: string
+          created_at?: string
+          id?: never
+          user_id: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          id?: never
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar: string
@@ -429,6 +452,10 @@ export type Database = {
             }
             Returns: boolean
           }
+      log_impersonation: {
+        Args: { p_admin: string; p_user: string }
+        Returns: undefined
+      }
       min_role: {
         Args: {
           target_role: Database["profiles"]["Enums"]["roles"]
@@ -703,6 +730,13 @@ export type Database = {
         Args: { revision: number; script_id: string }
         Returns: undefined
       }
+      get_authors: {
+        Args: { script_ids: string[] }
+        Returns: {
+          script_id: string
+          username: string
+        }[]
+      }
       get_revision: { Args: { script_id: string }; Returns: number }
       is_author: {
         Args: { script_id: string; user_id: string }
@@ -743,6 +777,7 @@ export type Database = {
         Args: { p_script: string; p_token_hash: string }
         Returns: string
       }
+      valid_files: { Args: { files: string[] }; Returns: boolean }
     }
     Enums: {
       category:

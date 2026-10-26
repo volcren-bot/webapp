@@ -15,7 +15,7 @@
 	<div class="nv-float">
 		<span class="nv-title">about</span>
 
-		<p>Volcren is a botting platform made to automate repetitive tasks in video games.</p>
+		<p>VOLCREN is a botting platform made to automate repetitive tasks in video games.</p>
 		<p>We are not affiliated with or endorsed by any game developer or publisher.</p>
 		<p>Using our products may violate EULAs you've agreed to, which we do not condone.</p>
 	</div>

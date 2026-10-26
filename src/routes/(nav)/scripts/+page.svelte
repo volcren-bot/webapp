@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fmt } from "#lib/format.svelte.js"
 	import Head from "#lib/components/Head.svelte"
 	import Plus from "@lucide/svelte/icons/plus"
 	import Search from "@lucide/svelte/icons/search"
@@ -9,7 +10,7 @@
 	import FileCode from "@lucide/svelte/icons/file-code"
 	import { goto } from "$app/navigation"
 	import { listKey, useShortcuts } from "#lib/shortcuts.svelte.js"
-	import { CATEGORIES, CATEGORY_ICONS, STAGE_COLORS, TYPES, formatPrice } from "#lib/scripts"
+	import { CATEGORIES, CATEGORY_ICONS, STAGE_COLORS, TYPES } from "#lib/scripts"
 
 	const { data } = $props()
 	const { profile } = $derived(data)
@@ -183,7 +184,7 @@
 										: 'text-(--tn-green)'}"
 								>
 									{#if script.type === "premium"}<Lock class="h-4" />{:else}<LockOpen class="h-4" />{/if}
-									{formatPrice(script.price)}
+									{fmt.price(script.price)}
 								</span>
 							</span>
 						</div>
@@ -197,7 +198,7 @@
 							<span class="nv-dim ml-auto flex items-center gap-1"><User class="h-4" /> {script.author}</span>
 							<span class="nv-dim flex items-center gap-1">
 								<Clock class="h-4" />
-								{new Date(script.updatedAt).toLocaleDateString()}
+								{fmt.date(script.updatedAt)}
 							</span>
 						</div>
 					</a>

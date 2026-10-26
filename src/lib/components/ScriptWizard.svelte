@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { fmt } from "#lib/format.svelte.js"
 	import { tick, untrack } from "svelte"
 	import { superForm } from "sveltekit-superforms"
 	import { zod4Client } from "sveltekit-superforms/adapters"
-	import { CATEGORIES, MAX_PRICE, formatPrice, STAGES, TYPES, scriptSchema } from "#lib/scripts"
+	import { CATEGORIES, MAX_PRICE, STAGES, TYPES } from "#lib/scripts"
+	import { scriptSchema } from "#lib/schemas"
 	import type { Infer, SuperValidated } from "sveltekit-superforms"
 	import { formatCredits } from "#lib/utils"
 
@@ -78,7 +80,7 @@
 			key: "price",
 			label: "Price (credits per minute):",
 			kind: "text",
-			hint: `${formatCredits(1)} to ${formatCredits(MAX_PRICE)}, whole numbers.`,
+			hint: `${fmt.credits(1)} to ${fmt.credits(MAX_PRICE)}, whole numbers.`,
 			skip: () => $form.type === "free"
 		},
 		{
@@ -173,7 +175,7 @@
 		say(`title:        ${$form.title}`)
 		say(`description:  ${$form.description}`)
 		say(`type:         ${$form.type}`)
-		say(`price:        ${$form.price === 0 ? "free" : formatPrice($form.price)}`)
+		say(`price:        ${$form.price === 0 ? "free" : fmt.price($form.price)}`)
 		say(`stage:        ${$form.stage}`)
 		say(`categories:   ${$form.categories.join(", ") || "none"}`)
 		say("content:")
@@ -193,7 +195,7 @@
 		const s = current
 		const shown =
 			s.key === "price"
-				? formatPrice(Number(value))
+				? fmt.price(Number(value))
 				: Array.isArray(value)
 					? value.join(", ") || "none"
 					: value

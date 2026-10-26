@@ -1,7 +1,7 @@
 import { error, fail, redirect } from "@sveltejs/kit"
 import { message, superValidate } from "sveltekit-superforms"
 import { zod4 } from "sveltekit-superforms/adapters"
-import { scriptSchema } from "#lib/scripts"
+import { scriptSchema } from "#lib/schemas"
 import { newDeployToken } from "#lib/server/deploy.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
@@ -9,6 +9,8 @@ import { one } from "#lib/utils"
 
 export const load = async ({ params, locals: { supabaseServer, user, getProfile } }) => {
 	const scripts = supabaseServer.schema("scripts")
+	// Started now so it runs alongside the script lookup instead of after it
+	const profilePromise = getProfile()
 
 	const { data: script } = await scripts
 		.from("scripts")
@@ -31,12 +33,12 @@ export const load = async ({ params, locals: { supabaseServer, user, getProfile 
 	const info = one(script?.protected)
 	if (!script || !metadata || !info) error(404, "Script not found")
 
-	const profile = await getProfile()
+	const profile = await profilePromise
 	const own = user != null && info.author === user.id
 	const canEdit = own || (profile != null && ["moderator", "administrator"].includes(profile.role))
 
 	const [{ data: author }, { data: versions }, { data: tokens }] = await Promise.all([
-		supabaseServer.schema("profiles").from("profiles").select("username").eq("id", info.author).maybeSingle(),
+		scripts.rpc("get_authors", { script_ids: [script.id] }).maybeSingle(),
 		canEdit
 			? scripts
 					.from("versions")

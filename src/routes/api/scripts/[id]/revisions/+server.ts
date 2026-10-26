@@ -1,15 +1,10 @@
 import { error, json } from "@sveltejs/kit"
-import { MAX_FILES, MAX_FILE_BYTES } from "#lib/scripts"
+import { MAX_FILES, MAX_FILE_BYTES, uploadAll, validFileName } from "#lib/scripts"
 import { hashDeployToken } from "#lib/server/deploy.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-/** A path inside the revision folder: plain segments, no "." or ".." and no leading or trailing slash. */
-const validName = (name: string) =>
-	name.length <= 200 &&
-	name.split("/").every((part) => /^[\w.-]+$/.test(part) && part !== "." && part !== "..")
 
 /**
  * CI uploads a revision with a deploy token (see the script page):
@@ -40,7 +35,7 @@ export const POST = async ({ request, params }) => {
 	if (!files.length) error(400, 'Send the revision\'s files as multipart "files" fields.')
 	if (files.length > MAX_FILES) error(400, `At most ${MAX_FILES} files per revision.`)
 	if (new Set(names).size !== names.length) error(400, "File names must be unique.")
-	const badName = names.find((name) => !validName(name))
+	const badName = names.find((name) => !validFileName(name))
 	if (badName != null) error(400, `Invalid file name: ${badName}`)
 	const big = files.find((file) => file.size > MAX_FILE_BYTES)
 	if (big) error(400, `${big.name} is larger than ${MAX_FILE_BYTES / 1024 / 1024} MB.`)
@@ -60,10 +55,10 @@ export const POST = async ({ request, params }) => {
 	const folder = `${params.id}/${String(revision).padStart(9, "0")}`
 
 	try {
-		for (const file of files) {
+		await uploadAll(files, async (file) => {
 			const { error: err } = await admin.storage.from("scripts").upload(`${folder}/${file.name}`, file)
 			if (err) throw err
-		}
+		})
 		const { error: err } = await scripts.rpc("publish_version", { script_id: params.id, revision })
 		if (err) throw err
 	} catch (e) {

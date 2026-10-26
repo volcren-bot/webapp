@@ -1,7 +1,7 @@
 import { fail, redirect } from "@sveltejs/kit"
 import { message, superValidate } from "sveltekit-superforms"
 import { zod4 } from "sveltekit-superforms/adapters"
-import { scriptSchema } from "#lib/scripts"
+import { scriptSchema } from "#lib/schemas"
 import { errorRef } from "#lib/server/supabase.server"
 
 const SCRIPTER_ROLES = ["scripter", "moderator", "administrator"]
@@ -47,8 +47,10 @@ export const actions = {
 		if (!latest)
 			return message(form, errorRef("The script was created but could not be found"), { status: 500 })
 
-		const meta = await scripts.from("metadata").update({ type, price, stage, categories }).eq("id", latest.id)
-		const row = await scripts.from("scripts").select("url").eq("id", latest.id).single()
+		const [meta, row] = await Promise.all([
+			scripts.from("metadata").update({ type, price, stage, categories }).eq("id", latest.id),
+			scripts.from("scripts").select("url").eq("id", latest.id).single()
+		])
 		if (!row.data)
 			return message(form, errorRef("The script was created but could not be opened", row.error), {
 				status: 500

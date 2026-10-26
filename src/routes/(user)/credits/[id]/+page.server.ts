@@ -3,8 +3,26 @@ import QRCode from "qrcode"
 import { syncPayment } from "#lib/server/payments.server"
 import { errorRef } from "#lib/server/supabase.server"
 
-export const load = async ({ params, locals: { supabaseServer, user } }) => {
+// The page polls this load every few seconds and a pending invoice keeps its addresses, so each QR code
+// is only drawn once. Capped so old invoices don't pile up.
+const MAX_CACHED_QRS = 500
+const qrCodes = new Map<string, Promise<string>>()
+
+function qrCode(uri: string) {
+	let qr = qrCodes.get(uri)
+	if (!qr) {
+		if (qrCodes.size >= MAX_CACHED_QRS) qrCodes.delete(qrCodes.keys().next().value!)
+		qr = QRCode.toDataURL(uri, { margin: 1, width: 256 })
+		qr.catch(() => qrCodes.delete(uri))
+		qrCodes.set(uri, qr)
+	}
+	return qr
+}
+
+export const load = async ({ params, depends, locals: { supabaseServer, user } }) => {
 	if (!user) redirect(303, "/auth")
+	// The page polls with this instead of invalidateAll, so the layout's loads don't re-run with it
+	depends("payment:status")
 
 	// RLS only returns the user's own payments
 	const { data: payment } = await supabaseServer
@@ -23,8 +41,10 @@ export const load = async ({ params, locals: { supabaseServer, user } }) => {
 		error(502, errorRef("Could not load the invoice", e))
 	)
 
-	// syncPayment may have just settled or expired it
-	const status = invoice.status === "paid" || invoice.status === "complete" ? "paid" : payment.status
+	// syncPayment may have just settled or expired it. A paid invoice is still waiting for
+	// confirmations, so it isn't credited yet.
+	const status =
+		invoice.status === "complete" ? "paid" : invoice.status === "paid" ? "confirming" : payment.status
 
 	const methods = await Promise.all(
 		invoice.payments
@@ -37,7 +57,7 @@ export const load = async ({ params, locals: { supabaseServer, user } }) => {
 				rate: method.rate_str,
 				address: method.payment_address,
 				uri: method.payment_url,
-				qr: await QRCode.toDataURL(method.payment_url, { margin: 1, width: 256 })
+				qr: await qrCode(method.payment_url)
 			}))
 	)
 

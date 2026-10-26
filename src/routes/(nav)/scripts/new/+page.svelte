@@ -11,7 +11,7 @@
 	data={data.form}
 	fresh
 	label="New script"
-	heading="volcren script creator"
+	heading="VOLCREN script creator"
 	confirm="Create this script?"
 	progress="Creating script..."
 />

@@ -123,7 +123,7 @@
 				class="nv-dim block shrink-0 px-4 py-0.5 text-center text-[0.85rem] leading-tight no-underline"
 				role="note"
 			>
-				<p>Volcren is not affiliated with or endorsed by any game developer or publisher.</p>
+				<p>VOLCREN is not affiliated with or endorsed by any game developer or publisher.</p>
 				<p>Using our products may violate EULAs you've agreed to, which we do not condone.</p>
 			</div>
 		</div>

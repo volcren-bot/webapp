@@ -104,7 +104,7 @@
 	<div class="nv-row nv-root mb-1">explorer</div>
 	<a href="/" class="nv-home" class:active={path === "/"} aria-current={path === "/" ? "page" : undefined}>
 		<span aria-hidden="true" class="nv-icon">{ICON_SERVER}</span>
-		<span>{SITE_NAME.toLowerCase()}/</span>
+		<span>{SITE_NAME}/</span>
 	</a>
 	<ul>
 		{#each files as route, i (route)}

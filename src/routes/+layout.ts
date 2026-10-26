@@ -11,6 +11,7 @@ export const load = async ({ data, depends }) => {
 	if (!browser || !hydrated) {
 		hydrated = browser
 		return {
+			locale: data.locale,
 			user: data.user,
 			expiresAt: data.expiresAt,
 			profile: data.profile,
@@ -26,6 +27,7 @@ export const load = async ({ data, depends }) => {
 
 	if ((session?.user.id ?? null) === data.user) {
 		return {
+			locale: data.locale,
 			user: data.user,
 			expiresAt: session?.expires_at ?? null,
 			profile: data.profile,
@@ -45,6 +47,7 @@ export const load = async ({ data, depends }) => {
 			.single()
 
 		return {
+			locale: data.locale,
 			user: authUser.id,
 			expiresAt,
 			profile,
@@ -53,6 +56,7 @@ export const load = async ({ data, depends }) => {
 	}
 
 	return {
+		locale: data.locale,
 		user: null,
 		expiresAt,
 		profile: null,

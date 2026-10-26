@@ -1,6 +1,8 @@
 const MAX_SIDEBAR_SCRIPTS = 100
 
-export const load = async ({ locals: { safeGetSession, getProfile, supabaseServer }, setHeaders }) => {
+import { localeFrom } from "#lib/format.svelte.js"
+
+export const load = async ({ locals: { safeGetSession, getProfile, supabaseServer }, setHeaders, request }) => {
 	setHeaders({
 		"Strict-Transport-Security": "max-age=31536000; includeSubDomains",
 		"X-Frame-Options": "SAMEORIGIN",
@@ -23,6 +25,7 @@ export const load = async ({ locals: { safeGetSession, getProfile, supabaseServe
 	])
 
 	return {
+		locale: localeFrom(request.headers.get("accept-language")),
 		user: user?.id ?? null,
 		expiresAt: session?.expires_at ?? null,
 		profile,

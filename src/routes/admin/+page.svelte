@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fmt } from "#lib/format.svelte.js"
 	import Head from "#lib/components/Head.svelte"
 	import { enhance } from "$app/forms"
 	import { formatCredits } from "#lib/utils"
@@ -39,7 +40,10 @@
 
 	<form class="nv-float mt-6 flex w-full flex-col" method="POST" action="?/impersonate" use:enhance>
 		<span class="nv-title">login as user</span>
-		<small class="nv-dim">This replaces your own session. Log out and back in to return.</small>
+		<small class="nv-dim">
+			This replaces your own session. Log out and back in to return. Every login is recorded, and
+			administrators can't be logged in as.
+		</small>
 
 		{#if form?.message && "login" in form}
 			<small class="text-error-400">{form.message}</small>
@@ -60,10 +64,24 @@
 				{#each data.adjustments as row (row.id)}
 					<li class="flex flex-col">
 						<span>
-							{new Date(row.created_at).toLocaleString()} · {row.user} ({row.user_id}):
-							{row.amount > 0 ? "+" : ""}{formatCredits(row.amount)}
+							{fmt.dateTime(row.created_at)} · {row.user} ({row.user_id}):
+							{row.amount > 0 ? "+" : ""}{fmt.credits(row.amount)}
 						</span>
 						<small class="nv-dim">by {row.admin ?? "unknown"} · {row.note}</small>
+					</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
+
+	{#if data.impersonations.length}
+		<section class="nv-float mt-6 flex w-full flex-col">
+			<span class="nv-title">recent logins as users</span>
+			<ul class="my-3 flex flex-col gap-1">
+				{#each data.impersonations as row (row.id)}
+					<li class="flex flex-col">
+						<span>{fmt.dateTime(row.created_at)} · {row.user} ({row.user_id})</span>
+						<small class="nv-dim">by {row.admin}</small>
 					</li>
 				{/each}
 			</ul>

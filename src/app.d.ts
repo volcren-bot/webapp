@@ -20,6 +20,7 @@ declare global {
 			getProfile: () => Promise<ProfileBase | null> | null
 		}
 		interface PageData {
+			locale: string
 			user: string | null
 			expiresAt: number | null
 			profile: ProfileBase | null

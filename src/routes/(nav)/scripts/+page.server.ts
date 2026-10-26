@@ -34,11 +34,11 @@ export const load = async ({ url, locals: { supabaseServer, user } }) => {
 
 	if (err) return { scripts: [], error: errorRef("Could not load the scripts", err), filters: {} }
 
-	const authorIds = [...new Set(data.flatMap((s) => one(s.protected)?.author ?? []))]
-	const { data: authors } = authorIds.length
-		? await supabaseServer.schema("profiles").from("profiles").select("id, username").in("id", authorIds)
+	// Profiles are private: author names come from get_authors, keyed by script
+	const { data: authors } = data.length
+		? await supabaseServer.schema("scripts").rpc("get_authors", { script_ids: data.map((s) => s.id) })
 		: { data: [] }
-	const names = new Map((authors ?? []).map((a) => [a.id, a.username]))
+	const names = new Map((authors ?? []).map((a) => [a.script_id, a.username]))
 
 	const scripts = data
 		.flatMap((s) => {
@@ -58,7 +58,7 @@ export const load = async ({ url, locals: { supabaseServer, user } }) => {
 			price: s.metadata.price,
 			live: s.protected.revision > 0,
 			updatedAt: s.protected.updated_at,
-			author: names.get(s.protected.author) ?? "unknown",
+			author: names.get(s.id) ?? "unknown",
 			own: s.protected.author === user?.id
 		}))
 

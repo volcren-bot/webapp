@@ -14,7 +14,8 @@ export const load = async ({ locals: { user, supabaseServer } }) => {
 			.from("credits_ledger")
 			.select("id, kind, amount, balance_after, note, created_at, payments(provider, bonus)")
 			.eq("user_id", user.id)
-			.order("created_at", { ascending: false })
+			// id follows insertion order like created_at, and is what credits_ledger_user_id_idx covers
+			.order("id", { ascending: false })
 			.limit(50)
 	])
 

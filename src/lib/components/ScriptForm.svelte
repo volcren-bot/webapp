@@ -2,7 +2,8 @@
 	import { untrack } from "svelte"
 	import { superForm, type Infer, type SuperValidated } from "sveltekit-superforms"
 	import { zod4Client } from "sveltekit-superforms/adapters"
-	import { CATEGORIES, CATEGORY_ICONS, MAX_PRICE, STAGES, TYPES, scriptSchema } from "#lib/scripts"
+	import { CATEGORIES, CATEGORY_ICONS, MAX_PRICE, STAGES, TYPES } from "#lib/scripts"
+	import { scriptSchema } from "#lib/schemas"
 	
 	let {
 		data,

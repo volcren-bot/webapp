@@ -1,6 +1,5 @@
-import { error, redirect } from "@sveltejs/kit"
-import { formatError } from "#lib/utils"
-import { safePath, LOGIN_REDIRECT_COOKIE } from "#lib/server/supabase.server"
+import { redirect } from "@sveltejs/kit"
+import { refError, safePath, LOGIN_REDIRECT_COOKIE } from "#lib/server/supabase.server"
 
 export const GET = async ({ url: { origin, searchParams }, cookies, locals: { supabaseServer } }) => {
 	const takeLoginRedirect = () => {
@@ -9,22 +8,18 @@ export const GET = async ({ url: { origin, searchParams }, cookies, locals: { su
 		return (path && safePath(path, origin)) ?? "/"
 	}
 
+	// The provider's error goes to the logs, never onto the page: anyone can put any text in
+	// these parameters and send the link around.
 	const err = searchParams.get("error")
 	if (err) {
-		let message = "<h3>Authentication Error</h3>"
-		message += "<p>Error: " + decodeURI(err) + "</p>"
-
-		const description = searchParams.get("error_description")
-		if (description) message += "<p>Message: " + decodeURI(description) + "</p>"
-
-		error(401, message)
+		refError(401, "Login failed", { error: err, description: searchParams.get("error_description") })
 	}
 
 	const code = searchParams.get("code")
 	if (code) {
 		// The profile row is created by the database trigger (see the database repo).
 		const { error: err } = await supabaseServer.auth.exchangeCodeForSession(code)
-		if (err) error(401, formatError(err))
+		if (err) refError(401, "Login failed", err)
 	}
 
 	redirect(303, takeLoginRedirect())

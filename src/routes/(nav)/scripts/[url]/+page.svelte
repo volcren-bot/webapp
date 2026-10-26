@@ -1,7 +1,7 @@
 <script lang="ts">
+	import { fmt } from "#lib/format.svelte.js"
 	import { enhance } from "$app/forms"
 	import Head from "#lib/components/Head.svelte"
-	import ScriptWizard from "#lib/components/ScriptWizard.svelte"
 	import UUID from "#lib/components/UUID.svelte"
 	import RevisionUpload from "./RevisionUpload.svelte"
 	import Lock from "@lucide/svelte/icons/lock"
@@ -11,7 +11,7 @@
 	import Eye from "@lucide/svelte/icons/eye"
 	import EyeOff from "@lucide/svelte/icons/eye-off"
 	import FileCode from "@lucide/svelte/icons/file-code"
-	import { CATEGORY_ICONS, STAGE_COLORS, formatPrice } from "#lib/scripts"
+	import { CATEGORY_ICONS, STAGE_COLORS, } from "#lib/scripts"
 	import { metaDescription } from "#lib/utils"
 	import { page } from "$app/state"
 
@@ -68,7 +68,7 @@
 							: 'text-(--tn-green)'}"
 					>
 						{#if script.type === "premium"}<Lock class="h-4" />{:else}<LockOpen class="h-4" />{/if}
-						{formatPrice(script.price)}
+						{fmt.price(script.price)}
 					</dd>
 				</div>
 				<div>
@@ -81,7 +81,7 @@
 				</div>
 				<div>
 					<dt class="nv-dim flex items-center gap-1"><Clock class="h-4" /> updated</dt>
-					<dd>{new Date(script.updatedAt).toLocaleDateString()}</dd>
+					<dd>{fmt.date(script.updatedAt)}</dd>
 				</div>
 			</dl>
 		</aside>
@@ -134,7 +134,7 @@
 							<span style="color: {statusColor[version.status]}">{version.status}</span>
 							<span class="nv-dim">{version.files.length} file{version.files.length === 1 ? "" : "s"}</span>
 							<span class="nv-dim">{version.files.join(", ")}</span>
-							<span class="nv-dim ml-auto">{new Date(version.created_at).toLocaleString()}</span>
+							<span class="nv-dim ml-auto">{fmt.dateTime(version.created_at)}</span>
 						</li>
 					{/each}
 				</ul>
@@ -176,10 +176,10 @@
 					{#each data.tokens as token (token.id)}
 						<li class="flex flex-wrap items-center gap-x-3">
 							<span class="font-bold">{token.name}</span>
-							<span class="nv-dim">created {new Date(token.created_at).toLocaleDateString()}</span>
+							<span class="nv-dim">created {fmt.date(token.created_at)}</span>
 							<span class="nv-dim">
 								{token.last_used_at
-									? `last used ${new Date(token.last_used_at).toLocaleString()}`
+									? `last used ${fmt.dateTime(token.last_used_at)}`
 									: "never used"}
 							</span>
 							<form
@@ -202,16 +202,19 @@
 			<pre class="overflow-x-auto text-xs"><code>{deployCommand}</code></pre>
 		</div>
 
-		<ScriptWizard
-			data={data.form}
-			action="?/update"
-			boxed
-			label="Edit script"
-			heading="volcren script editor"
-			confirm="Save these changes?"
-			progress="Saving changes..."
-			minStage={script.stage}
-		/>
+		<!-- Loaded only for editors, so visitors don't download the form and validation code -->
+		{#await import("#lib/components/ScriptWizard.svelte") then { default: ScriptWizard }}
+			<ScriptWizard
+				data={data.form}
+				action="?/update"
+				boxed
+				label="Edit script"
+				heading="VOLCREN script editor"
+				confirm="Save these changes?"
+				progress="Saving changes..."
+				minStage={script.stage}
+			/>
+		{/await}
 	{/if}
 
 	{#if data.canDelete}

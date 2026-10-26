@@ -1,4 +1,3 @@
-import { z } from "zod"
 import type { Component } from "svelte"
 import Swords from "@lucide/svelte/icons/swords"
 import Skull from "@lucide/svelte/icons/skull"
@@ -68,40 +67,41 @@ export const STAGE_COLORS: Record<ScriptStage, string> = {
 	archived: "var(--tn-comment)"
 }
 
-export const MAX_PRICE = 10_000
+/** Credits per minute. 22 is about €98 for a 31-day month of nonstop use (metadata_price_max_check). */
+export const MAX_PRICE = 22
 export const MAX_FILES = 50
 export const MAX_FILE_BYTES = 5 * 1024 * 1024
+const UPLOAD_CONCURRENCY = 6
+
+/**
+ * Runs `upload` over a revision's files a few at a time instead of one after another. After the first
+ * error no new uploads start; it is thrown once the ones in flight settle, so the caller can discard the
+ * revision without racing them.
+ */
+export async function uploadAll(files: File[], upload: (file: File) => Promise<void>) {
+	const queue = [...files]
+	const errors: unknown[] = []
+	const worker = async () => {
+		for (let file = queue.shift(); file && !errors.length; file = queue.shift()) {
+			try {
+				await upload(file)
+			} catch (error) {
+				errors.push(error)
+			}
+		}
+	}
+	await Promise.all(Array.from({ length: Math.min(UPLOAD_CONCURRENCY, files.length) }, worker))
+	if (errors.length) throw errors[0]
+}
+
+/**
+ * A file path inside a revision: letters, digits, _ . - and / between segments, no "." or ".."
+ * segment, at most 200 characters. The database checks the same rules (scripts.valid_files).
+ */
+export const validFileName = (name: string) =>
+	name.length <= 200 &&
+	name.split("/").every((part) => /^[A-Za-z0-9_.-]+$/.test(part) && part !== "." && part !== "..")
 
 /** Prices are in credits per minute. */
-export const formatPrice = (credits: number) => (credits === 0 ? "free" : `${formatCredits(credits)}/min`)
-
-export const scriptSchema = z
-	.object({
-		title: z
-			.string()
-			.trim()
-			.min(3, "Must be at least 3 characters long.")
-			.max(80, "Must be at most 80 characters long."),
-		description: z
-			.string()
-			.trim()
-			.min(10, "Must be at least 10 characters long.")
-			.max(200, "Must be at most 200 characters long."),
-		content: z
-			.string()
-			.trim()
-			.min(1, "Write something about the script.")
-			.max(10_000, "Must be at most 10,000 characters long."),
-		type: z.enum(TYPES),
-		price: z
-			.number("Must be a number.")
-			.int("Must be a whole number of credits.")
-			.min(0)
-			.max(MAX_PRICE, `Must be at most ${formatCredits(MAX_PRICE)} per minute.`),
-		stage: z.enum(STAGES),
-		categories: z.array(z.enum(CATEGORIES)).max(5, "Pick at most 5 categories.")
-	})
-	.refine((s) => (s.type === "free") === (s.price === 0), {
-		path: ["price"],
-		message: `Free scripts cost nothing, premium scripts cost at least ${formatCredits(1)} per minute.`
-	})
+export const formatPrice = (credits: number, locale?: string) =>
+	credits === 0 ? "free" : `${formatCredits(credits, locale)}/min`

@@ -2,7 +2,7 @@
 	import { invalidateAll } from "$app/navigation"
 	import Upload from "@lucide/svelte/icons/upload"
 	import { getSupabaseBrowser } from "#lib/supabase.browser"
-	import { MAX_FILES, MAX_FILE_BYTES } from "#lib/scripts"
+	import { MAX_FILES, MAX_FILE_BYTES, uploadAll, validFileName } from "#lib/scripts"
 
 	let { id }: { id: string } = $props()
 
@@ -16,6 +16,8 @@
 		const big = files.find((f) => f.size > MAX_FILE_BYTES)
 		if (big) return `${big.name} is larger than ${MAX_FILE_BYTES / 1024 / 1024} MB.`
 		if (new Set(files.map((f) => f.name)).size !== files.length) return "File names must be unique."
+		const bad = files.find((f) => !validFileName(f.name))
+		if (bad) return `${bad.name}: file names may only use letters, digits, _ . and -.`
 		return ""
 	})
 
@@ -40,11 +42,13 @@
 			revision = created.data.revision
 			const folder = `${id}/${String(revision).padStart(9, "0")}`
 
-			for (const [i, file] of files.entries()) {
-				status = `uploading ${file.name} (${i + 1}/${files.length})...`
+			let uploaded = 0
+			status = `uploading files (0/${files.length})...`
+			await uploadAll(files, async (file) => {
 				const { error } = await supabase.storage.from("scripts").upload(`${folder}/${file.name}`, file)
 				if (error) throw error
-			}
+				status = `uploading files (${++uploaded}/${files.length})...`
+			})
 
 			status = "publishing..."
 			const published = await supabase.schema("scripts").rpc("publish_version", { script_id: id, revision })

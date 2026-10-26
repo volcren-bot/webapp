@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fmt } from "#lib/format.svelte.js"
 	import { profileSchema } from "#lib/schemas"
 	import { zod4Client } from "sveltekit-superforms/adapters"
 	import Head from "#lib/components/Head.svelte"
@@ -67,7 +68,7 @@
 
 	<section class="nv-float mt-6 flex w-full flex-col">
 		<span class="nv-title">balance</span>
-		<p class="my-2 text-lg font-bold">{formatCredits(data.credits)}</p>
+		<p class="my-2 text-lg font-bold">{fmt.credits(data.credits)}</p>
 		<a class="btn my-2 mr-auto" href="/credits">add funds</a>
 
 		<span class="nv-title mt-4">history</span>
@@ -76,15 +77,15 @@
 				{#each data.ledger as entry (entry.id)}
 					<li class="flex justify-between gap-4">
 						<span>
-							{new Date(entry.created_at).toLocaleString()} · {creditSource(entry)}
+							{fmt.dateTime(entry.created_at)} · {creditSource(entry)}
 							{#if entry.bonus}
-								<span class="nv-dim">(incl. {formatCredits(entry.bonus)} bonus)</span>
+								<span class="nv-dim">(incl. {fmt.credits(entry.bonus)} bonus)</span>
 							{/if}
 							{#if entry.note}<span class="nv-dim">({entry.note})</span>{/if}
 						</span>
 						<span class={entry.amount < 0 ? "text-error-400" : "text-success-400"}>
-							{entry.amount > 0 ? "+" : ""}{entry.amount.toLocaleString("en-US")}
-							<span class="nv-dim">→ {entry.balance_after.toLocaleString("en-US")}</span>
+							{entry.amount > 0 ? "+" : ""}{fmt.number(entry.amount)}
+							<span class="nv-dim">→ {fmt.number(entry.balance_after)}</span>
 						</span>
 					</li>
 				{/each}

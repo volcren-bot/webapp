@@ -1,12 +1,11 @@
 <script lang="ts">
+	import { fmt } from "#lib/format.svelte.js"
 	import Head from "#lib/components/Head.svelte"
 	import { enhance } from "$app/forms"
 	import { formatCredits } from "#lib/utils"
 	import { bonusRate, creditsFor, CREDITS_PER_CENT, CREDITS_PER_EUR, MAX_BONUS } from "#lib/credits"
 
 	const { data, form } = $props()
-
-	const eur = (cents: number) => `€${(cents / 100).toFixed(2)}`
 
 	const presets = [5, 7, 12]
 
@@ -24,13 +23,13 @@
 <main class="mx-auto my-6 flex w-full max-w-3xl flex-col">
 	<header class="my-8 flex flex-col">
 		<h1 class="text-2xl font-bold">Balance</h1>
-		<p class="nv-dim">{formatCredits(data.credits)}</p>
+		<p class="nv-dim">{fmt.credits(data.credits)}</p>
 	</header>
 
 	<form class="nv-float flex w-full flex-col" method="POST" use:enhance>
 		<span class="nv-title">add funds</span>
 		<p class="nv-dim">Pay with crypto through Bitcart.</p>
-		<p class="my-2 font-semibold">€1 = 10,000 credits</p>
+		<p class="my-2 font-semibold">{fmt.credits(CREDITS_PER_EUR)} = {fmt.eur(100)}</p>
 
 		{#if form?.message}
 			<small class="text-error-400">{form.message}</small>
@@ -39,7 +38,7 @@
 		<div class="my-3 flex flex-wrap gap-2">
 			{#each presets as preset (preset)}
 				<button type="button" class="btn" onclick={() => (amount = preset)}>
-					{formatCredits(preset * CREDITS_PER_EUR)} · €{preset}
+					{fmt.credits(preset * CREDITS_PER_EUR)} · {fmt.eur(preset * 100)}
 				</button>
 			{/each}
 		</div>
@@ -73,20 +72,20 @@
 		</div>
 
 		<p class="nv-dim">
-			The average paid script costs about {formatCredits(data.averagePerMonth)}
-			(≈ €{(data.averagePerMonth / 10_000).toFixed(2)}) to run 24/7 for 30 days.
+			The average paid script costs about {fmt.credits(data.averagePerMonth)}
+			(≈ {fmt.eur(data.averagePerMonth / CREDITS_PER_CENT)}) to run 24/7 for 30 days.
 		</p>
 		<small class="nv-dim">All sales are final. Refunds are not possible.</small>
 
 		{#if valid}
 			<dl class="nv-dim my-4 grid max-w-sm grid-cols-[1fr_auto] gap-x-6">
 				<dt>Cost</dt>
-				<dd class="text-right">{eur(cents)}</dd>
+				<dd class="text-right">{fmt.eur(cents)}</dd>
 				<dt>Credits</dt>
-				<dd class="text-right font-semibold">{formatCredits(purchase.total)}</dd>
-				<dt>Bonus ({(bonusRate(cents) * 100).toFixed(1)}%)</dt>
+				<dd class="text-right font-semibold">{fmt.credits(purchase.total)}</dd>
+				<dt>Bonus ({fmt.percent(bonusRate(cents))})</dt>
 				<dd class="text-right">
-					+{formatCredits(purchase.bonus)} (≈ €{(purchase.bonus / CREDITS_PER_EUR).toFixed(2)})
+					+{fmt.credits(purchase.bonus)} (≈ {fmt.eur(purchase.bonus / CREDITS_PER_CENT)})
 				</dd>
 			</dl>
 		{/if}
@@ -100,11 +99,11 @@
 			<ul class="my-3 flex flex-col gap-1">
 				{#each data.payments as payment (payment.id)}
 					<li class="flex justify-between">
-						<span>{new Date(payment.created_at).toLocaleString()}</span>
+						<span>{fmt.dateTime(payment.created_at)}</span>
 						<span>
-							{formatCredits(payment.credits)}{payment.bonus
-								? ` incl. ${payment.bonus.toLocaleString("en-US")} bonus`
-								: ""} ({eur(payment.amount)}) ·
+							{fmt.credits(payment.credits)}{payment.bonus ? ` incl. ${fmt.number(payment.bonus)} bonus` : ""} ({fmt.eur(
+								payment.amount
+							)}) ·
 							{#if payment.status === "pending"}
 								<a class="underline" href="/credits/{payment.id}">pay</a>
 							{:else}

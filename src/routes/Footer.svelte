@@ -59,7 +59,7 @@
 		>
 			discord
 		</a>
-		<a href="/" class="nv-seg hidden sm:block">{SITE_NAME.toLowerCase()}</a>
+		<a href="/" class="nv-seg hidden sm:block">{SITE_NAME}</a>
 		<a href="/account" class="nv-seg alt">{profile ? profile.username : "guest"}</a>
 		<a href="/information" class="nv-seg" style="background: var(--tn-blue); color: var(--tn-bg-dark)">
 			&copy; {new Date().getFullYear()}

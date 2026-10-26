@@ -1,6 +1,7 @@
 <script lang="ts">
+	import { fmt } from "#lib/format.svelte.js"
 	import Head from "#lib/components/Head.svelte"
-	import { invalidateAll } from "$app/navigation"
+	import { invalidate } from "$app/navigation"
 	import { onMount } from "svelte"
 	import { formatCredits } from "#lib/utils"
 
@@ -19,11 +20,12 @@
 	const method = $derived(invoice?.methods[selected])
 
 	const pending = $derived(payment.status === "pending" && secondsLeft > 0)
+	const confirming = $derived(payment.status === "confirming")
 
 	onMount(() => {
 		const tick = setInterval(() => (now = Date.now()), 1000)
-		// Re-runs the load, which asks Bitcart for the status again
-		const poll = setInterval(() => pending && invalidateAll(), 5000)
+		// Re-runs only this page's load, which asks Bitcart for the status again
+		const poll = setInterval(() => (pending || confirming) && invalidate("payment:status"), 5000)
 		return () => {
 			clearInterval(tick)
 			clearInterval(poll)
@@ -43,14 +45,24 @@
 
 <main class="mx-auto my-6 flex w-full max-w-3xl flex-col">
 	<header class="my-8 flex flex-col">
-		<h1 class="text-2xl font-bold">Add {formatCredits(payment.credits)}</h1>
+		<h1 class="text-2xl font-bold">Add {fmt.credits(payment.credits)}</h1>
 		<p class="nv-dim">{payment.currency}</p>
 	</header>
 
 	{#if payment.status === "paid"}
 		<section class="nv-float flex w-full flex-col">
 			<span class="nv-title">paid</span>
-			<p class="text-success-400">Your {formatCredits(payment.credits)} have been added to your balance.</p>
+			<p class="text-success-400">Your {fmt.credits(payment.credits)} have been added to your balance.</p>
+			<a class="btn my-2 mr-auto" href="/credits">back to balance</a>
+		</section>
+	{:else if confirming}
+		<section class="nv-float flex w-full flex-col">
+			<span class="nv-title">confirming</span>
+			<p class="nv-dim">
+				Your payment was received and is waiting for network confirmations. Your
+				{fmt.credits(payment.credits)} are added once it's confirmed, which can take a while depending on the
+				currency. You can leave this page.
+			</p>
 			<a class="btn my-2 mr-auto" href="/credits">back to balance</a>
 		</section>
 	{:else if payment.status === "expired" || payment.status === "invalid" || !pending}

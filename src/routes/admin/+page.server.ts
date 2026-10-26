@@ -8,15 +8,28 @@ export const load = async ({ locals: { user, getProfile } }) => {
 	if (profile?.role !== "administrator") redirect(303, "/")
 
 	const admin = supabaseAdmin()
-	const { data: ledger } = await admin
-		.schema("payments")
-		.from("credits_ledger")
-		.select("id, user_id, amount, balance_after, note, granted_by, created_at")
-		.eq("kind", "adjustment")
-		.order("id", { ascending: false })
-		.limit(50)
+	const [{ data: ledger }, { data: logins }] = await Promise.all([
+		admin
+			.schema("payments")
+			.from("credits_ledger")
+			.select("id, user_id, amount, balance_after, note, granted_by, created_at")
+			.eq("kind", "adjustment")
+			.order("id", { ascending: false })
+			.limit(50),
+		admin
+			.schema("profiles")
+			.from("impersonations")
+			.select("id, admin_id, user_id, created_at")
+			.order("id", { ascending: false })
+			.limit(50)
+	])
 
-	const ids = [...new Set((ledger ?? []).flatMap((row) => [row.user_id, row.granted_by ?? []].flat()))]
+	const ids = [
+		...new Set([
+			...(ledger ?? []).flatMap((row) => [row.user_id, row.granted_by ?? []].flat()),
+			...(logins ?? []).flatMap((row) => [row.admin_id, row.user_id])
+		])
+	]
 	const { data: profiles } = ids.length
 		? await admin.schema("profiles").from("profiles").select("id, username").in("id", ids)
 		: { data: [] }
@@ -27,6 +40,11 @@ export const load = async ({ locals: { user, getProfile } }) => {
 			...row,
 			user: names.get(row.user_id) ?? row.user_id,
 			admin: row.granted_by ? (names.get(row.granted_by) ?? row.granted_by) : null
+		})),
+		impersonations: (logins ?? []).map((row) => ({
+			...row,
+			user: names.get(row.user_id) ?? row.user_id,
+			admin: names.get(row.admin_id) ?? row.admin_id
 		}))
 	}
 }
@@ -88,6 +106,17 @@ export const actions = {
 		if (!UUID.test(userId)) return fail(400, { message: "Enter a valid user UUID.", login: true })
 
 		const admin = supabaseAdmin()
+		// Recorded before the login exists, so an impersonation that can't be recorded doesn't happen.
+		// The database also refuses administrators as targets.
+		const { error: logErr } = await admin
+			.schema("profiles")
+			.rpc("log_impersonation", { p_admin: user.id, p_user: userId })
+		if (logErr?.code === "42501") {
+			return fail(403, { message: "Administrators can't be impersonated.", login: true })
+		}
+		if (logErr?.code === "P0002") return fail(404, { message: "No user with that UUID.", login: true })
+		if (logErr) return fail(500, { message: errorRef("Could not record the login", logErr), login: true })
+
 		const { data: target, error: lookup } = await admin.auth.admin.getUserById(userId)
 		if (lookup || !target.user?.email) {
 			return fail(404, { message: "No user with that UUID and an email.", login: true })

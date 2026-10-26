@@ -9,7 +9,6 @@ import { openPayments } from "#lib/server/payments.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
 import { creditsFor } from "#lib/credits"
-import { one } from "#lib/utils"
 
 const MINUTES_PER_MONTH = 30 * 24 * 60
 
@@ -18,28 +17,20 @@ export const load = async ({ locals: { supabaseServer, user } }) => {
 
 	const payments = supabaseServer.schema("payments")
 
-	const [account, history, prices] = await Promise.all([
+	const [account, history, average] = await Promise.all([
 		payments.from("accounts").select("credits, earnings").eq("user_id", user.id).maybeSingle(),
 		payments
 			.from("payments")
 			.select("id, status, credits, bonus, amount, currency, created_at, paid_at")
 			.order("created_at", { ascending: false })
 			.limit(20),
-		// Only paid, published scripts: free ones would drag the average down
-		supabaseAdmin()
-			.schema("scripts")
-			.from("scripts")
-			.select("metadata!inner(price)")
-			.eq("published", true)
-			.gt("metadata.price", 0)
+		// Per-minute average over the paid scripts users can run; null when there are none
+		payments.rpc("average_price")
 	])
 
-	if (prices.error) console.error("Could not load script prices", prices.error)
+	if (average.error) console.error("Could not load the average script price", average.error)
 
-	const paid = (prices.data ?? []).flatMap((s) => one(s.metadata)?.price ?? [])
-	const averagePerMonth = paid.length
-		? Math.round((paid.reduce((sum, price) => sum + price, 0) / paid.length) * MINUTES_PER_MONTH)
-		: 0
+	const averagePerMonth = Math.round((average.data ?? 0) * MINUTES_PER_MONTH)
 
 	return {
 		credits: account.data?.credits ?? 0,

@@ -3,9 +3,12 @@
 	import { page } from "$app/state"
 	import Head from "#lib/components/Head.svelte"
 	import { faqs } from "#lib/faqs"
+	import { newFaqUrl } from "#lib/github"
 	import { useShortcuts } from "#lib/shortcuts.svelte.js"
 
 	let { children } = $props()
+
+	const currentId = $derived(page.url.pathname.split("/")[3])
 
 	useShortcuts(() => [
 		{
@@ -14,7 +17,7 @@
 			scope: "This page",
 			keys: ["ArrowUp", "ArrowDown"],
 			run: (e) => {
-				const current = faqs.findIndex((f) => f.id === page.params.id)
+				const current = faqs.findIndex((f) => f.id === currentId)
 				const next =
 					current === -1
 						? e.key === "ArrowDown"
@@ -37,7 +40,7 @@
 
 	// Only scrolls when the selected row is outside the visible part of the list.
 	$effect(() => {
-		if (!page.params.id) return
+		if (!currentId) return
 		list?.querySelector("[aria-current]")?.scrollIntoView({ block: "nearest" })
 	})
 </script>
@@ -52,23 +55,28 @@
 
 	<nav
 		bind:this={list}
-		class="flex max-h-[calc(5*2.25rem+2px)] flex-col divide-y divide-(--tn-bg-hl) overflow-y-auto rounded-md border border-(--tn-bg-hl) bg-(--tn-bg-float)"
+		class="flex max-h-[calc(5*2.25rem+0.125rem)] flex-col divide-y divide-(--tn-bg-hl) overflow-y-auto rounded-md border border-(--tn-bg-hl) bg-(--tn-bg-float)"
 		aria-label="Questions"
 	>
 		{#each faqs as faq (faq.id)}
-			{@const active = page.params.id === faq.id}
+			{@const active = currentId === faq.id}
 			<a
 				href="/information/faq/{faq.id}"
-				class="grid h-9 shrink-0 grid-cols-[4ch_1fr] items-center gap-4 px-3 text-(--tn-fg) hover:bg-(--tn-bg-hl) hover:text-(--tn-blue) hover:no-underline {active
+				class="grid min-h-9 shrink-0 grid-cols-[4ch_1fr] items-start gap-4 px-3 py-1.5 text-(--tn-fg) hover:bg-(--tn-bg-hl) hover:text-(--tn-blue) hover:no-underline {active
 					? 'bg-(--tn-bg-hl)'
 					: ''}"
 				aria-current={active ? "page" : undefined}
 			>
 				<span class="nv-key">{faq.key}</span>
-				<span class={active ? "text-(--tn-blue)" : ""}>{faq.q}</span>
+				<span class="min-w-0 wrap-break-word {active ? 'text-(--tn-blue)' : ''}">{faq.q}</span>
 			</a>
 		{/each}
 	</nav>
 
 	{@render children()}
+
+	<small class="nv-dim">
+		Missing a question?
+		<a href={newFaqUrl()} target="_blank" rel="noopener noreferrer">Add one on GitHub</a>.
+	</small>
 </section>

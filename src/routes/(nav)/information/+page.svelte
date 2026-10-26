@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Head from "#lib/components/Head.svelte"
 	import SubRoutes from "#lib/components/SubRoutes.svelte"
+	import { REPO_URL } from "#lib/github"
 	import { informationPages } from "#lib/information"
 </script>
 
@@ -27,7 +28,7 @@
 			</p>
 			<p>
 				We do not collect any information about our users. Everything is open source, so you can review the <a
-					href="https://github.com/volcren-bot"
+					href={REPO_URL}
 					target="_blank"
 					rel="noopener noreferrer">code</a
 				> yourself and verify our claims.

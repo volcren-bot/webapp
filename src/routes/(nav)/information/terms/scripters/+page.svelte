@@ -16,5 +16,9 @@
 	{#if data.scripter.error}
 		<small class="text-error-400">{data.scripter.error}</small>
 	{/if}
-	<VersionedDocument id="scripter-terms" title="Scripter terms of service" versions={data.scripter.versions} />
+	<VersionedDocument
+		id="scripter-terms"
+		title="Scripter terms of service"
+		versions={data.scripter.versions}
+	/>
 </section>

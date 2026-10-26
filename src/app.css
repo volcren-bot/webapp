@@ -2,9 +2,25 @@
 @plugin "@tailwindcss/forms";
 @plugin "@tailwindcss/typography";
 
+@font-face {
+	font-family: "FiraCode Nerd Font Mono";
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url("/fonts/FiraCodeNerdFontMono-Regular.woff2") format("woff2");
+}
+
+@font-face {
+	font-family: "FiraCode Nerd Font Mono";
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url("/fonts/FiraCodeNerdFontMono-Bold.woff2") format("woff2");
+}
+
 @theme {
 	--font-mono:
-		"JetBrainsMono Nerd Font", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas,
+		"FiraCode Nerd Font Mono", "FiraCode Nerd Font", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas,
 		"Liberation Mono", monospace;
 }
 
@@ -48,25 +64,6 @@ dialog::backdrop {
 /* ---------- Neovim / LazyVim layer (tokyonight night) ---------- */
 
 :root,
-[data-nv-theme="catppuccin"] {
-	--tn-bg-dark: #181825;
-	--tn-bg: #1e1e2e;
-	--tn-bg-float: #262637;
-	--tn-bg-hl: #313244;
-	--tn-border: #45475a;
-	--tn-fg: #cdd6f4;
-	--tn-fg-dark: #bac2de;
-	--tn-comment: #6c7086;
-	--tn-blue: #89b4fa;
-	--tn-purple: #cba6f7;
-	--tn-cyan: #89dceb;
-	--tn-green: #a6e3a1;
-	--tn-yellow: #f9e2af;
-	--tn-orange: #fab387;
-	--tn-red: #f38ba8;
-	--tn-sel: #45475a;
-}
-
 [data-nv-theme="tokyonight"] {
 	--tn-bg-dark: #16161e;
 	--tn-bg: #1a1b26;
@@ -84,6 +81,25 @@ dialog::backdrop {
 	--tn-orange: #ff9e64;
 	--tn-red: #f7768e;
 	--tn-sel: #2e3c64;
+}
+
+[data-nv-theme="catppuccin"] {
+	--tn-bg-dark: #181825;
+	--tn-bg: #1e1e2e;
+	--tn-bg-float: #262637;
+	--tn-bg-hl: #313244;
+	--tn-border: #45475a;
+	--tn-fg: #cdd6f4;
+	--tn-fg-dark: #bac2de;
+	--tn-comment: #6c7086;
+	--tn-blue: #89b4fa;
+	--tn-purple: #cba6f7;
+	--tn-cyan: #89dceb;
+	--tn-green: #a6e3a1;
+	--tn-yellow: #f9e2af;
+	--tn-orange: #fab387;
+	--tn-red: #f38ba8;
+	--tn-sel: #45475a;
 }
 
 [data-nv-theme="gruvbox"] {
@@ -413,7 +429,7 @@ dialog::backdrop {
 		white-space: pre;
 	}
 	.nv-icon {
-		font-family: "Symbols Nerd Font Mono", "Symbols Nerd Font", "JetBrainsMono Nerd Font", var(--font-mono);
+		font-family: "Symbols Nerd Font Mono", "Symbols Nerd Font", "FiraCode Nerd Font Mono", var(--font-mono);
 		color: var(--tn-blue);
 	}
 

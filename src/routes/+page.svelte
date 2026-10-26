@@ -118,47 +118,15 @@
 		}, 30)
 		return () => clearInterval(timer)
 	})
-
-	// Scale the ASCII art so the whole page fits the available height (and width) without scrolling
-	let section: HTMLElement | undefined = $state()
-	let art: HTMLElement | undefined = $state()
-	let fontSize = $state<number>()
-	const maxFont = () => Math.min(innerWidth * 0.007, 12)
-	const fit = () => {
-		const area = section?.parentElement
-		if (!section || !art || !area) return
-		const style = getComputedStyle(area)
-		const available = area.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
-		const sectionStyle = getComputedStyle(section)
-		const margins = parseFloat(sectionStyle.marginTop) + parseFloat(sectionStyle.marginBottom)
-		const gap = parseFloat(sectionStyle.rowGap) || 0
-		// The section grows to fill the page, so its own height says nothing about its content
-		const children = [...section.children] as HTMLElement[]
-		const content = children.reduce((sum, c) => sum + c.offsetHeight, 0) + gap * (children.length - 1)
-		const current = fontSize ?? parseFloat(getComputedStyle(art).fontSize)
-		const perPx = art.offsetHeight / current
-		const fixed = content + margins - art.offsetHeight
-		const next = (available - fixed - 2) / perPx
-		fontSize = Math.max(4, Math.min(maxFont(), Math.floor(next * 10) / 10))
-	}
-	onMount(() => {
-		const observer = new ResizeObserver(fit)
-		if (section?.parentElement) observer.observe(section.parentElement)
-		fit()
-		return () => observer.disconnect()
-	})
 </script>
 
 <Head title={SITE_NAME} description={SITE_DESCRIPTION} />
 
 <section
-	bind:this={section}
 	class="mx-auto my-4 flex h-fit w-full max-w-3xl grow flex-col items-center justify-center gap-3"
 >
 	<div
-		bind:this={art}
-		class="flex flex-col items-center gap-2"
-		style="font-size: {fontSize ?? 'clamp(3px, 0.7vw, 12px)'}{fontSize ? 'px' : ''}"
+		class="flex flex-col items-center gap-2 text-[0.4375rem] md:text-[0.5rem] xl:text-[0.5625rem]"
 	>
 		<pre
 			class="text-[0.85em] leading-none"
@@ -177,7 +145,7 @@
 		</pre>
 	</div>
 
-	<p class="nv-dim">{SITE_DESCRIPTION}</p>
+	<p class="nv-dim text-center">{SITE_DESCRIPTION}</p>
 
 	<p class="nv-dim">
 		{#if profile}

@@ -394,7 +394,7 @@
 
 <style>
 	.console {
-		font-family: "JetBrainsMono Nerd Font", var(--font-mono, ui-monospace, monospace);
+		font-family: "FiraCode Nerd Font Mono", var(--font-mono, ui-monospace, monospace);
 		/* One fixed length for every line (text, prompts, options, input), so no row can grow with its glyphs. */
 		--lh: 1.3rem;
 		line-height: var(--lh);

@@ -2,8 +2,7 @@
 	import { fmt } from "#lib/format.svelte.js"
 	import Head from "#lib/components/Head.svelte"
 	import { enhance } from "$app/forms"
-	import { formatCredits } from "#lib/utils"
-	import { bonusRate, creditsFor, CREDITS_PER_CENT, CREDITS_PER_EUR, MAX_BONUS } from "#lib/credits"
+	import { bonusRate, creditsFor, CREDITS_PER_CENT, CREDITS_PER_EUR } from "#lib/credits"
 
 	const { data, form } = $props()
 
@@ -28,11 +27,10 @@
 
 	<form class="nv-float flex flex-col gap-3 text-center" method="POST" use:enhance>
 		<span class="nv-title">add funds</span>
-		<p>
-			<span class="nv-dim">Pay with crypto through Bitcart.</span>
-			<span class="font-bold">{fmt.credits(CREDITS_PER_EUR)} = {fmt.eur(100)}</span>
-		</p>
-
+		<div class="my-6">
+			<p class="nv-dim">pay with crypto through bitcart.</p>
+			<p class="font-bold">{fmt.credits(CREDITS_PER_EUR)} = {fmt.eur(100)}</p>
+		</div>
 		{#if form?.message}
 			<small class="text-error-400">{form.message}</small>
 		{/if}
@@ -77,13 +75,17 @@
 			{#if !valid}
 				<small class="text-error-400">
 					{#if cents > data.limits.max}
-						Maximum is {fmt.credits(data.limits.max * CREDITS_PER_CENT)} ({fmt.eur(data.limits.max)})
+						maximum is {fmt.credits(data.limits.max * CREDITS_PER_CENT)} ({fmt.eur(data.limits.max)})
 					{:else}
-						Minimum is {fmt.credits(data.limits.min * CREDITS_PER_CENT)} ({fmt.eur(data.limits.min)})
+						minimum is {fmt.credits(data.limits.min * CREDITS_PER_CENT)} ({fmt.eur(data.limits.min)})
 					{/if}
 				</small>
 			{/if}
-			<dl class="grid w-full grid-cols-[1fr_auto] gap-x-6 rounded-md bg-(--tn-bg-dark) px-3 py-2 text-left" class:line-through={!valid} class:opacity-60={!valid}>
+			<dl
+				class="grid w-full grid-cols-[1fr_auto] gap-x-6 rounded-md bg-(--tn-bg-dark) px-3 py-2 text-left"
+				class:line-through={!valid}
+				class:opacity-60={!valid}
+			>
 				<dt class="nv-dim">cost</dt>
 				<dd class="text-right">{fmt.eur(cents)}</dd>
 				<dt class="nv-dim">bonus ({fmt.percent(bonusRate(cents))})</dt>
@@ -92,15 +94,18 @@
 					<span class="nv-dim">≈ {fmt.eur(purchase.bonus / CREDITS_PER_CENT)}</span>
 				</dd>
 				<dt class="nv-dim">you get</dt>
-				<dd class="text-right font-bold text-(--tn-green)">{fmt.credits(purchase.total)}</dd>
+				<dd class="text-right font-bold text-success-400">{fmt.credits(purchase.total)}</dd>
 			</dl>
 		</div>
 
-		<p class="nv-dim">
-			The average paid script costs about {fmt.credits(data.averagePerMonth)}
-			(≈ {fmt.eur(data.averagePerMonth / CREDITS_PER_CENT)}) to run 24/7 for 30 days. All sales are final.
-			Refunds are not possible.
-		</p>
+		<div class="nv-dim">
+			<p class="my-4">
+				paid script average costs {fmt.credits(data.averagePerMonth)}
+				(≈ {fmt.eur(data.averagePerMonth / CREDITS_PER_CENT)}) to run for 30 days
+			</p>
+			<p>all sales are final.</p>
+			<p>refunds are not possible.</p>
+		</div>
 
 		<button type="submit" class="btn mx-auto mt-1 w-full max-w-md">pay</button>
 	</form>
@@ -110,7 +115,11 @@
 			<span class="nv-title">recent payments</span>
 			<ul class="flex flex-col gap-1">
 				{#each data.payments as payment (payment.id)}
-					<li class="flex flex-wrap justify-between gap-x-4" class:line-through={payment.status === "expired"} class:opacity-50={payment.status === "expired"}>
+					<li
+						class="flex flex-wrap justify-between gap-x-4"
+						class:line-through={payment.status === "expired"}
+						class:opacity-50={payment.status === "expired"}
+					>
 						<span class="nv-dim">{fmt.dateTime(payment.created_at)}</span>
 						<span>
 							{fmt.credits(payment.credits)}{#if payment.bonus}<span class="nv-dim">

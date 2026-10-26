@@ -7,7 +7,7 @@
 	import { enhance as formEnhance } from "$app/forms"
 	import UUID from "#lib/components/UUID.svelte"
 	import { untrack } from "svelte"
-	import { creditSource, formatCredits } from "#lib/utils"
+	import { creditSource } from "#lib/utils"
 
 	const { data, form } = $props()
 	const profile = $derived(data.profile!)
@@ -38,7 +38,7 @@
 
 	<form class="nv-float flex flex-col gap-3" method="POST" action="?/update" use:enhance>
 		<span class="nv-title">credentials</span>
-		<p class="nv-dim">Your email is permanent. Your password is only used for API access.</p>
+		<p class="nv-dim">your email is permanent. your password is only used for API access.</p>
 
 		{#if $errors._errors}
 			{#each $errors._errors as err (err)}
@@ -47,7 +47,7 @@
 		{/if}
 
 		{#if form && "password" in form && form.password}
-			<small class="text-success-400">Your password has been updated.</small>
+			<small class="text-success-400">your password has been updated.</small>
 		{/if}
 
 		<label class="label">
@@ -106,10 +106,11 @@
 	<form class="nv-float nv-danger flex flex-col gap-3" method="POST" action="?/delete" use:formEnhance>
 		<span class="nv-title">delete account</span>
 		<p>
-			This permanently deletes your profile, Discord link and stats, and signs you out. <strong
-				>Your {fmt.credits(data.credits)} are lost.</strong
-			>
-			Payment and usage records are kept, linked only to your account ID (see the
+			this permanently deletes your profile, discord link and stats, and signs you out.
+			<strong>
+				your {fmt.credits(data.credits)} are lost.
+			</strong>
+			payment and usage records are kept, linked only to your account id (see the
 			<a href="/information/privacy">privacy policy</a>).
 		</p>
 

@@ -27,6 +27,7 @@
 		"@sveltejs/vite-plugin-svelte": "^7.3.1",
 		"@tailwindcss/forms": "^0.5.11",
 		"@tailwindcss/typography": "^0.5.20",
+		"@types/markdown-it": "^14.2.0",
 		"@types/node": "^26.6.5",
 		"@types/qrcode": "^1.5.6",
 		"eslint": "^10.13.0",
@@ -51,8 +52,7 @@
 		"@supabase/supabase-js": "^2.118.0",
 		"@sveltejs/adapter-node": "^6.0.0",
 		"@tailwindcss/vite": "^4.3.3",
-		"mdsvex": "^0.12.8",
-		"qrcode": "^1.5.4",
-		"shiki": "^4.5.0"
+		"markdown-it": "^15.0.3",
+		"qrcode": "^1.5.4"
 	}
 }

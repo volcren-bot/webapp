@@ -2,35 +2,12 @@ import tailwindcss from "@tailwindcss/vite"
 import { sveltekit, type Config } from "@sveltejs/kit/vite"
 import { defineConfig } from "vite"
 
-import { mdsvex, escapeSvelte } from "mdsvex"
 import adapter from "@sveltejs/adapter-node"
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte"
-import { getSingletonHighlighter } from "shiki"
-
-const shikiHighlighter = await getSingletonHighlighter({
-	themes: ["github-dark", "github-light"],
-	langs: ["javascript", "typescript", "bash", "yml", "yaml", "json"]
-})
-
-const mdsvexOptions = {
-	extensions: [".md"],
-	highlight: {
-		highlighter: async (code: string, lang: string | null | undefined = "text") => {
-			const html = escapeSvelte(
-				shikiHighlighter.codeToHtml(code, {
-					lang: lang ?? "text",
-					themes: { light: "github-light", dark: "github-dark" }
-				})
-			)
-			return `{@html \`${html}\` }`
-		}
-	}
-}
 
 const sveltekitConfig: Config = {
 	adapter: adapter(),
-	preprocess: [vitePreprocess(), mdsvex(mdsvexOptions)],
-	extensions: [".svelte", ".svx", ".md"],
+	preprocess: [vitePreprocess()],
 	csp: {
 		mode: "auto",
 		directives: {

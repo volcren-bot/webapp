@@ -85,7 +85,8 @@
 
 	// Pages nested two levels down, keyed by "parent/child". Listed by id.
 	const LEAVES: Record<string, string[]> = {
-		"information/faq": faqs.map((f) => f.id)
+		"information/faq": faqs.map((f) => f.id),
+		"information/terms": ["users", "scripters"]
 	}
 
 	function guide(parentLast: boolean, last: boolean) {

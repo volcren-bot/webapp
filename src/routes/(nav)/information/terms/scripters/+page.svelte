@@ -9,7 +9,7 @@
 
 <section class="mx-auto my-8 flex w-full max-w-3xl flex-col gap-6">
 	<header>
-		<a href="/information" class="nv-dim">← information</a>
+		<a href="/information/terms" class="nv-dim">← terms</a>
 		<h1 class="text-2xl font-bold">Scripter terms of service</h1>
 	</header>
 

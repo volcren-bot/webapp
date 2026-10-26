@@ -2,7 +2,8 @@
 	export type DocumentVersion = {
 		version: string
 		publishedAt: string
-		content: string
+		/** Sanitized HTML, rendered on the server from markdown. */
+		html: string
 	}
 
 	let { id, title, versions }: { id: string; title: string; versions: DocumentVersion[] } = $props()
@@ -28,7 +29,12 @@
 			</select>
 		</label>
 
-		<div class="whitespace-pre-line">{current.content}</div>
+		<div
+			class="prose max-w-none text-(--tn-fg) prose-headings:text-(--tn-fg) prose-a:text-(--tn-blue) prose-strong:text-(--tn-fg)"
+		>
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -- rendered server-side by markdown-it with raw HTML escaped -->
+			{@html current.html}
+		</div>
 	{:else}
 		<p class="nv-dim">Nothing published yet.</p>
 	{/if}

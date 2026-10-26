@@ -8,7 +8,7 @@ A SvelteKit starter with Supabase auth, Tailwind 4 UI, dark mode.
 - Supabase SSR auth (OAuth login/logout, session handling in `src/hooks.server.ts`)
 - A `profiles` table with a role, created automatically on sign up (schema lives in the `database` repo)
 - Tailwind 4 with a fixed dark mode and a Neovim-style theme (`src/app.css`)
-- Account page (`/account`) to change email/password using Superforms + Zod
+- Account page (`/account`) with credit balance, ledger and account deletion
 - SEO `<Head>` component, security headers and a CSP in `svelte.config.js`
 - mdsvex + shiki for markdown pages
 

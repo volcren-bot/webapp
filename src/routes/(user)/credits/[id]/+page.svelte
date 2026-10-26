@@ -3,7 +3,6 @@
 	import Head from "#lib/components/Head.svelte"
 	import { invalidate } from "$app/navigation"
 	import { onMount } from "svelte"
-	import { formatCredits } from "#lib/utils"
 
 	const { data } = $props()
 

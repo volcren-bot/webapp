@@ -6,7 +6,6 @@
 	import { CATEGORIES, MAX_PRICE, STAGES, TYPES } from "#lib/scripts"
 	import { scriptSchema } from "#lib/schemas"
 	import type { Infer, SuperValidated } from "sveltekit-superforms"
-	import { formatCredits } from "#lib/utils"
 
 	let {
 		data,

@@ -2,15 +2,6 @@ import { z } from "zod"
 import { CATEGORIES, MAX_PRICE, STAGES, TYPES } from "#lib/scripts"
 import { formatCredits } from "#lib/utils"
 
-export const profileSchema = z.object({
-	email: z.string().email("Must be a valid email!").optional(),
-	password: z
-		.string()
-		.min(6, "Must be more than 6 characters long.")
-		.max(32, "Must be less than 32 characters long.")
-		.optional()
-})
-
 // Kept out of #lib/scripts so pages that only list scripts don't ship zod.
 export const scriptSchema = z
 	.object({

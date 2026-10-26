@@ -1,11 +1,8 @@
-import { profileSchema } from "#lib/schemas"
 import { deletionBlockers } from "#lib/server/account.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
-import { formatError, one } from "#lib/utils"
+import { one } from "#lib/utils"
 import { fail, redirect } from "@sveltejs/kit"
-import { setError, superValidate } from "sveltekit-superforms"
-import { zod4 } from "sveltekit-superforms/adapters"
 
 export const load = async ({ locals: { user, supabaseServer } }) => {
 	if (!user) redirect(303, "/")
@@ -32,30 +29,11 @@ export const load = async ({ locals: { user, supabaseServer } }) => {
 			provider: one(payment)?.provider ?? null,
 			bonus: one(payment)?.bonus ?? 0
 		})),
-		form: await superValidate({ email: user.email }, zod4(profileSchema)),
 		blockers
 	}
 }
 
 export const actions = {
-	update: async ({ request, locals: { user, supabaseServer } }) => {
-		const form = await superValidate(request, zod4(profileSchema))
-
-		if (!user) return setError(form, "", "You need to login to update your account.")
-		if (!form.valid) return setError(form, "", "Form is not valid!")
-
-		// Emails are permanent: whatever the client sends for it is ignored.
-		form.data.email = user.email
-		const password = form.data.password || undefined
-
-		if (password) {
-			const { error: err } = await supabaseServer.auth.updateUser({ password })
-			if (err) return setError(form, "", formatError(err))
-		}
-
-		return { form, password: password != null }
-	},
-
 	// Deletes the auth user. The database cascades that to the profile, balance, stats and deploy
 	// tokens; payment and usage records stay (see the privacy policy).
 	delete: async ({ request, locals: { user, getProfile, supabaseServer } }) => {

@@ -1,31 +1,12 @@
 <script lang="ts">
 	import { fmt } from "#lib/format.svelte.js"
-	import { profileSchema } from "#lib/schemas"
-	import { zod4Client } from "sveltekit-superforms/adapters"
 	import Head from "#lib/components/Head.svelte"
-	import { superForm } from "sveltekit-superforms"
-	import { enhance as formEnhance } from "$app/forms"
+	import { enhance } from "$app/forms"
 	import UUID from "#lib/components/UUID.svelte"
-	import { untrack } from "svelte"
 	import { creditSource } from "#lib/utils"
 
 	const { data, form } = $props()
 	const profile = $derived(data.profile!)
-
-	const {
-		form: authForm,
-		errors,
-		enhance
-	} = superForm(
-		untrack(() => data.form),
-		{
-			multipleSubmits: "prevent",
-			clearOnSubmit: "errors",
-			taintedMessage: null,
-			dataType: "json",
-			validators: zod4Client(profileSchema)
-		}
-	)
 </script>
 
 <Head title="Account" description="Manage your account." noindex />
@@ -35,37 +16,6 @@
 		<h1 class="text-2xl font-bold">Account: {profile.username || "No username"}</h1>
 		<UUID uuid={profile.id}></UUID>
 	</header>
-
-	<form class="nv-float flex flex-col gap-3" method="POST" action="?/update" use:enhance>
-		<span class="nv-title">credentials</span>
-		<p class="nv-dim">your email is permanent. your password is only used for API access.</p>
-
-		{#if $errors._errors}
-			{#each $errors._errors as err (err)}
-				<small class="text-error-400">{err}</small>
-			{/each}
-		{/if}
-
-		{#if form && "password" in form && form.password}
-			<small class="text-success-400">your password has been updated.</small>
-		{/if}
-
-		<label class="label">
-			<span class="label-text">email</span>
-			<input class="input" value={$authForm.email ?? ""} disabled />
-		</label>
-		<label class="label">
-			<span class="label-text">password</span>
-			<input class="input" class:border-error-500={$errors.password} bind:value={$authForm.password} />
-			{#if $errors.password}
-				{#each $errors.password as err (err)}
-					<small class="text-error-400">{err}</small>
-				{/each}
-			{/if}
-		</label>
-
-		<button type="submit" class="btn mt-1 self-start">update</button>
-	</form>
 
 	<section class="nv-float flex flex-col items-start gap-3">
 		<span class="nv-title">balance</span>
@@ -103,7 +53,7 @@
 		{/if}
 	</section>
 
-	<form class="nv-float nv-danger flex flex-col gap-3" method="POST" action="?/delete" use:formEnhance>
+	<form class="nv-float nv-danger flex flex-col gap-3" method="POST" action="?/delete" use:enhance>
 		<span class="nv-title">delete account</span>
 		<p>
 			this permanently deletes your profile, discord link and stats, and signs you out.

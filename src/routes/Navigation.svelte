@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { enhance } from "$app/forms"
 	import { navigating, page } from "$app/state"
-	import { routeHref } from "#lib/utils"
 	import { sidebar } from "#lib/sidebar.svelte.js"
 	import { useShortcuts } from "#lib/shortcuts.svelte.js"
 	import Logo from "./Logo.svelte"

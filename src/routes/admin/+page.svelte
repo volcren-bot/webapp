@@ -2,7 +2,6 @@
 	import { fmt } from "#lib/format.svelte.js"
 	import Head from "#lib/components/Head.svelte"
 	import { enhance } from "$app/forms"
-	import { formatCredits } from "#lib/utils"
 
 	const { data, form } = $props()
 </script>

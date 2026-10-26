@@ -3,7 +3,7 @@
 </script>
 
 <!-- Pulled out by the links' padding, so their text lines up with the content around the menu -->
-<nav class="nv-menu -mx-[1.5ch] flex flex-col" aria-label="Sub pages">
+<nav class="nv-menu mx-[-1.5ch] flex flex-col" aria-label="Sub pages">
 	{#each items as item (item.key)}
 		<a href={item.href}>
 			<span class="nv-key">{item.key}</span>

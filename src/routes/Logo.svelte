@@ -5,7 +5,5 @@
 </script>
 
 <!-- Website Logo: replace the glyph and name with your own -->
-<span class="inline-flex items-center gap-2 whitespace-nowrap">
-	<img src="/favicon.svg" alt="" class="h-[1.2em] w-[1.2em]" />
-	<span class:font-bold={selected}>{SITE_NAME}</span>
-</span>
+<img src="/favicon.svg" alt="" class="size-8" />
+<span class="my-auto" class:font-bold={selected}>{SITE_NAME}</span>

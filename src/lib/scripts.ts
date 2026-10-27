@@ -22,6 +22,7 @@ import Target from "@lucide/svelte/icons/target"
 import Anvil from "@lucide/svelte/icons/anvil"
 import Sailboat from "@lucide/svelte/icons/sailboat"
 import { formatCredits } from "#lib/utils"
+import { ENCRYPTION_OVERHEAD } from "#lib/encryption"
 import { Constants, type Database } from "#lib/types/supabase"
 
 export type ScriptCategory = Database["scripts"]["Enums"]["category"]
@@ -86,7 +87,8 @@ export const STAGE_COLORS: Record<ScriptStage, string> = {
 /** Credits per minute. 22 is about €98 for a 31-day month of nonstop use (metadata_price_max_check). */
 export const MAX_PRICE = 22
 export const MAX_FILES = 50
-export const MAX_FILE_BYTES = 5 * 1024 * 1024
+/** The scripts bucket allows 5 MB per object, and the encrypted file is a little larger than the plain one. */
+export const MAX_FILE_BYTES = 5 * 1024 * 1024 - ENCRYPTION_OVERHEAD
 const UPLOAD_CONCURRENCY = 6
 
 /**

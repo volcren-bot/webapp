@@ -3,6 +3,7 @@
 	import Upload from "@lucide/svelte/icons/upload"
 	import { getSupabaseBrowser } from "#lib/supabase.browser"
 	import { MAX_FILES, MAX_FILE_BYTES, uploadAll, validFileName } from "#lib/scripts"
+	import { encryptFile, encryptedSize, keyHex, newRevisionKey } from "#lib/encryption"
 
 	let { id }: { id: string } = $props()
 
@@ -41,8 +42,8 @@
 				.from("versions")
 				// Clients may only insert id, files, sizes and entry (column grants); a trigger assigns the revision, so the
 				// generated type's required `revision` is cast away. Sending it would be a 403. Community authors
-				// are capped on storage, so the sizes are how the database knows what is coming.
-				.insert({ id, files: files.map((f) => f.name), sizes: files.map((f) => f.size), entry } as {
+				// are capped on storage, so the sizes are how the database knows what is coming (the files are uploaded encrypted).
+				.insert({ id, files: files.map((f) => f.name), sizes: files.map((f) => encryptedSize(f.size)), entry } as {
 					id: string
 					files: string[]
 					sizes: number[]
@@ -55,10 +56,18 @@
 			revision = created.data.revision
 			const folder = `${id}/${String(revision).padStart(9, "0")}`
 
+			// Every revision is stored encrypted; the database keeps the key and hands it to the loader.
+			const key = newRevisionKey()
+			const keyed = await supabase
+				.schema("scripts")
+				.rpc("set_version_key", { script_id: id, revision, key: keyHex(key) })
+			if (keyed.error) throw keyed.error
+
 			let uploaded = 0
 			status = `uploading files (0/${files.length})...`
 			await uploadAll(files, async (file) => {
-				const { error } = await supabase.storage.from("scripts").upload(`${folder}/${file.name}`, file)
+				const sealed = await encryptFile(file, key, id, revision!, file.name)
+				const { error } = await supabase.storage.from("scripts").upload(`${folder}/${file.name}`, sealed)
 				if (error) throw error
 				status = `uploading files (${++uploaded}/${files.length})...`
 			})

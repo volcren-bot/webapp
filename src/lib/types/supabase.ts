@@ -1017,6 +1017,10 @@ export type Database = {
 				Args: { revision: number; script_id: string }
 				Returns: undefined
 			}
+			set_version_key: {
+				Args: { key: string; revision: number; script_id: string }
+				Returns: undefined
+			}
 			redeem_share_code: {
 				Args: { p_code: string }
 				Returns: {

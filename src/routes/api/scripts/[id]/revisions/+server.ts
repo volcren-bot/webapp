@@ -1,5 +1,6 @@
 import { error, json } from "@sveltejs/kit"
 import { MAX_FILES, MAX_FILE_BYTES, uploadAll, validFileName } from "#lib/scripts"
+import { encryptFile, encryptedSize, keyHex, newRevisionKey } from "#lib/encryption"
 import { hashDeployToken } from "#lib/server/deploy.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
@@ -48,7 +49,7 @@ export const POST = async ({ request, params }) => {
 	// A trigger assigns the revision, so the generated type's required `revision` is cast away (see RevisionUpload)
 	const created = await scripts
 		.from("versions")
-		.insert({ id: params.id, files: names, sizes: files.map((file) => file.size), entry } as {
+		.insert({ id: params.id, files: names, sizes: files.map((file) => encryptedSize(file.size)), entry } as {
 			id: string
 			files: string[]
 			sizes: number[]
@@ -68,8 +69,17 @@ export const POST = async ({ request, params }) => {
 	const folder = `${params.id}/${String(revision).padStart(9, "0")}`
 
 	try {
+		// Every revision is stored encrypted; the database keeps the key and hands it to the loader.
+		const key = newRevisionKey()
+		const { error: keyErr } = await scripts.rpc("set_version_key", {
+			script_id: params.id,
+			revision,
+			key: keyHex(key)
+		})
+		if (keyErr) throw keyErr
 		await uploadAll(files, async (file) => {
-			const { error: err } = await admin.storage.from("scripts").upload(`${folder}/${file.name}`, file)
+			const sealed = await encryptFile(file, key, params.id, revision, file.name)
+			const { error: err } = await admin.storage.from("scripts").upload(`${folder}/${file.name}`, sealed)
 			if (err) throw err
 		})
 		const { error: err } = await scripts.rpc("publish_version", { script_id: params.id, revision })

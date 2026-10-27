@@ -79,8 +79,7 @@ export function handleKey(e: KeyboardEvent, globals: Shortcut[]) {
 	if (e.target instanceof HTMLElement && e.target.closest("input, textarea, select, [contenteditable]"))
 		return
 	// Enter on a focused link or button belongs to that element.
-	if (e.key === "Enter" && e.target instanceof HTMLElement && e.target.closest("a, button, summary"))
-		return
+	if (e.key === "Enter" && e.target instanceof HTMLElement && e.target.closest("a, button, summary")) return
 	const all = [...localShortcuts(), ...globals].filter((s) => s.run && s.keys?.includes(e.key))
 	const elsewhere = all.filter((s) => s.href !== page.url.pathname)
 	const matches = elsewhere.length ? elsewhere : all

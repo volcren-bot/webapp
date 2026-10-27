@@ -4,7 +4,7 @@
 	import { zod4Client } from "sveltekit-superforms/adapters"
 	import { CATEGORIES, CATEGORY_ICONS, MAX_PRICE, STAGES, TYPES } from "#lib/scripts"
 	import { scriptSchema } from "#lib/schemas"
-	
+
 	let {
 		data,
 		action = "",

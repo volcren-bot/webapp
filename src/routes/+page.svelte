@@ -122,12 +122,8 @@
 
 <Head title={SITE_NAME} description={SITE_DESCRIPTION} />
 
-<section
-	class="mx-auto my-4 flex h-fit w-full max-w-3xl grow flex-col items-center justify-center gap-3"
->
-	<div
-		class="flex flex-col items-center gap-2 text-[0.4375rem] md:text-[0.5rem] xl:text-[0.5625rem]"
-	>
+<section class="mx-auto my-4 flex h-fit w-full max-w-3xl grow flex-col items-center justify-center gap-3">
+	<div class="flex flex-col items-center gap-2 text-[0.4375rem] md:text-[0.5rem] xl:text-[0.5625rem]">
 		<pre
 			class="text-[0.85em] leading-none"
 			aria-hidden="true">{#each logo as line, i (i)}{#each logoRuns(line, i) as run, j (j)}<span

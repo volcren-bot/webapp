@@ -8,7 +8,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
  * CI uploads a revision with a deploy token (see the script page):
- *   curl -H "Authorization: Bearer $TOKEN" -H "Origin: <site>" -F files=@main.luau <site>/api/scripts/<id>/revisions
+ *   curl -H "Authorization: Bearer $TOKEN" -H "Origin: <site>" -F files=@main.luau -F entry=main.luau <site>/api/scripts/<id>/revisions
+ * `entry` names the file the loader runs; it can be left out when there is only one file.
  * The Origin header is only there to pass SvelteKit's CSRF check for multipart bodies; the token is the auth.
  * Does what RevisionUpload does in the browser, as service_role once the token checks out.
  */
@@ -33,6 +34,10 @@ export const POST = async ({ request, params }) => {
 	const names = files.map((file) => file.name)
 
 	if (!files.length) error(400, 'Send the revision\'s files as multipart "files" fields.')
+	const entryField = form?.get("entry")
+	const entry = typeof entryField === "string" && entryField ? entryField : files.length === 1 ? names[0] : null
+	if (!entry) error(400, 'A revision with several files needs an "entry" field naming the file to run.')
+	if (!names.includes(entry)) error(400, `The entry file ${entry} is not one of the uploaded files.`)
 	if (files.length > MAX_FILES) error(400, `At most ${MAX_FILES} files per revision.`)
 	if (new Set(names).size !== names.length) error(400, "File names must be unique.")
 	const badName = names.find((name) => !validFileName(name))
@@ -43,10 +48,11 @@ export const POST = async ({ request, params }) => {
 	// A trigger assigns the revision, so the generated type's required `revision` is cast away (see RevisionUpload)
 	const created = await scripts
 		.from("versions")
-		.insert({ id: params.id, files: names, sizes: files.map((file) => file.size) } as {
+		.insert({ id: params.id, files: names, sizes: files.map((file) => file.size), entry } as {
 			id: string
 			files: string[]
 			sizes: number[]
+			entry: string
 			revision: number
 		})
 		.select("revision")

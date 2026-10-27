@@ -28,7 +28,7 @@
 		`curl --fail-with-body -sS \\
   -H "Authorization: Bearer $VOLCREN_TOKEN" \\
   -H "Origin: ${page.url.origin}" \\
-  -F files=@main.luau -F files=@lib.luau \\
+  -F files=@main.luau -F files=@lib.luau -F entry=main.luau \\
   ${page.url.origin}/api/scripts/${script.id}/revisions`
 	)
 </script>

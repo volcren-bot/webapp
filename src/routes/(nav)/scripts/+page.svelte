@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { fmt } from "#lib/format.svelte.js"
 	import Head from "#lib/components/Head.svelte"
+	import ScriptBadges from "#lib/components/ScriptBadges.svelte"
+	import { enhance } from "$app/forms"
+	import Gift from "@lucide/svelte/icons/gift"
 	import Plus from "@lucide/svelte/icons/plus"
 	import Search from "@lucide/svelte/icons/search"
 	import Lock from "@lucide/svelte/icons/lock"
@@ -12,11 +15,10 @@
 	import { listKey, useShortcuts } from "#lib/shortcuts.svelte.js"
 	import { CATEGORIES, CATEGORY_ICONS, STAGE_COLORS, TYPES } from "#lib/scripts"
 
-	const { data } = $props()
+	const { data, form } = $props()
 	const { profile } = $derived(data)
-	const canCreate = $derived(
-		profile != null && ["scripter", "moderator", "administrator"].includes(profile.role)
-	)
+	// Anyone can write a community script once they accept the terms (the new script page asks for them)
+	const canCreate = $derived(profile != null)
 	const filters = $derived(data.filters)
 
 	// Row highlighted by the arrow keys; -1 until one is pressed.
@@ -25,7 +27,7 @@
 	let search = $state<HTMLInputElement>()
 
 	$effect(() => {
-		data.scripts
+		void data.scripts
 		selected = -1
 	})
 
@@ -143,8 +145,38 @@
 				<span>mine</span>
 			</label>
 		{/if}
+		{#if data.canBrowseCommunity}
+			<label
+				class="flex h-[2.25em] cursor-pointer items-center gap-2"
+				title="Community scripts are left out of the list unless they are yours or shared with you"
+			>
+				<input type="checkbox" name="community" value="1" checked={filters.community} />
+				<span>community</span>
+			</label>
+		{/if}
 		<button type="submit" class="btn"><Search class="size-4 shrink-0" /> search</button>
 	</form>
+
+	{#if profile}
+		<form method="POST" action="?/redeem" class="nv-float flex flex-wrap items-end gap-3" use:enhance>
+			<span class="nv-title">redeem a share code</span>
+			<label class="label grow">
+				<span class="label-text">code</span>
+				<input
+					class="input font-mono"
+					name="code"
+					required
+					minlength="64"
+					maxlength="128"
+					autocomplete="off"
+					spellcheck="false"
+					placeholder="paste the code you were given"
+				/>
+			</label>
+			<button type="submit" class="btn"><Gift class="size-4 shrink-0" /> redeem</button>
+			{#if form?.redeemError}<small class="w-full text-error-400">{form.redeemError}</small>{/if}
+		</form>
+	{/if}
 
 	{#if data.error}
 		<small class="text-error-400">{data.error}</small>
@@ -172,7 +204,12 @@
 								{script.title}
 							</span>
 							<span class="flex shrink-0 items-center gap-3 text-sm">
-								{#if !script.published || !script.live}
+								<ScriptBadges
+									community={script.community}
+									granted={script.granted}
+									authorBanned={script.authorBanned}
+								/>
+								{#if !script.community && (!script.published || !script.live)}
 									<span class="text-(--tn-orange)">{script.published ? "no revision" : "draft"}</span>
 								{/if}
 								<span style="color: {STAGE_COLORS[script.stage]}">{script.stage}</span>

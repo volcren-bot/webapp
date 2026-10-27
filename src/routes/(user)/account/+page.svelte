@@ -15,6 +15,10 @@
 	<header class="flex flex-col items-start gap-2">
 		<h1 class="text-2xl font-bold">Account: {profile.username || "No username"}</h1>
 		<UUID uuid={profile.id}></UUID>
+		<p class="nv-dim">
+			Role: <b class="text-(--tn-fg)">{profile.role}</b>{#if profile.role === "contributor"}
+				· you have community scripts{/if}
+		</p>
 	</header>
 
 	<section class="nv-float flex flex-col items-start gap-3">

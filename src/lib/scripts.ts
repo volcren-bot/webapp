@@ -28,6 +28,22 @@ export type ScriptCategory = Database["scripts"]["Enums"]["category"]
 export type ScriptStage = Database["scripts"]["Enums"]["stage"]
 export type ScriptType = Database["scripts"]["Enums"]["type"]
 
+export type Role = Database["profiles"]["Enums"]["roles"]
+
+/** `profiles.roles`, lowest to highest. */
+const ROLES: readonly Role[] = Constants.profiles.Enums.roles
+
+export const roleAtLeast = (role: string | null | undefined, minimum: Role) => {
+	const rank = ROLES.indexOf(role as Role)
+	return rank >= 0 && rank >= ROLES.indexOf(minimum)
+}
+
+/** A script by someone below scripter is a community script (scripts.author_is_community). */
+export const isCommunityRole = (role: string | null | undefined) => !roleAtLeast(role, "scripter")
+
+/** Byte sizes of the community limits as megabytes, e.g. "12.5". */
+export const megabytes = (bytes: number) => (bytes / 1024 / 1024).toFixed(1)
+
 export const CATEGORIES = Constants.scripts.Enums.category
 export const STAGES = Constants.scripts.Enums.stage
 export const TYPES = Constants.scripts.Enums.type

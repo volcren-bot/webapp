@@ -2,6 +2,7 @@
 	import { fmt } from "#lib/format.svelte.js"
 	import Head from "#lib/components/Head.svelte"
 	import { enhance } from "$app/forms"
+	import { Constants } from "#lib/types/supabase"
 
 	const { data, form } = $props()
 </script>
@@ -17,7 +18,7 @@
 	<form class="nv-float flex flex-col gap-3" method="POST" action="?/adjust" use:enhance>
 		<span class="nv-title">adjustment</span>
 
-		{#if form?.message && !("login" in form) && !("ban" in form)}
+		{#if form?.message && !("login" in form) && !("ban" in form) && !("document" in form)}
 			<small class={form.ok ? "text-success-400" : "text-error-400"}>{form.message}</small>
 		{/if}
 
@@ -81,6 +82,34 @@
 			<button type="submit" class="btn" formaction="?/ban">ban</button>
 			<button type="submit" class="btn" formaction="?/unban">unban</button>
 		</div>
+	</form>
+
+	<form class="nv-float flex flex-col gap-3" method="POST" action="?/publishDocument" use:enhance>
+		<span class="nv-title">publish a document</span>
+		<p class="nv-dim">
+			Adds a new version in markdown; published versions can't be edited. A new <b>scripter_tos</b> or
+			<b>community_tos</b> version asks every script creator to accept it again before they can create scripts,
+			upload revisions or generate share codes. Their existing scripts keep running.
+		</p>
+
+		{#if form?.message && "document" in form}
+			<small class={"ok" in form ? "text-success-400" : "text-error-400"}>{form.message}</small>
+		{/if}
+
+		<label class="label">
+			<span class="label-text">document</span>
+			<select class="input" name="kind" required>
+				{#each Constants.info.Enums.kind as kind (kind)}
+					<option value={kind} selected={kind === "community_tos"}>{kind}</option>
+				{/each}
+			</select>
+		</label>
+		<label class="label">
+			<span class="label-text">content (markdown)</span>
+			<textarea class="input min-h-48 font-mono" name="content" maxlength="200000" required></textarea>
+		</label>
+
+		<button type="submit" class="btn mt-1 self-start">publish</button>
 	</form>
 
 	{#if data.bans.length}

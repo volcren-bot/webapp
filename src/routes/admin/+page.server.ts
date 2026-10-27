@@ -1,6 +1,9 @@
 import { fail, redirect, type RequestEvent } from "@sveltejs/kit"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
+import { Constants } from "#lib/types/supabase"
+
+const MAX_DOCUMENT_CHARS = 200_000
 
 export const load = async ({ locals: { user, getProfile } }) => {
 	if (!user) redirect(303, "/auth")
@@ -122,6 +125,35 @@ async function setBanned(banned: boolean, { request, locals: { user, getProfile 
 }
 
 export const actions = {
+	// Publishes a new version of a legal document. Versions are immutable, and a new scripter_tos or
+	// community_tos version asks every creator to accept it again before they can upload.
+	publishDocument: async ({ request, locals: { user, getProfile, supabaseServer } }) => {
+		if (!user) return fail(401, { message: "You need to login.", document: true })
+		const profile = await getProfile()
+		if (profile?.role !== "administrator")
+			return fail(403, { message: "Administrators only.", document: true })
+
+		const data = await request.formData()
+		const kind = Constants.info.Enums.kind.find((k) => k === data.get("kind"))
+		const content = String(data.get("content") ?? "").trim()
+		if (!kind) return fail(400, { message: "Pick a document.", document: true })
+		if (!content) return fail(400, { message: "The document is empty.", document: true })
+		if (content.length > MAX_DOCUMENT_CHARS)
+			return fail(400, { message: "The document is too long.", document: true })
+
+		// The version number is assigned by a trigger, so the generated type's required `version` is cast away.
+		// Row level security lets only administrators insert.
+		const { error: err } = await supabaseServer
+			.schema("info")
+			.from("documents")
+			.insert({ kind, content } as { kind: typeof kind; content: string; version: number })
+		if (err?.code === "42501") return fail(403, { message: "Administrators only.", document: true })
+		if (err) return fail(500, { message: errorRef("Could not publish the document", err), document: true })
+
+		console.log(`Admin ${user.id} published a new ${kind}`)
+		return { message: `Published a new version of ${kind}.`, ok: true, document: true }
+	},
+
 	ban: (event) => setBanned(true, event),
 	unban: (event) => setBanned(false, event),
 

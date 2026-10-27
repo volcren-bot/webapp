@@ -33,9 +33,15 @@
 			const created = await supabase
 				.schema("scripts")
 				.from("versions")
-				// Clients may only insert id + files (column grants); a trigger assigns the revision, so the
-				// generated type's required `revision` is cast away. Sending it would be a 403.
-				.insert({ id, files: files.map((f) => f.name) } as { id: string; files: string[]; revision: number })
+				// Clients may only insert id, files and sizes (column grants); a trigger assigns the revision, so the
+				// generated type's required `revision` is cast away. Sending it would be a 403. Community authors
+				// are capped on storage, so the sizes are how the database knows what is coming.
+				.insert({ id, files: files.map((f) => f.name), sizes: files.map((f) => f.size) } as {
+					id: string
+					files: string[]
+					sizes: number[]
+					revision: number
+				})
 				.select("revision")
 				.single()
 			if (created.error) throw created.error

@@ -6,5 +6,6 @@ export const informationPages = [
 
 export const termsPages = [
 	{ key: "u", href: "/information/terms/users", label: "User terms of service" },
-	{ key: "s", href: "/information/terms/scripters", label: "Scripter terms of service" }
+	{ key: "s", href: "/information/terms/scripters", label: "Scripter terms of service" },
+	{ key: "c", href: "/information/terms/community", label: "Community scripts addendum" }
 ]

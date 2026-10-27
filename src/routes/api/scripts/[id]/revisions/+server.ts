@@ -43,12 +43,19 @@ export const POST = async ({ request, params }) => {
 	// A trigger assigns the revision, so the generated type's required `revision` is cast away (see RevisionUpload)
 	const created = await scripts
 		.from("versions")
-		.insert({ id: params.id, files: names } as { id: string; files: string[]; revision: number })
+		.insert({ id: params.id, files: names, sizes: files.map((file) => file.size) } as {
+			id: string
+			files: string[]
+			sizes: number[]
+			revision: number
+		})
 		.select("revision")
 		.single()
 	if (created.error?.code === "23505") {
 		error(409, "Another revision of this script is still pending. Discard it before uploading a new one.")
 	}
+	// 23514: a community author's storage is full
+	if (created.error?.code === "23514") error(413, created.error.message)
 	if (created.error) error(500, errorRef("Could not create the revision", created.error))
 
 	const revision = created.data.revision

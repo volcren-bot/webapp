@@ -2,10 +2,15 @@ import { error, fail, redirect } from "@sveltejs/kit"
 import { message, superValidate } from "sveltekit-superforms"
 import { zod4 } from "sveltekit-superforms/adapters"
 import { scriptSchema } from "#lib/schemas"
+import { roleAtLeast } from "#lib/scripts"
 import { newDeployToken } from "#lib/server/deploy.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
+import { hasAcceptedTerms } from "#lib/server/terms.server"
 import { one } from "#lib/utils"
+
+/** Share codes expire after 1 to this many days (scripts.config.max_share_code_days, which enforces it). */
+const MAX_CODE_DAYS = 30
 
 export const load = async ({ params, locals: { supabaseServer, user, getProfile } }) => {
 	const scripts = supabaseServer.schema("scripts")
@@ -15,7 +20,7 @@ export const load = async ({ params, locals: { supabaseServer, user, getProfile 
 	const { data: script } = await scripts
 		.from("scripts")
 		.select(
-			"id, url, title, description, content, published, metadata(type, categories, stage, price), protected(author, revision, created_at, updated_at)"
+			"id, url, title, description, content, published, is_community, is_granted, author_banned, metadata(type, categories, stage, price), protected(author, revision, created_at, updated_at)"
 		)
 		.eq("url", params.url)
 		.maybeSingle()
@@ -35,25 +40,42 @@ export const load = async ({ params, locals: { supabaseServer, user, getProfile 
 
 	const profile = await profilePromise
 	const own = user != null && info.author === user.id
-	const canEdit = own || (profile != null && ["moderator", "administrator"].includes(profile.role))
+	const staff = roleAtLeast(profile?.role, "moderator")
+	const canEdit = own || staff
+	const community = script.is_community === true
 
-	const [{ data: author }, { data: versions }, { data: tokens }] = await Promise.all([
-		scripts.rpc("get_authors", { script_ids: [script.id] }).maybeSingle(),
-		canEdit
-			? scripts
-					.from("versions")
-					.select("revision, status, files, created_at, published_at")
-					.eq("id", script.id)
-					.order("revision", { ascending: false })
-			: Promise.resolve({ data: [] }),
-		canEdit
-			? scripts
-					.from("deploy_tokens")
-					.select("id, name, created_at, last_used_at")
-					.eq("script_id", script.id)
-					.order("created_at")
-			: Promise.resolve({ data: [] })
-	])
+	const [{ data: author }, { data: versions }, { data: tokens }, termsAccepted, codes, grantees, usageRes] =
+		await Promise.all([
+			scripts.rpc("get_authors", { script_ids: [script.id] }).maybeSingle(),
+			canEdit
+				? scripts
+						.from("versions")
+						.select("revision, status, files, created_at, published_at")
+						.eq("id", script.id)
+						.order("revision", { ascending: false })
+				: Promise.resolve({ data: [] }),
+			canEdit
+				? scripts
+						.from("deploy_tokens")
+						.select("id, name, created_at, last_used_at")
+						.eq("script_id", script.id)
+						.order("created_at")
+				: Promise.resolve({ data: [] }),
+			// Share codes need the same terms as publishing; the pages show a notice instead of the tools
+			canEdit && user ? hasAcceptedTerms(supabaseServer, user.id) : Promise.resolve(true),
+			canEdit
+				? scripts
+						.from("share_codes")
+						.select("id, created_at, expires_at")
+						.eq("script_id", script.id)
+						.is("redeemed_at", null)
+						.gt("expires_at", new Date().toISOString())
+						.order("expires_at")
+				: Promise.resolve({ data: [] }),
+			canEdit ? scripts.rpc("list_grantees", { p_script: script.id }) : Promise.resolve({ data: [] }),
+			// The author's use of the community limits, shown next to the uploader
+			own && community ? scripts.rpc("get_community_usage").maybeSingle() : Promise.resolve({ data: null })
+		])
 
 	return {
 		script: {
@@ -66,12 +88,30 @@ export const load = async ({ params, locals: { supabaseServer, user, getProfile 
 			revision: info.revision,
 			createdAt: info.created_at,
 			updatedAt: info.updated_at,
-			author: author?.username ?? "unknown"
+			author: author?.username ?? "unknown",
+			community,
+			granted: script.is_granted === true,
+			authorBanned: script.author_banned === true
 		},
 		canEdit,
-		canDelete: profile?.role === "administrator",
+		canDelete: staff,
+		termsAccepted,
+		usage: usageRes.data
+			? {
+					scripts: usageRes.data.script_count,
+					maxScripts: usageRes.data.max_scripts,
+					bytes: usageRes.data.used_bytes,
+					maxBytes: usageRes.data.max_bytes
+				}
+			: null,
 		versions: versions ?? [],
 		tokens: tokens ?? [],
+		codes: codes.data ?? [],
+		grantees: (grantees.data ?? []).map((g) => ({
+			userId: g.user_id,
+			username: g.username,
+			grantedAt: g.granted_at
+		})),
 		form: canEdit
 			? await superValidate(
 					{
@@ -179,10 +219,86 @@ export const actions = {
 		return { tokenMessage: "Token revoked." }
 	},
 
+	// A code is returned once, here; only its hash is stored. The database checks who may create one.
+	createCode: async ({ request, params, locals: { user, supabaseServer } }) => {
+		if (!user) return fail(401, { codeError: "You need to login." })
+		const days = Number((await request.formData()).get("days"))
+		if (!Number.isInteger(days) || days < 1 || days > MAX_CODE_DAYS)
+			return fail(400, { codeError: `Pick an expiry between 1 and ${MAX_CODE_DAYS} days.` })
+
+		const scripts = supabaseServer.schema("scripts")
+		const { data: script } = await scripts.from("scripts").select("id").eq("url", params.url).maybeSingle()
+		if (!script) return fail(404, { codeError: "Script not found." })
+
+		// A minute short of the limit, so a clock a little ahead of the database's can't overshoot it
+		const expires = new Date(Date.now() + days * 86_400_000 - 60_000)
+		const { data, error: err } = await scripts.rpc("create_share_code", {
+			p_script: script.id,
+			p_expires_at: expires.toISOString()
+		})
+		if (err?.code === "42501")
+			return fail(403, {
+				codeError: "You can't create codes for this script. Accept the current terms first."
+			})
+		if (err?.code === "23514") return fail(400, { codeError: err.message })
+		if (err) return fail(500, { codeError: errorRef("Could not create the code", err) })
+
+		return { code: data[0].code, codeExpires: data[0].expires_at }
+	},
+
+	// Only unredeemed codes can be revoked; RLS limits it to whoever manages the script.
+	revokeCode: async ({ request, params, locals: { user, supabaseServer } }) => {
+		if (!user) return fail(401, { codeError: "You need to login." })
+		const id = String((await request.formData()).get("id") ?? "")
+
+		const scripts = supabaseServer.schema("scripts")
+		const { data: script } = await scripts.from("scripts").select("id").eq("url", params.url).maybeSingle()
+		if (!script) return fail(404, { codeError: "Script not found." })
+
+		const { data, error: err } = await scripts
+			.from("share_codes")
+			.delete()
+			.eq("id", id)
+			.eq("script_id", script.id)
+			.is("redeemed_at", null)
+			.select("id")
+		if (err) return fail(500, { codeError: errorRef("Could not revoke the code", err) })
+		if (!data.length) return fail(404, { codeError: "Code not found." })
+
+		return { codeMessage: "Code revoked." }
+	},
+
+	// Whoever manages the script revokes anyone's access; a recipient removes their own (RLS decides).
+	revokeGrant: async ({ request, params, locals: { user, supabaseServer } }) => {
+		if (!user) return fail(401, { grantError: "You need to login." })
+		const userId = String((await request.formData()).get("user") ?? "")
+
+		const scripts = supabaseServer.schema("scripts")
+		const { data: script } = await scripts.from("scripts").select("id").eq("url", params.url).maybeSingle()
+		if (!script) return fail(404, { grantError: "Script not found." })
+
+		const { data, error: err } = await scripts
+			.from("grants")
+			.delete()
+			.eq("script_id", script.id)
+			.eq("user_id", userId)
+			.select("user_id")
+		if (err) return fail(500, { grantError: errorRef("Could not remove the access", err) })
+		if (!data.length) return fail(404, { grantError: "Nothing to remove." })
+
+		// A recipient who removed their own access can no longer open the page
+		if (
+			userId === user.id &&
+			!(await scripts.from("scripts").select("id").eq("id", script.id).maybeSingle()).data
+		)
+			redirect(303, "/scripts")
+		return { grantMessage: "Access removed." }
+	},
+
 	delete: async ({ request, params, locals: { user, getProfile, supabaseServer } }) => {
 		if (!user) return fail(401, { message: "You need to login." })
-		if ((await getProfile())?.role !== "administrator")
-			return fail(403, { message: "Only administrators can delete scripts." })
+		if (!roleAtLeast((await getProfile())?.role, "moderator"))
+			return fail(403, { message: "Only moderators and administrators can delete scripts." })
 		if ((await request.formData()).get("confirm") !== params.url)
 			return fail(400, { message: "Type the script's url to confirm the delete." })
 
@@ -222,7 +338,7 @@ async function listObjects(
 	return paths
 }
 
-/** Removes the script everywhere: bucket files, stats, bundle entries and its rows. Administrators only. */
+/** Removes the script everywhere: bucket files, stats, bundle entries and its rows. Moderators and administrators only. */
 async function deleteScript(id: string) {
 	const admin = supabaseAdmin()
 

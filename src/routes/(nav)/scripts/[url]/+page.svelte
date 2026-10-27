@@ -4,6 +4,8 @@
 	import Head from "#lib/components/Head.svelte"
 	import UUID from "#lib/components/UUID.svelte"
 	import RevisionUpload from "./RevisionUpload.svelte"
+	import ShareCodes from "./ShareCodes.svelte"
+	import ScriptBadges from "#lib/components/ScriptBadges.svelte"
 	import Lock from "@lucide/svelte/icons/lock"
 	import LockOpen from "@lucide/svelte/icons/lock-open"
 	import User from "@lucide/svelte/icons/user"
@@ -13,7 +15,7 @@
 	import FileCode from "@lucide/svelte/icons/file-code"
 	import Hash from "@lucide/svelte/icons/hash"
 	import Coins from "@lucide/svelte/icons/coins"
-	import { CATEGORY_ICONS, STAGE_COLORS } from "#lib/scripts"
+	import { CATEGORY_ICONS, STAGE_COLORS, megabytes } from "#lib/scripts"
 	import { metaDescription } from "#lib/utils"
 	import { page } from "$app/state"
 
@@ -39,6 +41,11 @@
 		<h1 class="text-2xl font-bold">{script.title}</h1>
 		<p class="nv-dim">{script.description}</p>
 		<div class="mt-3 flex flex-wrap items-center gap-2 text-sm">
+			<ScriptBadges
+				community={script.community}
+				granted={script.granted}
+				authorBanned={script.authorBanned}
+			/>
 			<span class="nv-pill" style="color: {STAGE_COLORS[script.stage]}">{script.stage}</span>
 			{#each script.categories as category (category)}
 				{@const Icon = CATEGORY_ICONS[category]}
@@ -47,11 +54,39 @@
 					{category}
 				</span>
 			{/each}
-			{#if !script.published}
+			{#if !script.community && !script.published}
 				<span class="nv-pill nv-dim flex items-center gap-1"><EyeOff class="size-4 shrink-0" /> hidden</span>
 			{/if}
 		</div>
 	</header>
+
+	{#if script.community}
+		<aside class="nv-float flex flex-col gap-1 border-(--tn-orange)">
+			<span class="nv-title text-(--tn-orange)">community script</span>
+			<p>
+				Written by a community member, not by the Volcren team, and not reviewed by staff. It runs inside your
+				game client: only run scripts from people you trust. The loader asks you to confirm before it runs
+				one.
+			</p>
+		</aside>
+	{/if}
+
+	{#if script.granted}
+		<form
+			method="POST"
+			action="?/revokeGrant"
+			class="flex flex-wrap items-center gap-3"
+			use:enhance={({ cancel }) => {
+				if (!confirm("Remove this script from your account? You'll need a new share code to get it back."))
+					cancel()
+			}}
+		>
+			<span class="nv-dim">This script was shared with you.</span>
+			<input type="hidden" name="user" value={data.user} />
+			<button type="submit" class="btn btn-danger">remove from my account</button>
+			{#if result?.grantError}<small class="text-error-400">{result.grantError}</small>{/if}
+		</form>
+	{/if}
 
 	<div class="flex flex-col gap-6 md:flex-row">
 		<aside class="nv-float w-full shrink-0 md:w-64">
@@ -96,38 +131,64 @@
 	</div>
 
 	{#if data.canEdit && data.form}
-		<form
-			method="POST"
-			action="?/publish"
-			class="nv-float flex flex-wrap items-center justify-between gap-3"
-			use:enhance={() =>
-				async ({ update }) =>
-					update({ reset: false })}
-		>
-			<span class="nv-title">visibility</span>
-			<p class="flex items-center gap-2">
-				{#if script.published}<Eye class="size-4 shrink-0" /> Public{:else}<EyeOff class="size-4 shrink-0" /> Hidden{/if}
-				<span class="nv-dim">
-					{script.published
-						? "Everyone allowed by its stage can see it."
-						: "Only you and moderators can see it."}
-				</span>
-			</p>
-			<input type="hidden" name="published" value={String(!script.published)} />
-			<button type="submit" class="btn">{script.published ? "hide" : "publish"}</button>
-			{#if page.form?.message && !page.form?.form}
-				<small
-					class="w-full {result?.message?.includes("can't") || result?.message?.includes('Could not')
-						? 'text-error-400'
-						: 'text-success-400'}">{result?.message}</small
-				>
-			{/if}
-		</form>
+		{#if script.community}
+			<div class="nv-float">
+				<span class="nv-title">visibility</span>
+				<p class="nv-dim">
+					A community script is visible to you, testers and moderators, and to anyone you give a share code.
+					Its stage is only a label.
+				</p>
+			</div>
+		{:else}
+			<form
+				method="POST"
+				action="?/publish"
+				class="nv-float flex flex-wrap items-center justify-between gap-3"
+				use:enhance={() =>
+					async ({ update }) =>
+						update({ reset: false })}
+			>
+				<span class="nv-title">visibility</span>
+				<p class="flex items-center gap-2">
+					{#if script.published}<Eye class="size-4 shrink-0" /> Public{:else}<EyeOff
+							class="size-4 shrink-0"
+						/> Hidden{/if}
+					<span class="nv-dim">
+						{script.published
+							? "Everyone allowed by its stage can see it."
+							: "Only you and moderators can see it."}
+					</span>
+				</p>
+				<input type="hidden" name="published" value={String(!script.published)} />
+				<button type="submit" class="btn">{script.published ? "hide" : "publish"}</button>
+				{#if page.form?.message && !page.form?.form}
+					<small
+						class="w-full {result?.message?.includes("can't") || result?.message?.includes('Could not')
+							? 'text-error-400'
+							: 'text-success-400'}">{result?.message}</small
+					>
+				{/if}
+			</form>
+		{/if}
 
 		<div class="nv-float flex flex-col gap-3">
 			<span class="nv-title">revisions</span>
 			<p class="nv-dim">Uploading creates a new revision and makes it live once every file is stored.</p>
-			<RevisionUpload id={script.id} />
+			{#if data.usage}
+				<p class="nv-dim">
+					Storage: {megabytes(data.usage.bytes)} of {megabytes(data.usage.maxBytes)} MB used by all your revisions,
+					old ones included. Scripts: {data.usage.scripts} of {data.usage.maxScripts}.
+				</p>
+			{/if}
+			{#if data.termsAccepted}
+				<RevisionUpload id={script.id} />
+			{:else}
+				<p class="text-(--tn-orange)">
+					Accept the current <a href="/account/terms?next={encodeURIComponent(page.url.pathname)}"
+						>creator terms</a
+					> to upload revisions.
+				</p>
+			{/if}
 
 			{#if data.versions.length}
 				<ul class="mt-1 flex flex-col gap-1 border-t border-(--tn-bg-hl) pt-3 text-sm">
@@ -204,6 +265,8 @@
 				></pre>
 		</div>
 
+		<ShareCodes codes={data.codes} grantees={data.grantees} {result} accepted={data.termsAccepted} />
+
 		<!-- Loaded only for editors, so visitors don't download the form and validation code -->
 		{#await import("#lib/components/ScriptWizard.svelte") then { default: ScriptWizard }}
 			<ScriptWizard
@@ -215,6 +278,7 @@
 				confirm="Save these changes?"
 				progress="Saving changes..."
 				minStage={script.stage}
+				community={script.community}
 			/>
 		{/await}
 	{/if}
@@ -231,7 +295,8 @@
 		>
 			<span class="nv-title">delete</span>
 			<p class="nv-dim w-full">
-				Permanently removes the script, every revision file and its stats. This can't be undone. Type
+				Permanently removes the script, every revision file, its share codes and its stats. This can't be
+				undone. The author can't do this themselves. Type
 				<b>{page.params.url}</b> to confirm.
 			</p>
 			<input name="confirm" class="input" autocomplete="off" placeholder={page.params.url} />

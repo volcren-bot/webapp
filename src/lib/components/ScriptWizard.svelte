@@ -16,7 +16,8 @@
 		progress,
 		fresh = false,
 		boxed = false,
-		minStage = "prototype"
+		minStage = "prototype",
+		community = false
 	}: {
 		data: SuperValidated<Infer<typeof scriptSchema>>
 		action?: string
@@ -34,6 +35,8 @@
 		boxed?: boolean
 		/** Stages only move forward, so the stages before the current one are not offered. */
 		minStage?: (typeof STAGES)[number]
+		/** Community scripts are never premium, so the type and price are not asked. */
+		community?: boolean
 	} = $props()
 
 	const { form, enhance, submit, message } = superForm(
@@ -74,13 +77,13 @@
 			kind: "text",
 			hint: "What it does, setup, requirements. Shift+Enter for a new line."
 		},
-		{ key: "type", label: "Script type:", kind: "single", options: TYPES },
+		{ key: "type", label: "Script type:", kind: "single", options: TYPES, skip: () => community },
 		{
 			key: "price",
 			label: "Price (credits per minute):",
 			kind: "text",
 			hint: `${fmt.credits(1)} to ${fmt.credits(MAX_PRICE)}, whole numbers.`,
-			skip: () => $form.type === "free"
+			skip: () => community || $form.type === "free"
 		},
 		{
 			key: "stage",
@@ -193,11 +196,7 @@
 	function accept(value: string | number | string[]) {
 		const s = current
 		const shown =
-			s.key === "price"
-				? fmt.price(Number(value))
-				: Array.isArray(value)
-					? value.join(", ") || "none"
-					: value
+			s.key === "price" ? fmt.price(Number(value)) : Array.isArray(value) ? value.join(", ") || "none" : value
 		say(`${s.label} ${shown}`)
 		;($form as Record<string, unknown>)[s.key] = value
 		if (s.key === "type") $form.price = value === "free" ? 0 : Math.max(1, $form.price)
@@ -294,7 +293,7 @@
 
 	// Keep the newest line in view as the screen fills up.
 	$effect(() => {
-		lines.length
+		void lines.length
 		tick().then(() => screen && (screen.scrollTop = screen.scrollHeight))
 	})
 
@@ -349,7 +348,6 @@
 							<span class="caret" aria-hidden="true">&gt;</span> <span class="nv-cursor"></span>
 						</div>
 					{:else}
-						<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 						<div
 							class="options"
 							role="listbox"

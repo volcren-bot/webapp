@@ -7,15 +7,15 @@
 
 	const { profile } = $derived(page.data)
 
-	// Children only scripters (and staff) may open; hidden from everyone else.
-	const SCRIPTER_ONLY = ["scripts/new"]
-	const isScripter = $derived(!!profile && ["scripter", "moderator", "administrator"].includes(profile.role))
+	// Children only signed in users may open (anyone can write a community script once they accept the terms).
+	const MEMBER_ONLY = ["scripts/new"]
+	const isMember = $derived(!!profile)
 
 	// Scripts the user can see are listed under /scripts, after "new" when they may create one.
 	function visibleChildren(route: string) {
 		const name = route.toLowerCase()
 		const children = (NAV_CHILDREN[name] ?? []).filter(
-			(c) => isScripter || !SCRIPTER_ONLY.includes(`${name}/${c}`)
+			(c) => isMember || !MEMBER_ONLY.includes(`${name}/${c}`)
 		)
 		if (name !== "scripts") return children
 		const urls = new Set(children)
@@ -86,7 +86,7 @@
 	// Pages nested two levels down, keyed by "parent/child". Listed by id.
 	const LEAVES: Record<string, string[]> = {
 		"information/faq": faqs.map((f) => f.id),
-		"information/terms": ["users", "scripters"]
+		"information/terms": ["users", "scripters", "community"]
 	}
 
 	function guide(parentLast: boolean, last: boolean) {

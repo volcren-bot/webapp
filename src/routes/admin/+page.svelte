@@ -2,14 +2,129 @@
 	import { fmt } from "#lib/format.svelte.js"
 	import Head from "#lib/components/Head.svelte"
 	import { enhance } from "$app/forms"
+	import { untrack } from "svelte"
 	import { Constants } from "#lib/types/supabase"
 
 	const { data, form } = $props()
+
+	type Suggestion = { id: string; username: string; avatar: string }
+
+	let query = $state(untrack(() => data.search))
+	let suggestions = $state<Suggestion[]>([])
+	let more = $state(false)
+	let timer: ReturnType<typeof setTimeout>
+	let controller: AbortController | undefined
+
+	let documentKind = $state("community_tos")
+	let documentContent = $state("")
+	let documentStatus = $state("")
+	let loadingDocument = $state(false)
+
+	async function loadLatest() {
+		loadingDocument = true
+		documentStatus = ""
+		try {
+			const res = await fetch(`/admin/documents?kind=${encodeURIComponent(documentKind)}`)
+			if (!res.ok) {
+				documentStatus = "Could not load the document."
+				return
+			}
+			const body = await res.json()
+			if (body.version === null) {
+				documentStatus = `No published version of ${documentKind} yet.`
+				return
+			}
+			documentContent = body.content
+			documentStatus = `Loaded v${body.version}.`
+		} catch {
+			documentStatus = "Could not load the document."
+		} finally {
+			loadingDocument = false
+		}
+	}
+
+	// Waits for a pause in typing and drops stale requests, so a fast typist sends few queries
+	function search() {
+		clearTimeout(timer)
+		controller?.abort()
+		const q = query.trim()
+		if (q.length < 2) {
+			suggestions = []
+			more = false
+			return
+		}
+		timer = setTimeout(async () => {
+			controller = new AbortController()
+			try {
+				const res = await fetch(`/admin/users?q=${encodeURIComponent(q)}`, { signal: controller.signal })
+				if (!res.ok) return
+				const body = await res.json()
+				suggestions = body.users
+				more = body.more
+			} catch {
+				// aborted by a newer keystroke, or offline
+			}
+		}, 250)
+	}
 </script>
 
 <Head title="Admin" description="Adjust credits, log in as users and ban accounts." noindex />
 
 <section class="mx-auto my-8 flex w-full max-w-3xl flex-col gap-6">
+	<form class="nv-float flex flex-col gap-3" method="GET">
+		<span class="nv-title">find user</span>
+		<label class="label">
+			<span class="label-text">username or UUID</span>
+			<input
+				class="input"
+				name="user"
+				bind:value={query}
+				oninput={search}
+				maxlength="64"
+				autocomplete="off"
+				required
+			/>
+		</label>
+
+		{#if suggestions.length}
+			<ul class="flex flex-col gap-1">
+				{#each suggestions as s (s.id)}
+					<li>
+						<a class="underline" href="?user={s.id}">{s.username}</a>
+						<span class="nv-dim">({s.id})</span>
+					</li>
+				{/each}
+			</ul>
+		{:else if more}
+			<small class="nv-dim">More than 5 matches, keep typing.</small>
+		{/if}
+
+		<button type="submit" class="btn self-start">search</button>
+	</form>
+
+	{#if data.inspected}
+		{@const u = data.inspected}
+		<section class="nv-float flex flex-col gap-1">
+			<span class="nv-title">{u.username}</span>
+			<span><span class="nv-dim">UUID</span> {u.id}</span>
+			<span><span class="nv-dim">email</span> {u.email ?? "none"}</span>
+			<span><span class="nv-dim">role</span> {u.role}</span>
+			<span><span class="nv-dim">joined</span> {fmt.dateTime(u.created_at)}</span>
+			<span><span class="nv-dim">credits</span> {fmt.credits(u.credits)}</span>
+			<span><span class="nv-dim">earnings</span> {fmt.credits(u.earnings)}</span>
+			<span>
+				<span class="nv-dim">status</span>
+				{#if u.banned_at}
+					<span class="text-error-400">banned {fmt.dateTime(u.banned_at)}</span>
+				{:else}
+					<span class="text-success-400">active</span>
+				{/if}
+			</span>
+		</section>
+	{:else if data.search}
+		<small class="text-error-400">No user matches "{data.search}".</small>
+	{/if}
+
 	<header>
 		<h1 class="text-2xl font-bold">Adjust credits</h1>
 		<p class="nv-dim">Every change is recorded with your name and the note.</p>
@@ -98,18 +213,24 @@
 
 		<label class="label">
 			<span class="label-text">document</span>
-			<select class="input" name="kind" required>
+			<select class="input" name="kind" bind:value={documentKind} required>
 				{#each Constants.info.Enums.kind as kind (kind)}
-					<option value={kind} selected={kind === "community_tos"}>{kind}</option>
+					<option value={kind}>{kind}</option>
 				{/each}
 			</select>
 		</label>
 		<label class="label">
 			<span class="label-text">content (markdown)</span>
-			<textarea class="input min-h-48 font-mono" name="content" maxlength="200000" required></textarea>
+			<textarea class="input min-h-48 font-mono" name="content" maxlength="200000" bind:value={documentContent} required></textarea>
 		</label>
 
-		<button type="submit" class="btn mt-1 self-start">publish</button>
+		<div class="mt-1 flex items-center gap-2">
+			<button type="submit" class="btn">publish</button>
+			<button type="button" class="btn" onclick={loadLatest} disabled={loadingDocument}>
+				load latest version
+			</button>
+			{#if documentStatus}<small class="nv-dim">{documentStatus}</small>{/if}
+		</div>
 	</form>
 
 	{#if data.bans.length}

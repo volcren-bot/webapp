@@ -112,30 +112,33 @@
 		</ul>
 	{/if}
 
-	<span class="nv-title mt-2">people with access</span>
-	{#if grantees.length}
-		<ul class="flex flex-col gap-1 text-sm">
-			{#each grantees as grantee (grantee.userId)}
-				<li class="flex flex-wrap items-center gap-x-3">
-					<span class="font-bold">{grantee.username}</span>
-					<span class="nv-dim">since {fmt.date(grantee.grantedAt)}</span>
-					<form
-						method="POST"
-						action="?/revokeGrant"
-						class="ml-auto"
-						use:enhance={({ cancel }) => {
-							if (!confirm(`Take ${grantee.username}'s access away? Their code stays used.`)) cancel()
-						}}
-					>
-						<input type="hidden" name="user" value={grantee.userId} />
-						<button type="submit" class="btn btn-danger">remove access</button>
-					</form>
-				</li>
-			{/each}
-		</ul>
-	{:else}
-		<p class="nv-dim">Nobody has redeemed a code for this script yet.</p>
-	{/if}
-	{#if result?.grantError}<small class="text-error-400">{result.grantError}</small>{/if}
-	{#if result?.grantMessage}<small class="text-success-400">{result.grantMessage}</small>{/if}
+	<!-- Not a direct child of .nv-float, which would pin this title to the window border over "share codes" -->
+	<div class="mt-2 flex flex-col gap-3">
+		<span class="nv-title self-start">people with access</span>
+		{#if grantees.length}
+			<ul class="flex flex-col gap-1 text-sm">
+				{#each grantees as grantee (grantee.userId)}
+					<li class="flex flex-wrap items-center gap-x-3">
+						<span class="font-bold">{grantee.username}</span>
+						<span class="nv-dim">since {fmt.date(grantee.grantedAt)}</span>
+						<form
+							method="POST"
+							action="?/revokeGrant"
+							class="ml-auto"
+							use:enhance={({ cancel }) => {
+								if (!confirm(`Take ${grantee.username}'s access away? Their code stays used.`)) cancel()
+							}}
+						>
+							<input type="hidden" name="user" value={grantee.userId} />
+							<button type="submit" class="btn btn-danger">remove access</button>
+						</form>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="nv-dim">Nobody has redeemed a code for this script yet.</p>
+		{/if}
+		{#if result?.grantError}<small class="text-error-400">{result.grantError}</small>{/if}
+		{#if result?.grantMessage}<small class="text-success-400">{result.grantMessage}</small>{/if}
+	</div>
 </div>

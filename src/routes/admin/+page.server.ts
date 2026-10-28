@@ -4,8 +4,9 @@ import { errorRef } from "#lib/server/supabase.server"
 import { Constants } from "#lib/types/supabase"
 
 const MAX_DOCUMENT_CHARS = 200_000
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-export const load = async ({ locals: { user, getProfile } }) => {
+export const load = async ({ url, locals: { user, getProfile } }) => {
 	if (!user) redirect(303, "/auth")
 	const profile = await getProfile()
 	if (profile?.role !== "administrator") redirect(303, "/")
@@ -44,7 +45,38 @@ export const load = async ({ locals: { user, getProfile } }) => {
 		: { data: [] }
 	const names = new Map((profiles ?? []).map((p) => [p.id, p.username]))
 
+	// A user to inspect: a UUID, or an exact username
+	const search = (url.searchParams.get("user") ?? "").trim().slice(0, 64)
+	let inspected = null
+	if (search) {
+		const { data: found } = await admin
+			.schema("profiles")
+			.from("profiles")
+			.select("id, username, avatar, role, banned_at, created_at")
+			.eq(UUID.test(search) ? "id" : "username", search)
+			.maybeSingle()
+		if (found) {
+			const [{ data: account }, { data: auth }] = await Promise.all([
+				admin
+					.schema("payments")
+					.from("accounts")
+					.select("credits, earnings")
+					.eq("user_id", found.id)
+					.maybeSingle(),
+				admin.auth.admin.getUserById(found.id)
+			])
+			inspected = {
+				...found,
+				credits: account?.credits ?? 0,
+				earnings: account?.earnings ?? 0,
+				email: auth.user?.email ?? null
+			}
+		}
+	}
+
 	return {
+		search,
+		inspected,
 		adjustments: (ledger ?? []).map((row) => ({
 			...row,
 			user: names.get(row.user_id) ?? row.user_id,
@@ -62,8 +94,6 @@ export const load = async ({ locals: { user, getProfile } }) => {
 		}))
 	}
 }
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // Auth takes a duration, not "forever"
 const BAN_DURATION = "876000h"

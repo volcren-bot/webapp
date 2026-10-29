@@ -18,10 +18,20 @@
 	import { CATEGORY_ICONS, STAGE_COLORS, megabytes } from "#lib/scripts"
 	import { metaDescription } from "#lib/utils"
 	import { page } from "$app/state"
+	import { SvelteURLSearchParams } from "svelte/reactivity"
 
 	const { data, form: result } = $props()
 	const script = $derived(data.script)
 	const statusColor = { live: "var(--tn-green)", pending: "var(--tn-yellow)", discarded: "var(--tn-comment)" }
+
+	// Revision pages are a query parameter, so they work without JavaScript and can be linked
+	const revisionsHref = (n: number) => {
+		const params = new SvelteURLSearchParams(page.url.search)
+		if (n > 1) params.set("revisions", String(n))
+		else params.delete("revisions")
+		const query = params.toString()
+		return query ? `?${query}` : page.url.pathname
+	}
 
 	// The Origin header gets the multipart upload past SvelteKit's CSRF check; the token is the auth
 	const deployCommand = $derived(
@@ -130,7 +140,7 @@
 		</div>
 	</div>
 
-	{#if data.canEdit && data.form}
+	{#if data.owner && data.form}
 		{#if script.community}
 			<div class="nv-float">
 				<span class="nv-title">visibility</span>
@@ -174,35 +184,56 @@
 		<div class="nv-float flex flex-col gap-3">
 			<span class="nv-title">revisions</span>
 			<p class="nv-dim">Uploading creates a new revision and makes it live once every file is stored.</p>
-			{#if data.usage}
-				<p class="nv-dim">
-					Storage: {megabytes(data.usage.bytes)} of {megabytes(data.usage.maxBytes)} MB used by all your revisions,
-					old ones included. Scripts: {data.usage.scripts} of {data.usage.maxScripts}.
-				</p>
-			{/if}
-			{#if data.termsAccepted}
-				<RevisionUpload id={script.id} />
-			{:else}
-				<p class="text-(--tn-orange)">
-					Accept the current <a href="/account/terms?next={encodeURIComponent(page.url.pathname)}"
-						>creator terms</a
-					> to upload revisions.
-				</p>
-			{/if}
+			{#await data.owner.revisions}
+				<p class="nv-dim">Loading revisions...</p>
+			{:then revisions}
+				{#if revisions.usage}
+					<p class="nv-dim">
+						Storage: {megabytes(revisions.usage.bytes)} of {megabytes(revisions.usage.maxBytes)} MB used by all
+						your revisions, old ones included. Scripts: {revisions.usage.scripts} of {revisions.usage
+							.maxScripts}.
+					</p>
+				{/if}
+				{#if revisions.termsAccepted}
+					<RevisionUpload id={script.id} />
+				{:else}
+					<p class="text-(--tn-orange)">
+						Accept the current <a href="/account/terms?next={encodeURIComponent(page.url.pathname)}"
+							>creator terms</a
+						> to upload revisions.
+					</p>
+				{/if}
 
-			{#if data.versions.length}
-				<ul class="mt-1 flex flex-col gap-1 border-t border-(--tn-bg-hl) pt-3 text-sm">
-					{#each data.versions as version (version.revision)}
-						<li class="flex flex-wrap items-baseline gap-x-3">
-							<span class="font-bold">#{version.revision}</span>
-							<span style="color: {statusColor[version.status]}">{version.status}</span>
-							<span class="nv-dim">{version.files.length} file{version.files.length === 1 ? "" : "s"}</span>
-							<span class="nv-dim">{version.files.join(", ")}</span>
-							<span class="nv-dim ml-auto">{fmt.dateTime(version.created_at)}</span>
-						</li>
-					{/each}
-				</ul>
-			{/if}
+				{#if revisions.versions.length}
+					<ul class="mt-1 flex flex-col gap-1 border-t border-(--tn-bg-hl) pt-3 text-sm">
+						{#each revisions.versions as version (version.revision)}
+							<li class="flex flex-wrap items-baseline gap-x-3">
+								<span class="font-bold">#{version.revision}</span>
+								<span style="color: {statusColor[version.status]}">{version.status}</span>
+								<span class="nv-dim">{version.files.length} file{version.files.length === 1 ? "" : "s"}</span>
+								<span class="nv-dim">{version.files.join(", ")}</span>
+								<span class="nv-dim ml-auto">{fmt.dateTime(version.created_at)}</span>
+							</li>
+						{/each}
+					</ul>
+					{@const pages = Math.ceil(revisions.total / revisions.perPage)}
+					{#if pages > 1}
+						<nav class="flex items-center justify-between text-sm" aria-label="Revision pages">
+							{#if revisions.page > 1}
+								<a href={revisionsHref(revisions.page - 1)} data-sveltekit-noscroll data-sveltekit-keepfocus
+									>← newer</a
+								>
+							{:else}<span></span>{/if}
+							<span class="nv-dim">page {revisions.page} of {pages}</span>
+							{#if revisions.page < pages}
+								<a href={revisionsHref(revisions.page + 1)} data-sveltekit-noscroll data-sveltekit-keepfocus
+									>older →</a
+								>
+							{:else}<span></span>{/if}
+						</nav>
+					{/if}
+				{/if}
+			{/await}
 		</div>
 
 		<div class="nv-float flex flex-col gap-3">
@@ -235,37 +266,51 @@
 			{#if result?.tokenError}<small class="text-error-400">{result.tokenError}</small>{/if}
 			{#if result?.tokenMessage}<small class="text-success-400">{result.tokenMessage}</small>{/if}
 
-			{#if data.tokens.length}
-				<ul class="flex flex-col gap-1 text-sm">
-					{#each data.tokens as token (token.id)}
-						<li class="flex flex-wrap items-center gap-x-3">
-							<span class="font-bold">{token.name}</span>
-							<span class="nv-dim">created {fmt.date(token.created_at)}</span>
-							<span class="nv-dim">
-								{token.last_used_at ? `last used ${fmt.dateTime(token.last_used_at)}` : "never used"}
-							</span>
-							<form
-								method="POST"
-								action="?/revokeToken"
-								class="ml-auto"
-								use:enhance={({ cancel }) => {
-									if (!confirm(`Revoke ${token.name}? Anything using it stops working.`)) cancel()
-								}}
-							>
-								<input type="hidden" name="id" value={token.id} />
-								<button type="submit" class="btn btn-danger">revoke</button>
-							</form>
-						</li>
-					{/each}
-				</ul>
-			{/if}
+			{#await data.owner.tokens then tokens}
+				{#if tokens.length}
+					<ul class="flex flex-col gap-1 text-sm">
+						{#each tokens as token (token.id)}
+							<li class="flex flex-wrap items-center gap-x-3">
+								<span class="font-bold">{token.name}</span>
+								<span class="nv-dim">created {fmt.date(token.created_at)}</span>
+								<span class="nv-dim">
+									{token.last_used_at ? `last used ${fmt.dateTime(token.last_used_at)}` : "never used"}
+								</span>
+								<form
+									method="POST"
+									action="?/revokeToken"
+									class="ml-auto"
+									use:enhance={({ cancel }) => {
+										if (!confirm(`Revoke ${token.name}? Anything using it stops working.`)) cancel()
+									}}
+								>
+									<input type="hidden" name="id" value={token.id} />
+									<button type="submit" class="btn btn-danger">revoke</button>
+								</form>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			{/await}
 
 			<p class="nv-dim">Upload a revision with it (one <code>-F</code> per file):</p>
 			<pre class="overflow-x-auto rounded-md bg-(--tn-bg-dark) px-3 py-2 text-sm"><code>{deployCommand}</code
 				></pre>
 		</div>
 
-		<ShareCodes codes={data.codes} grantees={data.grantees} {result} accepted={data.termsAccepted} />
+		{#await data.owner.sharing}
+			<div class="nv-float flex flex-col gap-3">
+				<span class="nv-title">share codes</span>
+				<p class="nv-dim">Loading share codes...</p>
+			</div>
+		{:then sharing}
+			<ShareCodes
+				codes={sharing.codes}
+				grantees={sharing.grantees}
+				{result}
+				accepted={sharing.termsAccepted}
+			/>
+		{/await}
 
 		<!-- Loaded only for editors, so visitors don't download the form and validation code -->
 		{#await import("#lib/components/ScriptWizard.svelte") then { default: ScriptWizard }}

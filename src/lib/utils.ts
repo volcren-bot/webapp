@@ -103,8 +103,3 @@ export const creditSource = (entry: { kind: string; provider: string | null }) =
 /** "1,250 credits" */
 export const formatCredits = (credits: number, locale = "en-US") =>
 	`${credits.toLocaleString(locale)} ${credits === 1 ? "credit" : "credits"}`
-
-/** PostgREST embeds one-to-one relations as an object, but the generated types describe them as arrays. */
-export function one<T>(value: T[] | T | null | undefined): T | null {
-	return Array.isArray(value) ? (value[0] ?? null) : (value ?? null)
-}

@@ -1,6 +1,8 @@
 const MAX_SIDEBAR_SCRIPTS = 100
 
 import { localeFrom } from "#lib/format.svelte.js"
+import { roleAtLeast } from "#lib/scripts"
+import { getPublicScripts } from "#lib/server/scripts.cache"
 
 export const load = async ({
 	locals: { safeGetSession, getProfile, supabaseServer },
@@ -18,22 +20,32 @@ export const load = async ({
 	const { session, user } = await safeGetSession()
 
 	// Row-level security decides which scripts this user can see. Community scripts only appear in the
-	// sidebar when they are the user's own or were shared with them, like in the script list.
+	// sidebar when they are the user's own or were shared with them, like in the script list. Testers and
+	// up see more official scripts than the public ones, so they read the database; everyone else gets
+	// the public scripts from the cache and asks the database only for their own and shared ones.
+	const profile = await getProfile()
+	const cached = roleAtLeast(profile?.role, "tester") ? null : await getPublicScripts()
 	const scriptsTable = () => supabaseServer.schema("scripts").from("scripts")
-	const [profile, official, shared, own] = await Promise.all([
-		getProfile(),
-		scriptsTable().select("url").eq("is_community", false).order("url").limit(MAX_SIDEBAR_SCRIPTS),
+	const [official, shared, own] = await Promise.all([
+		cached
+			? null
+			: scriptsTable().select("url").eq("is_community", false).order("url").limit(MAX_SIDEBAR_SCRIPTS),
 		user ? scriptsTable().select("url").eq("is_granted", true).order("url").limit(MAX_SIDEBAR_SCRIPTS) : null,
 		user
-			? scriptsTable()
-					.select("url, protected!inner(author)")
-					.eq("is_community", true)
-					.eq("protected.author", user.id)
-					.order("url")
-					.limit(MAX_SIDEBAR_SCRIPTS)
+			? (() => {
+					const query = scriptsTable()
+						.select("url, protected!inner(author)")
+						.eq("protected.author", user.id)
+						.order("url")
+						.limit(MAX_SIDEBAR_SCRIPTS)
+					return cached ? query : query.eq("is_community", true)
+				})()
 			: null
 	])
-	const urls = new Set([official, shared, own].flatMap((r) => (r?.data ?? []).map((s) => s.url)))
+	const urls = new Set([
+		...(cached ?? []).map((s) => s.url),
+		...[official, shared, own].flatMap((r) => (r?.data ?? []).map((s) => s.url))
+	])
 	const scripts = [...urls]
 		.sort((a, b) => a.localeCompare(b))
 		.slice(0, MAX_SIDEBAR_SCRIPTS)

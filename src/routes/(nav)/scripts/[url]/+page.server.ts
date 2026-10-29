@@ -4,26 +4,71 @@ import { zod4 } from "sveltekit-superforms/adapters"
 import { scriptSchema } from "#lib/schemas"
 import { roleAtLeast } from "#lib/scripts"
 import { newDeployToken } from "#lib/server/deploy.server"
+import { getPublicScript, refreshScript } from "#lib/server/scripts.cache"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
 import { hasAcceptedTerms } from "#lib/server/terms.server"
-import { one } from "#lib/utils"
+import type { Database } from "#lib/types/supabase"
 
 /** Share codes expire after 1 to this many days (scripts.config.max_share_code_days, which enforces it). */
 const MAX_CODE_DAYS = 30
 
-export const load = async ({ params, locals: { supabaseServer, user, getProfile } }) => {
-	const scripts = supabaseServer.schema("scripts")
-	// Started now so it runs alongside the script lookup instead of after it
-	const profilePromise = getProfile()
+/** Revisions listed per page of the revision history. */
+const REVISIONS_PER_PAGE = 5
+const MAX_REVISION_PAGE = 100_000
 
-	const { data: script } = await scripts
-		.from("scripts")
-		.select(
-			"id, url, title, description, content, published, is_community, is_granted, author_banned, metadata(type, categories, stage, price), protected(author, revision, created_at, updated_at)"
-		)
-		.eq("url", params.url)
-		.maybeSingle()
+type ScriptTables = Database["scripts"]["Tables"]
+
+/** The script row with its metadata and protected rows, which are one-to-one (their id is the script's). */
+type ScriptPage = Pick<
+	ScriptTables["scripts"]["Row"],
+	| "id"
+	| "url"
+	| "title"
+	| "description"
+	| "content"
+	| "published"
+	| "is_community"
+	| "is_granted"
+	| "author_banned"
+> & {
+	metadata: Pick<ScriptTables["metadata"]["Row"], "type" | "categories" | "stage" | "price"> | null
+	protected: Pick<
+		ScriptTables["protected"]["Row"],
+		"author" | "revision" | "created_at" | "updated_at"
+	> | null
+}
+
+/** Streamed data must not reject: an unhandled rejection would crash the server, so a failure shows as empty. */
+const lazy = <T>(promise: T | PromiseLike<T>, fallback: T) =>
+	Promise.resolve(promise).catch((e) => {
+		console.error(e)
+		return fallback
+	})
+
+export const load = async ({ params, url, locals: { supabaseServer, user, getProfile } }) => {
+	const scripts = supabaseServer.schema("scripts")
+	const profile = await getProfile()
+
+	// A public script comes from the cache for visitors who are neither its author nor staff. Those two
+	// read the database: they can see more than the cache holds, and an upload should show at once.
+	const hit = await getPublicScript(params.url)
+	const cached =
+		hit && hit.protected.author !== user?.id && !roleAtLeast(profile?.role, "moderator") ? hit : null
+
+	const { data: script } = cached
+		? { data: { ...cached, is_community: false, is_granted: false, author_banned: false } }
+		: await scripts
+				.from("scripts")
+				.select(
+					`id, url, title, description, content, published, is_community, is_granted, author_banned,
+			metadata(type, categories, stage, price),
+			protected(author, revision, created_at, updated_at)`
+				)
+				.eq("url", params.url)
+				.maybeSingle()
+				.overrideTypes<ScriptPage, { merge: false }>()
+
 	if (!script) {
 		// A slug from before a rename: send the visitor to the current one.
 		const { data: old } = await scripts
@@ -31,89 +76,116 @@ export const load = async ({ params, locals: { supabaseServer, user, getProfile 
 			.select("scripts(url)")
 			.eq("slug", params.url)
 			.maybeSingle()
-		const current = one(old?.scripts)?.url
+		const current = old?.scripts?.url
 		if (current && current !== params.url) redirect(301, `/scripts/${current}`)
 	}
-	const metadata = one(script?.metadata)
-	const info = one(script?.protected)
+
+	const metadata = script?.metadata
+	const info = script?.protected
 	if (!script || !metadata || !info) error(404, "Script not found")
 
-	const profile = await profilePromise
 	const own = user != null && info.author === user.id
 	const staff = roleAtLeast(profile?.role, "moderator")
 	const canEdit = own || staff
 	const community = script.is_community === true
 
-	const [{ data: author }, { data: versions }, { data: tokens }, termsAccepted, codes, grantees, usageRes] =
-		await Promise.all([
-			scripts.rpc("get_authors", { script_ids: [script.id] }).maybeSingle(),
-			canEdit
-				? scripts
+	// Only owners and moderators see these sections, and they are not needed to draw the page, so they
+	// are returned as promises and stream in after it instead of holding it up.
+	let owner = null
+	if (canEdit) {
+		const revisionPage = Math.min(
+			Math.max(Number.parseInt(url.searchParams.get("revisions") ?? "", 10) || 1, 1),
+			MAX_REVISION_PAGE
+		)
+		const from = (revisionPage - 1) * REVISIONS_PER_PAGE
+
+		// Share codes need the same terms as publishing; the pages show a notice instead of the tools
+		const termsAccepted = lazy(user ? hasAcceptedTerms(supabaseServer, user.id) : true, true)
+
+		owner = {
+			revisions: lazy(
+				Promise.all([
+					scripts
 						.from("versions")
-						.select("revision, status, files, created_at, published_at")
+						.select("revision, status, files, created_at, published_at", { count: "exact" })
 						.eq("id", script.id)
 						.order("revision", { ascending: false })
-				: Promise.resolve({ data: [] }),
-			canEdit
-				? scripts
-						.from("deploy_tokens")
-						.select("id, name, created_at, last_used_at")
-						.eq("script_id", script.id)
-						.order("created_at")
-				: Promise.resolve({ data: [] }),
-			// Share codes need the same terms as publishing; the pages show a notice instead of the tools
-			canEdit && user ? hasAcceptedTerms(supabaseServer, user.id) : Promise.resolve(true),
-			canEdit
-				? scripts
+						.range(from, from + REVISIONS_PER_PAGE - 1),
+					// The author's use of the community limits, shown next to the uploader
+					own && community ? scripts.rpc("get_community_usage").maybeSingle() : null,
+					termsAccepted
+				]).then(([versions, usage, accepted]) => ({
+					versions: versions.data ?? [],
+					total: versions.count ?? 0,
+					page: revisionPage,
+					perPage: REVISIONS_PER_PAGE,
+					usage: usage?.data
+						? {
+								scripts: usage.data.script_count,
+								maxScripts: usage.data.max_scripts,
+								bytes: usage.data.used_bytes,
+								maxBytes: usage.data.max_bytes
+							}
+						: null,
+					termsAccepted: accepted
+				})),
+				{
+					versions: [],
+					total: 0,
+					page: revisionPage,
+					perPage: REVISIONS_PER_PAGE,
+					usage: null,
+					termsAccepted: true
+				}
+			),
+			tokens: lazy(
+				scripts
+					.from("deploy_tokens")
+					.select("id, name, created_at, last_used_at")
+					.eq("script_id", script.id)
+					.order("created_at")
+					.then(({ data }) => data ?? []),
+				[]
+			),
+			sharing: lazy(
+				Promise.all([
+					scripts
 						.from("share_codes")
 						.select("id, created_at, expires_at")
 						.eq("script_id", script.id)
 						.is("redeemed_at", null)
 						.gt("expires_at", new Date().toISOString())
-						.order("expires_at")
-				: Promise.resolve({ data: [] }),
-			canEdit ? scripts.rpc("list_grantees", { p_script: script.id }) : Promise.resolve({ data: [] }),
-			// The author's use of the community limits, shown next to the uploader
-			own && community ? scripts.rpc("get_community_usage").maybeSingle() : Promise.resolve({ data: null })
-		])
+						.order("expires_at"),
+					scripts.rpc("list_grantees", { p_script: script.id }),
+					termsAccepted
+				]).then(([codes, grantees, accepted]) => ({
+					codes: codes.data ?? [],
+					grantees: (grantees.data ?? []).map((g) => ({
+						userId: g.user_id,
+						username: g.username,
+						grantedAt: g.granted_at
+					})),
+					termsAccepted: accepted
+				})),
+				{ codes: [], grantees: [], termsAccepted: true }
+			)
+		}
+	}
 
-	return {
-		script: {
-			id: script.id,
-			title: script.title,
-			description: script.description,
-			content: script.content,
-			published: script.published,
-			...metadata,
-			revision: info.revision,
-			createdAt: info.created_at,
-			updatedAt: info.updated_at,
-			author: author?.username ?? "unknown",
-			community,
-			granted: script.is_granted === true,
-			authorBanned: script.author_banned === true
-		},
-		canEdit,
-		canDelete: staff,
-		termsAccepted,
-		usage: usageRes.data
-			? {
-					scripts: usageRes.data.script_count,
-					maxScripts: usageRes.data.max_scripts,
-					bytes: usageRes.data.used_bytes,
-					maxBytes: usageRes.data.max_bytes
-				}
+	// The streamed sections above are already on their way; these two only need to finish before the page.
+	const [author, grant, form] = await Promise.all([
+		cached ? null : scripts.rpc("get_authors", { script_ids: [script.id] }).maybeSingle(),
+		// The cache doesn't know if the script was shared with this visitor
+		cached && user
+			? scripts
+					.from("grants")
+					.select("user_id")
+					.eq("script_id", script.id)
+					.eq("user_id", user.id)
+					.maybeSingle()
 			: null,
-		versions: versions ?? [],
-		tokens: tokens ?? [],
-		codes: codes.data ?? [],
-		grantees: (grantees.data ?? []).map((g) => ({
-			userId: g.user_id,
-			username: g.username,
-			grantedAt: g.granted_at
-		})),
-		form: canEdit
-			? await superValidate(
+		canEdit
+			? superValidate(
 					{
 						title: script.title,
 						description: script.description,
@@ -127,6 +199,28 @@ export const load = async ({ params, locals: { supabaseServer, user, getProfile 
 					{ errors: false }
 				)
 			: null
+	])
+
+	return {
+		script: {
+			id: script.id,
+			title: script.title,
+			description: script.description,
+			content: script.content,
+			published: script.published,
+			...metadata,
+			revision: info.revision,
+			createdAt: info.created_at,
+			updatedAt: info.updated_at,
+			author: cached?.author ?? author?.data?.username ?? "unknown",
+			community,
+			granted: cached ? grant?.data != null : script.is_granted === true,
+			authorBanned: script.author_banned === true
+		},
+		canEdit,
+		canDelete: staff,
+		owner,
+		form
 	}
 }
 
@@ -154,6 +248,8 @@ export const actions = {
 		const meta = await scripts.from("metadata").update({ type, price, stage, categories }).eq("id", script.id)
 		if (meta.error) return message(form, errorRef("Could not save the script", meta.error), { status: 400 })
 
+		await refreshScript(script.id)
+
 		// The slug follows the title, so a rename moves the page.
 		const { data: renamed } = await scripts.from("scripts").select("url").eq("id", script.id).single()
 		if (renamed && renamed.url !== params.url) redirect(303, `/scripts/${renamed.url}`)
@@ -173,6 +269,7 @@ export const actions = {
 			.select("id")
 		if (err) return fail(500, { message: errorRef("Could not change the visibility", err) })
 		if (!data.length) return fail(403, { message: "You can't edit this script." })
+		await refreshScript(data[0].id)
 
 		return { message: published ? "Script is public." : "Script is hidden." }
 	},
@@ -315,6 +412,7 @@ export const actions = {
 		} catch (e) {
 			return fail(500, { message: errorRef("Could not delete the script", e) })
 		}
+		await refreshScript(script.id)
 		redirect(303, "/scripts")
 	}
 }

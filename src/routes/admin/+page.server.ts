@@ -1,4 +1,5 @@
 import { fail, redirect, type RequestEvent } from "@sveltejs/kit"
+import { markStale } from "#lib/server/scripts.cache"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
 import { Constants } from "#lib/types/supabase"
@@ -134,6 +135,8 @@ async function setBanned(banned: boolean, { request, locals: { user, getProfile 
 	})
 	if (err?.code === "42501") return fail(403, { message: "Administrators can't be banned.", ban: true })
 	if (err) return fail(500, { message: errorRef("Could not record the ban", err), ban: true })
+	// A banned author's scripts stop being public
+	markStale()
 
 	const { error: authErr } = await admin.auth.admin.updateUserById(target.id, {
 		ban_duration: banned ? BAN_DURATION : "none"

@@ -2,6 +2,7 @@ import { error, json } from "@sveltejs/kit"
 import { MAX_FILES, MAX_FILE_BYTES, uploadAll, validFileName } from "#lib/scripts"
 import { encryptFile, encryptedSize, keyHex, newRevisionKey } from "#lib/encryption"
 import { hashDeployToken } from "#lib/server/deploy.server"
+import { refreshScript } from "#lib/server/scripts.cache"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
 
@@ -36,7 +37,8 @@ export const POST = async ({ request, params }) => {
 
 	if (!files.length) error(400, 'Send the revision\'s files as multipart "files" fields.')
 	const entryField = form?.get("entry")
-	const entry = typeof entryField === "string" && entryField ? entryField : files.length === 1 ? names[0] : null
+	const entry =
+		typeof entryField === "string" && entryField ? entryField : files.length === 1 ? names[0] : null
 	if (!entry) error(400, 'A revision with several files needs an "entry" field naming the file to run.')
 	if (!names.includes(entry)) error(400, `The entry file ${entry} is not one of the uploaded files.`)
 	if (files.length > MAX_FILES) error(400, `At most ${MAX_FILES} files per revision.`)
@@ -84,6 +86,7 @@ export const POST = async ({ request, params }) => {
 		})
 		const { error: err } = await scripts.rpc("publish_version", { script_id: params.id, revision })
 		if (err) throw err
+		await refreshScript(params.id)
 	} catch (e) {
 		// A pending revision blocks the next one, so drop it.
 		await scripts.rpc("discard_version", { script_id: params.id, revision })

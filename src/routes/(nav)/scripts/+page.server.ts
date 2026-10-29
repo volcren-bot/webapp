@@ -1,10 +1,30 @@
 import { fail, redirect } from "@sveltejs/kit"
 import { CATEGORIES, TYPES, roleAtLeast, type ScriptCategory, type ScriptType } from "#lib/scripts"
+import { getPublicScripts, type CachedScript } from "#lib/server/scripts.cache"
 import { createLimiter } from "#lib/server/ratelimit.server"
 import { errorRef } from "#lib/server/supabase.server"
-import { one } from "#lib/utils"
+import type { Database } from "#lib/types/supabase"
 
 const MAX_LISTED = 500
+
+type ScriptTables = Database["scripts"]["Tables"]
+
+/** A listed script with its metadata and protected rows, which are one-to-one (their id is the script's). */
+type ListedScript = Pick<
+	ScriptTables["scripts"]["Row"],
+	"id" | "url" | "title" | "description" | "published" | "is_community" | "is_granted" | "author_banned"
+> & {
+	metadata: Pick<ScriptTables["metadata"]["Row"], "type" | "categories" | "stage" | "price">
+	protected: Pick<ScriptTables["protected"]["Row"], "author" | "revision" | "updated_at">
+}
+
+/** What the list shows of a cached script: the official ones anyone can see. */
+const listed = (s: CachedScript): ListedScript => ({
+	...s,
+	is_community: false,
+	is_granted: false,
+	author_banned: false
+})
 
 // Matches the search text literally rather than as a LIKE pattern.
 function likeEscape(text: string) {
@@ -50,20 +70,28 @@ export const load = async ({ url, locals: { supabaseServer, user, getProfile } }
 		if (category) query = query.contains("metadata.categories", [category])
 		if (type) query = query.eq("metadata.type", type)
 		if (mine) query = query.eq("protected.author", user.id)
-		return query.limit(MAX_LISTED)
+		return query
 	}
 
 	// Row level security decides what the user may see. The default list is the official scripts, the
 	// scripts shared with the user and their own community scripts; the community filter is every
-	// community script they can see.
-	const results = await Promise.all(
-		community
-			? [base().eq("is_community", true)]
+	// community script they can see. Testers and up see more official ones (alpha), so they read the
+	// database. Everyone else gets the public scripts from the cache and only asks the database for
+	// what is theirs: the shared scripts and the ones they wrote.
+	const cached = community || canBrowseCommunity ? null : await getPublicScripts()
+	const queries = community
+		? [base().eq("is_community", true)]
+		: cached
+			? user
+				? [base().eq("is_granted", true), base().eq("protected.author", user.id)]
+				: []
 			: [
 					base().eq("is_community", false),
 					base().eq("is_granted", true),
 					...(user ? [base().eq("is_community", true).eq("protected.author", user.id)] : [])
 				]
+	const results = await Promise.all(
+		queries.map((query) => query.limit(MAX_LISTED).overrideTypes<ListedScript[], { merge: false }>())
 	)
 	const err = results.find((r) => r.error)?.error
 	if (err)
@@ -74,22 +102,32 @@ export const load = async ({ url, locals: { supabaseServer, user, getProfile } }
 			canBrowseCommunity
 		}
 
-	const found = new Map<string, NonNullable<(typeof results)[number]["data"]>[number]>()
+	// The cached scripts go first so that a row from the database (which knows if it is shared) wins
+	const names = new Map<string, string>()
+	const found = new Map<string, ListedScript>()
+	const matches = (s: CachedScript) =>
+		s.title.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)
+	for (const s of cached ?? []) {
+		if (q && !matches(s)) continue
+		if (category && !s.metadata.categories.includes(category)) continue
+		if (type && s.metadata.type !== type) continue
+		if (mine && s.protected.author !== user?.id) continue
+		found.set(s.id, listed(s))
+		names.set(s.id, s.author)
+	}
 	for (const r of results) for (const s of r.data ?? []) found.set(s.id, s)
 	const data = [...found.values()]
 
 	// Profiles are private: author names come from get_authors, keyed by script
-	const { data: authors } = data.length
-		? await supabaseServer.schema("scripts").rpc("get_authors", { script_ids: data.map((s) => s.id) })
-		: { data: [] }
-	const names = new Map((authors ?? []).map((a) => [a.script_id, a.username]))
+	const unnamed = data.filter((s) => !names.has(s.id)).map((s) => s.id)
+	if (unnamed.length) {
+		const { data: authors } = await supabaseServer
+			.schema("scripts")
+			.rpc("get_authors", { script_ids: unnamed })
+		for (const a of authors ?? []) names.set(a.script_id, a.username)
+	}
 
 	const scripts = data
-		.flatMap((s) => {
-			const metadata = one(s.metadata)
-			const info = one(s.protected)
-			return metadata && info ? [{ ...s, metadata, protected: info }] : []
-		})
 		.sort((a, b) => b.protected.updated_at.localeCompare(a.protected.updated_at))
 		.slice(0, MAX_LISTED)
 		.map((s) => ({

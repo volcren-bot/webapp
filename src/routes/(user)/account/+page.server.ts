@@ -1,7 +1,6 @@
 import { deletionBlockers } from "#lib/server/account.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
-import { one } from "#lib/utils"
 import { fail, redirect } from "@sveltejs/kit"
 
 export const load = async ({ locals: { user, supabaseServer } }) => {
@@ -26,8 +25,8 @@ export const load = async ({ locals: { user, supabaseServer } }) => {
 		credits: account.data?.credits ?? 0,
 		ledger: (ledger.data ?? []).map(({ payments: payment, ...entry }) => ({
 			...entry,
-			provider: one(payment)?.provider ?? null,
-			bonus: one(payment)?.bonus ?? 0
+			provider: payment?.provider ?? null,
+			bonus: payment?.bonus ?? 0
 		})),
 		blockers
 	}

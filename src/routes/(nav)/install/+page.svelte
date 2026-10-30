@@ -1,6 +1,8 @@
 <script lang="ts">
 	import Head from "#lib/components/Head.svelte"
 	import { SITE_NAME } from "#lib/utils"
+	import Clipboard from "@lucide/svelte/icons/clipboard"
+	import ClipboardCheck from "@lucide/svelte/icons/clipboard-check"
 
 	let { data } = $props()
 
@@ -18,6 +20,18 @@
 				].join("\n")
 			: ""
 	)
+
+	let copied = $state(false)
+
+	async function copy(text: string) {
+		try {
+			await navigator.clipboard.writeText(text)
+			copied = true
+			setTimeout(() => (copied = false), 2000)
+		} catch {
+			// Clipboard access can be refused; the commands are selectable as well
+		}
+	}
 </script>
 
 <Head
@@ -96,7 +110,21 @@
 					>~/.local/share/bolt-launcher/</code
 				>), so Wine has to be installed. Paste this into a terminal:
 			</p>
-			<pre class="overflow-x-auto bg-(--tn-bg-dark) p-3 text-sm"><code>{linuxCommands}</code></pre>
+			<div class="relative">
+				<pre class="overflow-x-auto bg-(--tn-bg-dark) p-3 pr-24 text-sm"><code>{linuxCommands}</code></pre>
+				<button
+					class="btn absolute top-2 right-2 text-sm"
+					type="button"
+					onclick={() => copy(linuxCommands)}
+				>
+					{copied ? "Copied" : "Copy"}
+					{#if copied}
+						<ClipboardCheck class="size-3.5 shrink-0" />
+					{:else}
+						<Clipboard class="size-3.5 shrink-0" />
+					{/if}
+				</button>
+			</div>
 			<ul class="flex list-disc flex-col gap-2 pl-6">
 				<li>
 					The archive holds <code>loader</code>, <code>injector</code>, <code>injector.exe</code> and

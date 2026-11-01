@@ -3,8 +3,7 @@ import { syncPayment } from "#lib/server/payments.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
 
-// Bitcart notification_url target. The body only tells us which invoice changed;
-// the status is re-fetched from Bitcart, so a forged request can't credit anyone.
+// Bitcart notification_url target: the body only names the invoice, and the status is re-fetched from Bitcart so a forged request can't credit anyone.
 export const POST = async ({ request }) => {
 	const body = await request.json().catch(() => null)
 	if (typeof body?.id !== "string") error(400, "Missing invoice id")

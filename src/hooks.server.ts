@@ -22,8 +22,7 @@ const supabase: Handle = async ({ event, resolve }) => {
 	event.locals.safeGetSession = () => (sessionPromise ??= fetchSession())
 	event.locals.resetSession = () => (sessionPromise = null)
 
-	// getClaims verifies the JWT locally against the cached JWKS, so it skips the Auth server round trip
-	// that getUser makes on every request. Projects still on a symmetric JWT secret fall back to getUser.
+	// getClaims verifies the JWT locally against the cached JWKS, skipping getUser's Auth round trip; projects on a symmetric JWT secret fall back to getUser.
 	async function fetchSession() {
 		const { data, error: err } = await event.locals.supabaseServer.auth.getClaims()
 		if (err || !data) return { session: null, user: null }
@@ -65,8 +64,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
 
 	event.locals.getProfile = () => (profilePromise ??= fetchProfile())
 
-	// Auth refuses to refresh a banned or deleted account's session, but its access token stays
-	// valid until it expires, so the session ends here instead
+	// Auth won't refresh a banned or deleted account's session but its access token stays valid until it expires, so the session ends here
 	if (user) {
 		const profile = await event.locals.getProfile()
 		if (deleted || profile?.banned_at) {

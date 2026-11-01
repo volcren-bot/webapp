@@ -1,11 +1,7 @@
 import { openPayments } from "#lib/server/payments.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 
-/**
- * Why the account can't be deleted yet, as messages for the account page. The database refuses
- * the first two on its own (scripts.protected_author_fkey, payments.tr_accounts_pre_delete); these
- * checks only explain why. An invoice paid after the account is gone would have nowhere to go.
- */
+/** Why the account can't be deleted yet, as messages for the account page; the database enforces the first two, these checks only explain why. */
 export async function deletionBlockers(userId: string) {
 	const admin = supabaseAdmin()
 	const [scripts, account, open] = await Promise.all([

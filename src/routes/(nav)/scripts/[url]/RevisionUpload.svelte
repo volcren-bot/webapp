@@ -40,10 +40,13 @@
 			const created = await supabase
 				.schema("scripts")
 				.from("versions")
-				// Clients may only insert id, files, sizes and entry (column grants); a trigger assigns the revision, so the
-				// generated type's required `revision` is cast away. Sending it would be a 403. Community authors
-				// are capped on storage, so the sizes are how the database knows what is coming (the files are uploaded encrypted).
-				.insert({ id, files: files.map((f) => f.name), sizes: files.map((f) => encryptedSize(f.size)), entry } as {
+				// Clients may only insert id, files, sizes and entry (column grants); a trigger assigns the revision, so its required type is cast away, and sizes tell the database what is coming.
+				.insert({
+					id,
+					files: files.map((f) => f.name),
+					sizes: files.map((f) => encryptedSize(f.size)),
+					entry
+				} as {
 					id: string
 					files: string[]
 					sizes: number[]
@@ -121,7 +124,12 @@
 			>{status}</small
 		>
 	{/if}
-	<button type="button" class="btn self-start" disabled={busy || !files.length || !!problem || !entry} onclick={upload}>
+	<button
+		type="button"
+		class="btn self-start"
+		disabled={busy || !files.length || !!problem || !entry}
+		onclick={upload}
+	>
 		<Upload class="size-4 shrink-0" /> upload revision
 	</button>
 </div>

@@ -18,10 +18,7 @@ export const localeFrom = (acceptLanguage: string | null | undefined) => {
 
 const locale = () => page.data.locale ?? DEFAULT_LOCALE
 
-/**
- * Locale-aware formatting. The locale comes from the request's Accept-Language header (via the root layout),
- * so server and client render the same text and hydration doesn't mismatch.
- */
+/** Locale-aware formatting from the request's Accept-Language header (via the root layout), so server and client render the same text. */
 export const fmt = {
 	get locale() {
 		return locale()

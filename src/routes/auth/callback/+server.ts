@@ -8,8 +8,7 @@ export const GET = async ({ url: { origin, searchParams }, cookies, locals: { su
 		return (path && safePath(path, origin)) ?? "/"
 	}
 
-	// The provider's error goes to the logs, never onto the page: anyone can put any text in
-	// these parameters and send the link around.
+	// The provider's error goes to the logs, never onto the page, since anyone can put text in these parameters and share the link.
 	const err = searchParams.get("error")
 	// Auth refuses banned accounts (see the admin page). Only the code is read, and the text is ours.
 	if (err && searchParams.get("error_code") === "user_banned") error(403, "This account is banned.")

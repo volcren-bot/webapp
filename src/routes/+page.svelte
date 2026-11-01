@@ -54,8 +54,7 @@
 		const x = Math.sin(i * 12.9898 + j * 78.233) * 43758.5453
 		return (x - Math.floor(x)) * 2 - 1
 	}
-	// Color bands bleed into each other: the position is skewed so red creeps up the left side,
-	// and each character's bias (-1 = toward yellow, 1 = toward red) dithers the boundaries
+	// Color bands bleed into each other: the position is skewed so red creeps up the left, and each character's bias dithers the boundaries
 	const logoColor = (i: number, j: number, bias: number) => {
 		const skew = (0.5 - j / logoWidth) * 0.25
 		const t = (i + 0.5) / logo.length + skew + bias * 0.07
@@ -102,8 +101,7 @@
 		return runs
 	}
 
-	// Each tick flips a single character toward red and another toward yellow, plus a few inner
-	// flame characters, so the bleed shimmers gently instead of re-rolling all at once
+	// Each tick flips one character toward red and another toward yellow, plus a few inner flame ones, so the bleed shimmers gently
 	const pick = (cells: [number, number][]) => cells[Math.floor(Math.random() * cells.length)]
 	// Writing the same color back would still re-render the whole row, so skip those
 	const setBias = ([i, j]: [number, number], value: number) => {

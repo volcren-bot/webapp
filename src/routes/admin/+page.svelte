@@ -221,7 +221,12 @@
 		</label>
 		<label class="label">
 			<span class="label-text">content (markdown)</span>
-			<textarea class="input min-h-48 font-mono" name="content" maxlength="200000" bind:value={documentContent} required></textarea>
+			<textarea
+				class="input min-h-48 font-mono"
+				name="content"
+				maxlength="200000"
+				bind:value={documentContent}
+				required></textarea>
 		</label>
 
 		<div class="mt-1 flex items-center gap-2">

@@ -33,8 +33,7 @@ export const load = async ({ locals: { user, supabaseServer } }) => {
 }
 
 export const actions = {
-	// Deletes the auth user. The database cascades that to the profile, balance, stats and deploy
-	// tokens; payment and usage records stay (see the privacy policy).
+	// Deletes the auth user; the database cascades to profile, balance, stats and deploy tokens, while payment and usage records stay.
 	delete: async ({ request, locals: { user, getProfile, supabaseServer } }) => {
 		if (!user) return fail(401, { deleteMessage: "You need to login." })
 		const profile = await getProfile()

@@ -112,11 +112,7 @@
 			</p>
 			<div class="relative">
 				<pre class="overflow-x-auto bg-(--tn-bg-dark) p-3 pr-24 text-sm"><code>{linuxCommands}</code></pre>
-				<button
-					class="btn absolute top-2 right-2 text-sm"
-					type="button"
-					onclick={() => copy(linuxCommands)}
-				>
+				<button class="btn absolute top-2 right-2 text-sm" type="button" onclick={() => copy(linuxCommands)}>
 					{copied ? "Copied" : "Copy"}
 					{#if copied}
 						<ClipboardCheck class="size-3.5 shrink-0" />

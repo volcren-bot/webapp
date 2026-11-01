@@ -14,8 +14,7 @@ export const load = async ({ url, locals: { user, supabaseServer } }) => {
 }
 
 export const actions = {
-	// The versions the user read come from the form, and the database only accepts the current ones, so
-	// a document published in the meantime can't be accepted unseen.
+	// The versions the user read come from the form and the database accepts only the current ones, so a document published meanwhile can't be accepted unseen.
 	accept: async ({ request, url, locals: { user, supabaseServer } }) => {
 		if (!user) return fail(401, { message: "You need to login." })
 

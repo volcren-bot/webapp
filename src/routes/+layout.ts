@@ -1,8 +1,7 @@
 import { browser } from "$app/env"
 import { getSupabaseBrowser } from "#lib/supabase.browser"
 
-// The server data is already in sync with the session on first load, so the client is only needed
-// once the auth state changes and the layout invalidates
+// The server data is already in sync on first load, so the client is only needed once the auth state changes and the layout invalidates
 let hydrated = false
 
 export const load = async ({ data, depends }) => {

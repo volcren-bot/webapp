@@ -1,5 +1,4 @@
--- Minimal schema expected by the template. Run it in the Supabase SQL editor
--- (or put it in a migration) after creating your project.
+-- Minimal schema expected by the template; run it in the Supabase SQL editor (or a migration) after creating your project.
 
 create type public.roles as enum ('user', 'administrator');
 

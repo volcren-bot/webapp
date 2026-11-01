@@ -1,13 +1,7 @@
 import { getInvoice, type BitcartInvoice } from "#lib/server/bitcart.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 
-/**
- * Asks Bitcart for the invoice's real status and applies it to our payment row: credits the
- * user once it's complete (settle_payment is idempotent) and marks expired/invalid ones.
- * "paid" only means the transaction was seen; "complete" means it has the confirmations the
- * Bitcart store asks for, so the store's transaction speed setting decides when credits land.
- * Shared by the webhook and the checkout page, so a missed webhook doesn't lose a payment.
- */
+/** Asks Bitcart for the invoice's real status and applies it to our payment row, crediting once complete (settle_payment is idempotent); shared by webhook and checkout. */
 export async function syncPayment(paymentId: string, invoiceId: string): Promise<BitcartInvoice> {
 	const invoice = await getInvoice(invoiceId)
 	const payments = supabaseAdmin().schema("payments")
@@ -27,10 +21,7 @@ export async function syncPayment(paymentId: string, invoiceId: string): Promise
 	return invoice
 }
 
-/**
- * The user's payments that can still be paid. Rows are only marked expired when something syncs
- * them, so each pending one is checked with Bitcart first and the stale ones drop out.
- */
+/** The user's payments that can still be paid; each pending one is checked with Bitcart first so stale ones drop out. */
 export async function openPayments(userId: string) {
 	const payments = supabaseAdmin().schema("payments")
 

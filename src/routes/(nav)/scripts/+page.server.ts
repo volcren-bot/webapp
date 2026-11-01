@@ -73,11 +73,7 @@ export const load = async ({ url, locals: { supabaseServer, user, getProfile } }
 		return query
 	}
 
-	// Row level security decides what the user may see. The default list is the official scripts, the
-	// scripts shared with the user and their own community scripts; the community filter is every
-	// community script they can see. Testers and up see more official ones (alpha), so they read the
-	// database. Everyone else gets the public scripts from the cache and only asks the database for
-	// what is theirs: the shared scripts and the ones they wrote.
+	// Row level security decides what the user sees; testers and up read the database, everyone else gets public scripts from the cache plus their shared and own ones.
 	const cached = community || canBrowseCommunity ? null : await getPublicScripts()
 	const queries = community
 		? [base().eq("is_community", true)]

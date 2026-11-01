@@ -7,8 +7,7 @@ const MAX_CHARS = 32
 // One more than we show, so we can tell "5 matches" from "more than 5"
 const SUGGESTIONS = 5
 
-// Username suggestions for the admin page. Only returns names once the search narrows to
-// SUGGESTIONS or fewer, otherwise `more` tells the page to keep typing.
+// Username suggestions for the admin page, returned only once the search narrows to SUGGESTIONS or fewer, otherwise `more` tells the page to keep typing.
 export const GET = async ({ url, locals: { user, getProfile } }) => {
 	if (!user) error(401, "You need to login.")
 	const profile = await getProfile()

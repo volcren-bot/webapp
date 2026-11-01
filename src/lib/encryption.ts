@@ -1,9 +1,4 @@
-/**
- * Revision files are stored encrypted (scripts.version_keys, scripts.set_version_key): AES-256-GCM under a random key
- * per revision, laid out as nonce (12 bytes) || ciphertext || tag (16 bytes). The additional data ties a file to its
- * place, so a file copied to another script, revision or name does not open. The loader does the same in reverse.
- * Works in the browser and on the server (Web Crypto).
- */
+/** Revision files are AES-256-GCM encrypted under a random key per revision as nonce || ciphertext || tag, bound to their place; works in browser and server. */
 
 const NONCE_BYTES = 12
 const TAG_BYTES = 16

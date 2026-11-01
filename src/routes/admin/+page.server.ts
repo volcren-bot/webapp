@@ -99,11 +99,7 @@ export const load = async ({ url, locals: { user, getProfile } }) => {
 // Auth takes a duration, not "forever"
 const BAN_DURATION = "876000h"
 
-/**
- * The database ban (profiles.set_banned) decides what the account can do and records who did it.
- * The Auth ban on top stops it signing in or refreshing a session. It's applied even when the
- * database had nothing to change, so repeating a ban or unban retries a failed Auth update.
- */
+/** The database ban (profiles.set_banned) decides what the account can do; the Auth ban on top blocks sign-in and is reapplied on repeats to retry failures. */
 async function setBanned(banned: boolean, { request, locals: { user, getProfile } }: RequestEvent) {
 	if (!user) return fail(401, { message: "You need to login.", ban: true })
 	const profile = await getProfile()
@@ -158,8 +154,7 @@ async function setBanned(banned: boolean, { request, locals: { user, getProfile 
 }
 
 export const actions = {
-	// Publishes a new version of a legal document. Versions are immutable, and a new scripter_tos or
-	// community_tos version asks every creator to accept it again before they can upload.
+	// Publishes a new version of a legal document; versions are immutable, and a new scripter_tos or community_tos version asks every creator to accept again.
 	publishDocument: async ({ request, locals: { user, getProfile, supabaseServer } }) => {
 		if (!user) return fail(401, { message: "You need to login.", document: true })
 		const profile = await getProfile()
@@ -174,8 +169,7 @@ export const actions = {
 		if (content.length > MAX_DOCUMENT_CHARS)
 			return fail(400, { message: "The document is too long.", document: true })
 
-		// The version number is assigned by a trigger, so the generated type's required `version` is cast away.
-		// Row level security lets only administrators insert.
+		// The version number is assigned by a trigger, so the generated type's required `version` is cast away; row level security lets only administrators insert.
 		const { error: err } = await supabaseServer
 			.schema("info")
 			.from("documents")
@@ -244,8 +238,7 @@ export const actions = {
 		if (!UUID.test(userId)) return fail(400, { message: "Enter a valid user UUID.", login: true })
 
 		const admin = supabaseAdmin()
-		// Recorded before the login exists, so an impersonation that can't be recorded doesn't happen.
-		// The database also refuses administrators as targets.
+		// Recorded before the login exists so an unrecordable impersonation doesn't happen; the database also refuses administrators as targets.
 		const { error: logErr } = await admin
 			.schema("profiles")
 			.rpc("log_impersonation", { p_admin: user.id, p_user: userId })

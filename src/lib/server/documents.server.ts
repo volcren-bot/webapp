@@ -24,10 +24,7 @@ const OPTIONS: Options = {
 	}
 }
 
-/**
- * Markdown to HTML. Raw HTML in the source is escaped and only allowlisted link protocols survive,
- * so the result is safe to inject. Cached by content: published versions rarely change.
- */
+/** Markdown to HTML with raw HTML escaped and only allowlisted link protocols kept, so the result is safe to inject; cached by content. */
 function render(content: string) {
 	const hit = rendered.get(content)
 	if (hit !== undefined) return hit

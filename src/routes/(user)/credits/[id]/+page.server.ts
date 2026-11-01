@@ -3,8 +3,7 @@ import QRCode from "qrcode"
 import { syncPayment } from "#lib/server/payments.server"
 import { errorRef } from "#lib/server/supabase.server"
 
-// The page polls this load every few seconds and a pending invoice keeps its addresses, so each QR code
-// is only drawn once. Capped so old invoices don't pile up.
+// The page polls this load and a pending invoice keeps its addresses, so each QR code is drawn once and capped so old invoices don't pile up.
 const MAX_CACHED_QRS = 500
 const qrCodes = new Map<string, Promise<string>>()
 
@@ -41,8 +40,7 @@ export const load = async ({ params, depends, locals: { supabaseServer, user } }
 		error(502, errorRef("Could not load the invoice", e))
 	)
 
-	// syncPayment may have just settled or expired it. A paid invoice is still waiting for
-	// confirmations, so it isn't credited yet.
+	// syncPayment may have just settled or expired it; a paid invoice still waits for confirmations, so it isn't credited yet.
 	const status =
 		invoice.status === "complete" ? "paid" : invoice.status === "paid" ? "confirming" : payment.status
 

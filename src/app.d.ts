@@ -6,8 +6,7 @@ import type { SessionProfile } from "#lib/types/profile"
 type Session = { expires_at: number }
 type User = { id: string; email?: string }
 
-// See https://svelte.dev/docs/kit/types#app.d.ts
-// for information about these interfaces
+// See https://svelte.dev/docs/kit/types#app.d.ts for information about these interfaces
 declare global {
 	namespace App {
 		// interface Error {}
@@ -25,8 +24,7 @@ declare global {
 			expiresAt: number | null
 			profile: SessionProfile | null
 		}
-		// interface PageState {}
-		// interface Platform {}
+		// interface PageState {} and interface Platform {}
 	}
 }
 

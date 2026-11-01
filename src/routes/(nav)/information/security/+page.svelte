@@ -1,6 +1,5 @@
 <script lang="ts">
 	import Head from "#lib/components/Head.svelte"
-	import { REPO_URL } from "#lib/github"
 </script>
 
 <Head title="Security" description="What keeps you safe here, and what doesn't." />

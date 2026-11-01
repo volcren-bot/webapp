@@ -4,8 +4,7 @@ export const SITE_NAME = "VOLCREN"
 export const SITE_DESCRIPTION = "Most advanced memory reading bot"
 export const WEBSITE_URL = "https://example.com"
 
-// Any top-level page placed in src/routes/(nav)/<name>/+page.svelte becomes a nav tab.
-// "Home" is the first tab and the root route.
+// Any top-level page at src/routes/(nav)/<name>/+page.svelte becomes a nav tab, with "Home" the first tab and the root route.
 const navPages = import.meta.glob("/src/routes/**/+page.svelte")
 
 function topLevelPages(group: string) {

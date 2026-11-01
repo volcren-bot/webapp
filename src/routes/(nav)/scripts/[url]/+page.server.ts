@@ -50,8 +50,7 @@ export const load = async ({ params, url, locals: { supabaseServer, user, getPro
 	const scripts = supabaseServer.schema("scripts")
 	const profile = await getProfile()
 
-	// A public script comes from the cache for visitors who are neither its author nor staff. Those two
-	// read the database: they can see more than the cache holds, and an upload should show at once.
+	// A public script comes from the cache for visitors who are neither its author nor staff; those two read the database so an upload shows at once.
 	const hit = await getPublicScript(params.url)
 	const cached =
 		hit && hit.protected.author !== user?.id && !roleAtLeast(profile?.role, "moderator") ? hit : null
@@ -89,8 +88,7 @@ export const load = async ({ params, url, locals: { supabaseServer, user, getPro
 	const canEdit = own || staff
 	const community = script.is_community === true
 
-	// Only owners and moderators see these sections, and they are not needed to draw the page, so they
-	// are returned as promises and stream in after it instead of holding it up.
+	// Only owners and moderators see these sections, so they are returned as promises and stream in after the page instead of holding it up.
 	let owner = null
 	if (canEdit) {
 		const revisionPage = Math.min(

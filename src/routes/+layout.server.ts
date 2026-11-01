@@ -19,10 +19,7 @@ export const load = async ({
 
 	const { session, user } = await safeGetSession()
 
-	// Row-level security decides which scripts this user can see. Community scripts only appear in the
-	// sidebar when they are the user's own or were shared with them, like in the script list. Testers and
-	// up see more official scripts than the public ones, so they read the database; everyone else gets
-	// the public scripts from the cache and asks the database only for their own and shared ones.
+	// Row-level security decides which scripts this user sees; testers and up read the database, everyone else gets public scripts from the cache plus their own and shared ones.
 	const profile = await getProfile()
 	const cached = roleAtLeast(profile?.role, "tester") ? null : await getPublicScripts()
 	const scriptsTable = () => supabaseServer.schema("scripts").from("scripts")

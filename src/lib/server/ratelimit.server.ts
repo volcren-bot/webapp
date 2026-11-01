@@ -1,7 +1,4 @@
-/**
- * Fixed-window counter per key, in this process. Returns false once a key goes over `max` hits within
- * `duration` ms. It only keeps one server from being hammered; the database holds the limits that matter.
- */
+/** Fixed-window counter per key in this process, returning false once a key exceeds `max` hits within `duration` ms; the database holds the limits that matter. */
 export function createLimiter(max: number, duration: number) {
 	const hits = new Map<string, { count: number; reset: number }>()
 

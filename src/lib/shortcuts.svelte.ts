@@ -59,10 +59,7 @@ function showKey(display: string) {
 let lastKey: string | undefined
 let lastIndex = 0
 
-/**
- * Runs the shortcut matching the key: the current page's first, then the global ones.
- * When several share the key, repeated presses cycle through them in that order.
- */
+/** Runs the shortcut matching the key, the current page's first and then the global ones, with repeated presses cycling through them. */
 export function handleKey(e: KeyboardEvent, globals: Shortcut[]) {
 	if (e.key === "Backspace" && !e.repeat) {
 		const modal = document.querySelector<HTMLDialogElement>("dialog[open]")

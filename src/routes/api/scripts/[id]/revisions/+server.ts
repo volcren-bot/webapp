@@ -8,13 +8,7 @@ import { errorRef } from "#lib/server/supabase.server"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-/**
- * CI uploads a revision with a deploy token (see the script page):
- *   curl -H "Authorization: Bearer $TOKEN" -H "Origin: <site>" -F files=@main.luau -F entry=main.luau <site>/api/scripts/<id>/revisions
- * `entry` names the file the loader runs; it can be left out when there is only one file.
- * The Origin header is only there to pass SvelteKit's CSRF check for multipart bodies; the token is the auth.
- * Does what RevisionUpload does in the browser, as service_role once the token checks out.
- */
+/** CI uploads a revision with a deploy token: curl -H "Authorization: Bearer $TOKEN" -H "Origin: <site>" -F files=@main.luau -F entry=main.luau <site>/api/scripts/<id>/revisions (entry optional for one file; Origin passes the CSRF check). */
 export const POST = async ({ request, params }) => {
 	const token = request.headers.get("authorization")?.match(/^Bearer (\S+)$/)?.[1]
 	if (!token) error(401, "Missing deploy token")

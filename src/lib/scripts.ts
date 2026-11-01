@@ -91,11 +91,7 @@ export const MAX_FILES = 50
 export const MAX_FILE_BYTES = 5 * 1024 * 1024 - ENCRYPTION_OVERHEAD
 const UPLOAD_CONCURRENCY = 6
 
-/**
- * Runs `upload` over a revision's files a few at a time instead of one after another. After the first
- * error no new uploads start; it is thrown once the ones in flight settle, so the caller can discard the
- * revision without racing them.
- */
+/** Runs `upload` over a revision's files a few at a time; after the first error no new uploads start and it is thrown once those in flight settle. */
 export async function uploadAll(files: File[], upload: (file: File) => Promise<void>) {
 	const queue = [...files]
 	const errors: unknown[] = []
@@ -112,10 +108,7 @@ export async function uploadAll(files: File[], upload: (file: File) => Promise<v
 	if (errors.length) throw errors[0]
 }
 
-/**
- * A file path inside a revision: letters, digits, _ . - and / between segments, no "." or ".."
- * segment, at most 200 characters. The database checks the same rules (scripts.valid_files).
- */
+/** A file path inside a revision: letters, digits, _ . - and / between segments, no "." or ".." segment, at most 200 characters (as in scripts.valid_files). */
 export const validFileName = (name: string) =>
 	name.length <= 200 &&
 	name.split("/").every((part) => /^[A-Za-z0-9_.-]+$/.test(part) && part !== "." && part !== "..")

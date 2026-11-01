@@ -66,8 +66,7 @@
 		{ display: "Esc", label: "Close menus and modals", scope: "Global" }
 	])
 
-	// Shortcuts call goto() without the hover preload, so fetch the nav pages' code up front.
-	// Only code, not data: preloading data would run every server load on each page view.
+	// Shortcuts call goto() without the hover preload, so fetch the nav pages' code (not data) up front.
 	onMount(() => {
 		for (const route of NAV_ROUTES) match(routeHref(route)).then((found) => found && preloadCode(found.id))
 	})

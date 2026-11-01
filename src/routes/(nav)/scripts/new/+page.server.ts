@@ -52,8 +52,7 @@ export const actions = {
 		const price = community ? 0 : form.data.price
 		const scripts = supabaseServer.schema("scripts")
 
-		// No .select() on the insert: the SELECT policy can't see the row yet, because the protected row
-		// that names the author is created by an AFTER INSERT trigger.
+		// No .select() on the insert: the SELECT policy can't see the row yet, since an AFTER INSERT trigger creates the protected row naming the author.
 		const inserted = await scripts.from("scripts").insert({ title, description, content })
 		// 42501: terms not accepted (or not allowed); 23514: the community script limit
 		if (inserted.error?.code === "42501")

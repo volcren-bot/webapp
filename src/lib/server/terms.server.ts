@@ -13,10 +13,7 @@ export const TERMS = [
 	{ kind: "community_tos", label: "Community scripts addendum" }
 ] as const satisfies readonly { kind: Kind; label: string }[]
 
-/**
- * Whether the user may create scripts, upload revisions and generate share codes: they accepted the current
- * version of both documents. The database enforces it too; this only decides what the pages show. Fails closed.
- */
+/** Whether the user may create scripts, upload revisions and generate share codes (accepted both current documents); the database enforces it too. Fails closed. */
 export async function hasAcceptedTerms(supabase: Client, userId: string) {
 	const { data, error } = await supabase.schema("profiles").rpc("has_accepted_terms", { user_id: userId })
 	if (error) {

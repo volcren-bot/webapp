@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { invalidateAll } from "$app/navigation"
 	import Upload from "@lucide/svelte/icons/upload"
+	import { fmt } from "#lib/format.svelte.js"
 	import { getSupabaseBrowser } from "#lib/supabase.browser"
 	import { MAX_FILES, MAX_FILE_BYTES, uploadAll, validFileName } from "#lib/scripts"
 	import { encryptFile, encryptedSize, keyHex, newRevisionKey } from "#lib/encryption"
@@ -16,7 +17,7 @@
 	const problem = $derived.by(() => {
 		if (files.length > MAX_FILES) return `At most ${MAX_FILES} files per revision.`
 		const big = files.find((f) => f.size > MAX_FILE_BYTES)
-		if (big) return `${big.name} is larger than ${MAX_FILE_BYTES / 1024 / 1024} MB.`
+		if (big) return `${big.name} is larger than ${fmt.megabytes(MAX_FILE_BYTES)} MB.`
 		if (new Set(files.map((f) => f.name)).size !== files.length) return "File names must be unique."
 		const bad = files.find((f) => !validFileName(f.name))
 		if (bad) return `${bad.name}: file names may only use letters, digits, _ . and -.`

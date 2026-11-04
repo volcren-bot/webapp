@@ -15,7 +15,7 @@
 	import FileCode from "@lucide/svelte/icons/file-code"
 	import Hash from "@lucide/svelte/icons/hash"
 	import Coins from "@lucide/svelte/icons/coins"
-	import { CATEGORY_ICONS, STAGE_COLORS, megabytes } from "#lib/scripts"
+	import { CATEGORY_ICONS, STAGE_COLORS } from "#lib/scripts"
 	import { metaDescription } from "#lib/utils"
 	import { page } from "$app/state"
 	import { SvelteURLSearchParams } from "svelte/reactivity"
@@ -189,9 +189,9 @@
 			{:then revisions}
 				{#if revisions.usage}
 					<p class="nv-dim">
-						Storage: {megabytes(revisions.usage.bytes)} of {megabytes(revisions.usage.maxBytes)} MB used by all
-						your revisions, old ones included. Scripts: {revisions.usage.scripts} of {revisions.usage
-							.maxScripts}.
+						Storage: {fmt.megabytes(revisions.usage.bytes)} of {fmt.megabytes(revisions.usage.maxBytes)} MB used
+						by all your revisions, old ones included. Scripts: {fmt.number(revisions.usage.scripts)} of
+						{fmt.number(revisions.usage.maxScripts)}.
 					</p>
 				{/if}
 				{#if revisions.termsAccepted}

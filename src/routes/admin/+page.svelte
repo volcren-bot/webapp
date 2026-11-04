@@ -3,6 +3,7 @@
 	import Head from "#lib/components/Head.svelte"
 	import { enhance } from "$app/forms"
 	import { untrack } from "svelte"
+	import { CREDITS_PER_EUR } from "#lib/credits"
 	import { Constants } from "#lib/types/supabase"
 
 	const { data, form } = $props()
@@ -142,7 +143,10 @@
 			<input class="input" name="user" required />
 		</label>
 		<label class="label">
-			<span class="label-text">credits <span class="nv-dim">negative to remove, 10,000 = €1</span></span>
+			<span class="label-text"
+				>credits <span class="nv-dim">negative to remove, {fmt.number(CREDITS_PER_EUR)} = {fmt.eur(100)}</span
+				></span
+			>
 			<input class="input" name="amount" type="number" step="1" required />
 		</label>
 		<label class="label">

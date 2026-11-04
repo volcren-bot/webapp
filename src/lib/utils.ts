@@ -99,6 +99,23 @@ export const creditSource = (entry: { kind: string; provider: string | null }) =
 	}
 }
 
-/** "1,250 credits" */
+const CREDIT_UNITS = [
+	{ size: 1_000_000_000, suffix: "B" },
+	{ size: 1_000_000, suffix: "M" },
+	{ size: 1_000, suffix: "k" }
+]
+
+/** Shortens only when exact: "50k", "50.5k", "1.5M", but "50,550". */
+export const formatCreditAmount = (credits: number, locale = "en-US") => {
+	const unit = CREDIT_UNITS.find(({ size }) => Math.abs(credits) >= size && credits % (size / 10) === 0)
+	if (!unit) return credits.toLocaleString(locale)
+	return `${(credits / unit.size).toLocaleString(locale, { maximumFractionDigits: 1 })}${unit.suffix}`
+}
+
+/** "50.5k credits" */
 export const formatCredits = (credits: number, locale = "en-US") =>
-	`${credits.toLocaleString(locale)} ${credits === 1 ? "credit" : "credits"}`
+	`${formatCreditAmount(credits, locale)} ${credits === 1 ? "credit" : "credits"}`
+
+/** "€12.50" */
+export const formatEur = (cents: number, locale = "en-US") =>
+	(cents / 100).toLocaleString(locale, { style: "currency", currency: "EUR" })

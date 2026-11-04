@@ -1,5 +1,6 @@
 import { error, json } from "@sveltejs/kit"
-import { MAX_FILES, MAX_FILE_BYTES, uploadAll, validFileName } from "#lib/scripts"
+import { localeFrom } from "#lib/format.svelte.js"
+import { MAX_FILES, MAX_FILE_BYTES, megabytes, uploadAll, validFileName } from "#lib/scripts"
 import { encryptFile, encryptedSize, keyHex, newRevisionKey } from "#lib/encryption"
 import { hashDeployToken } from "#lib/server/deploy.server"
 import { refreshScript } from "#lib/server/scripts.cache"
@@ -40,7 +41,10 @@ export const POST = async ({ request, params }) => {
 	const badName = names.find((name) => !validFileName(name))
 	if (badName != null) error(400, `Invalid file name: ${badName}`)
 	const big = files.find((file) => file.size > MAX_FILE_BYTES)
-	if (big) error(400, `${big.name} is larger than ${MAX_FILE_BYTES / 1024 / 1024} MB.`)
+	if (big) {
+		const limit = megabytes(MAX_FILE_BYTES, localeFrom(request.headers.get("accept-language")))
+		error(400, `${big.name} is larger than ${limit} MB.`)
+	}
 
 	// A trigger assigns the revision, so the generated type's required `revision` is cast away (see RevisionUpload)
 	const created = await scripts

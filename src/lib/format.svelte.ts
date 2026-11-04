@@ -1,7 +1,7 @@
 import { page } from "$app/state"
 import { SvelteDate } from "svelte/reactivity"
-import { formatCredits } from "#lib/utils"
-import { formatPrice } from "#lib/scripts"
+import { formatCreditAmount, formatCredits, formatEur } from "#lib/utils"
+import { formatPrice, megabytes } from "#lib/scripts"
 
 const DEFAULT_LOCALE = "en-US"
 
@@ -25,8 +25,10 @@ export const fmt = {
 	},
 	number: (n: number, options?: Intl.NumberFormatOptions) => n.toLocaleString(locale(), options),
 	credits: (credits: number) => formatCredits(credits, locale()),
+	creditAmount: (credits: number) => formatCreditAmount(credits, locale()),
 	price: (credits: number) => formatPrice(credits, locale()),
-	eur: (cents: number) => (cents / 100).toLocaleString(locale(), { style: "currency", currency: "EUR" }),
+	eur: (cents: number) => formatEur(cents, locale()),
+	megabytes: (bytes: number) => megabytes(bytes, locale()),
 	percent: (fraction: number, digits = 1) =>
 		fraction.toLocaleString(locale(), { style: "percent", maximumFractionDigits: digits }),
 	date: (value: string | number | Date) => new SvelteDate(value).toLocaleDateString(locale()),

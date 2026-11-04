@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Head from "#lib/components/Head.svelte"
 	import ScriptWizard from "#lib/components/ScriptWizard.svelte"
-	import { megabytes } from "#lib/scripts"
+	import { fmt } from "#lib/format.svelte.js"
 
 	const { data } = $props()
 </script>
@@ -16,8 +16,8 @@
 			run it, it is always free, and it is not reviewed by staff.
 		</p>
 		<p class="nv-dim">
-			You have used {data.usage.scripts} of {data.usage.maxScripts} scripts and {megabytes(data.usage.bytes)} of
-			{megabytes(data.usage.maxBytes)} MB of storage.
+			You have used {fmt.number(data.usage.scripts)} of {fmt.number(data.usage.maxScripts)} scripts and
+			{fmt.megabytes(data.usage.bytes)} of {fmt.megabytes(data.usage.maxBytes)} MB of storage.
 		</p>
 	</aside>
 {/if}

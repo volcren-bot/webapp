@@ -1,8 +1,10 @@
 import { fail, redirect, type RequestEvent } from "@sveltejs/kit"
+import { localeFrom } from "#lib/format.svelte.js"
 import { markStale } from "#lib/server/scripts.cache"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
 import { Constants } from "#lib/types/supabase"
+import { formatCredits } from "#lib/utils"
 
 const MAX_DOCUMENT_CHARS = 200_000
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -222,7 +224,7 @@ export const actions = {
 		if (err) return fail(500, { message: errorRef("Could not adjust the credits", err) })
 
 		return {
-			message: `Done: ${target.username} now has ${balance.toLocaleString("en-US")} credits.`,
+			message: `Done: ${target.username} now has ${formatCredits(balance, localeFrom(request.headers.get("accept-language")))}.`,
 			ok: true
 		}
 	},

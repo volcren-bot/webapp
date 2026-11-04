@@ -9,6 +9,8 @@ import { openPayments } from "#lib/server/payments.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
 import { creditsFor } from "#lib/credits"
+import { localeFrom } from "#lib/format.svelte.js"
+import { formatEur } from "#lib/utils"
 
 const MINUTES_PER_MONTH = 30 * 24 * 60
 
@@ -49,8 +51,9 @@ export const actions = {
 		const cents = Math.round(eur * 100)
 
 		if (!Number.isFinite(cents) || cents < MIN_TOPUP_CENTS || cents > MAX_TOPUP_CENTS) {
+			const locale = localeFrom(request.headers.get("accept-language"))
 			return fail(400, {
-				message: `Amount must be between €${MIN_TOPUP_CENTS / 100} and €${MAX_TOPUP_CENTS / 100}.`
+				message: `Amount must be between ${formatEur(MIN_TOPUP_CENTS, locale)} and ${formatEur(MAX_TOPUP_CENTS, locale)}.`
 			})
 		}
 

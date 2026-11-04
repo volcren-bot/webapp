@@ -42,8 +42,9 @@ export const roleAtLeast = (role: string | null | undefined, minimum: Role) => {
 /** A script by someone below scripter is a community script (scripts.author_is_community). */
 export const isCommunityRole = (role: string | null | undefined) => !roleAtLeast(role, "scripter")
 
-/** Byte sizes of the community limits as megabytes, e.g. "12.5". */
-export const megabytes = (bytes: number) => (bytes / 1024 / 1024).toFixed(1)
+/** Byte sizes as megabytes, e.g. "12.5". */
+export const megabytes = (bytes: number, locale = "en-US") =>
+	(bytes / 1024 / 1024).toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
 export const CATEGORIES = Constants.scripts.Enums.category
 export const STAGES = Constants.scripts.Enums.stage

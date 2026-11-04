@@ -123,7 +123,7 @@
 						<span class="nv-dim">{fmt.dateTime(payment.created_at)}</span>
 						<span>
 							{fmt.credits(payment.credits)}{#if payment.bonus}<span class="nv-dim">
-									incl. {fmt.number(payment.bonus)} bonus</span
+									incl. {fmt.creditAmount(payment.bonus)} bonus</span
 								>{/if}
 							<span class="nv-dim">({fmt.eur(payment.amount)}) ·</span>
 							{#if payment.status === "pending"}

@@ -46,8 +46,8 @@
 								? 'text-error-400'
 								: 'text-success-400'}"
 						>
-							{entry.amount > 0 ? "+" : ""}{fmt.number(entry.amount)}
-							<span class="nv-dim">→ {fmt.number(entry.balance_after)}</span>
+							{entry.amount > 0 ? "+" : ""}{fmt.creditAmount(entry.amount)}
+							<span class="nv-dim">→ {fmt.creditAmount(entry.balance_after)}</span>
 						</span>
 					</li>
 				{/each}

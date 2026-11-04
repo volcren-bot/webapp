@@ -43,6 +43,10 @@ A SvelteKit starter with Supabase auth, Tailwind 4 UI, dark mode.
 
 After changing the database, regenerate the types with `bun gentypes` (needs the Supabase CLI).
 
+## Feedback
+
+`/reports` lists the bug reports the viewer may see, straight from `feedback.list_reports` under row level security: their own, those on their scripts, those assigned to them, and all of them for moderators. `/reports/[id]` shows one with its attachments (diagnostics, game state, script log) and lets the author, assignee or a moderator change its status, the author or a moderator assign a tester, and the reporter or a moderator delete it. The script page's feedback section gives authors the score distribution (`feedback.score_summary`) and the count of open reports. Scores and reports are sent by the loader through the API; the webapp only reads and triages them.
+
 ## Keyboard navigation
 
 Every `+page.svelte` is found at build time (`src/lib/routes.ts`) and nested by URL into one tree, so a new page

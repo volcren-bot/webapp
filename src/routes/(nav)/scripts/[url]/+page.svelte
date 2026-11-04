@@ -298,6 +298,50 @@
 				></pre>
 		</div>
 
+		<div class="nv-float flex flex-col gap-3">
+			<span class="nv-title">feedback</span>
+			<p class="nv-dim">
+				Users score scripts from 1 to 10 and report bugs from the loader. Scores are internal and anonymous:
+				you see the distribution, moderators the rest.
+			</p>
+			{#await data.owner.feedback}
+				<p class="nv-dim">Loading feedback...</p>
+			{:then feedback}
+				{#if feedback.count}
+					<p>
+						<b>{fmt.number(feedback.average ?? 0, { maximumFractionDigits: 2 })}</b>
+						<span class="nv-dim"
+							>average from {fmt.number(feedback.count)} score{feedback.count === 1 ? "" : "s"}</span
+						>
+					</p>
+					{@const most = Math.max(...feedback.histogram, 1)}
+					<ol class="grid grid-cols-10 items-end gap-1 text-center text-xs" aria-label="Score distribution">
+						{#each feedback.histogram as votes, i (i)}
+							<li class="flex flex-col items-center gap-1">
+								<span class="nv-dim">{votes || ""}</span>
+								<span
+									class="w-full rounded-sm bg-(--tn-blue)"
+									style="height: {Math.max((votes / most) * 4, votes ? 0.25 : 0.0625)}rem"
+									title="{votes} × {i + 1}"
+								></span>
+								<span>{i + 1}</span>
+							</li>
+						{/each}
+					</ol>
+				{:else}
+					<p class="nv-dim">No scores yet.</p>
+				{/if}
+				<p>
+					<a href="/reports?script={script.id}">
+						{fmt.number(feedback.open)} open bug report{feedback.open === 1 ? "" : "s"}
+					</a>
+					{#if feedback.total > feedback.open}
+						<span class="nv-dim">({fmt.number(feedback.total)} in all)</span>
+					{/if}
+				</p>
+			{/await}
+		</div>
+
 		{#await data.owner.sharing}
 			<div class="nv-float flex flex-col gap-3">
 				<span class="nv-title">share codes</span>

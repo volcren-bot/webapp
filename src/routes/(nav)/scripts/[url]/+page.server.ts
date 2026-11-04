@@ -145,6 +145,20 @@ export const load = async ({ params, url, locals: { supabaseServer, user, getPro
 					.then(({ data }) => data ?? []),
 				[]
 			),
+			// Internal scores (aggregates only) and the open bug reports, for the author and moderators
+			feedback: lazy(
+				Promise.all([
+					supabaseServer.schema("feedback").rpc("score_summary", { p_script: script.id }).maybeSingle(),
+					supabaseServer.schema("feedback").rpc("list_reports", { p_script: script.id })
+				]).then(([summary, reports]) => ({
+					count: summary.data?.count ?? 0,
+					average: summary.data?.average ?? null,
+					histogram: summary.data?.histogram ?? [],
+					open: (reports.data ?? []).filter((r) => r.status === "open" || r.status === "in_progress").length,
+					total: reports.data?.length ?? 0
+				})),
+				{ count: 0, average: null, histogram: [], open: 0, total: 0 }
+			),
 			sharing: lazy(
 				Promise.all([
 					scripts

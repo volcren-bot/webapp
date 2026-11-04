@@ -1,6 +1,178 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
+	feedback: {
+		Tables: {
+			reports: {
+				Row: {
+					assigned_to: string | null
+					created_at: string
+					description: string
+					diagnostics: Json | null
+					id: string
+					log: string | null
+					revision: number
+					script_id: string
+					session_id: string
+					snapshot: Json | null
+					status: Database["feedback"]["Enums"]["report_status"]
+					updated_at: string
+					user_id: string
+					can_manage_report: boolean | null
+					can_view_report: boolean | null
+				}
+				Insert: {
+					assigned_to?: string | null
+					created_at?: string
+					description?: string
+					diagnostics?: Json | null
+					id?: string
+					log?: string | null
+					revision: number
+					script_id: string
+					session_id: string
+					snapshot?: Json | null
+					status?: Database["feedback"]["Enums"]["report_status"]
+					updated_at?: string
+					user_id: string
+				}
+				Update: {
+					assigned_to?: string | null
+					created_at?: string
+					description?: string
+					diagnostics?: Json | null
+					id?: string
+					log?: string | null
+					revision?: number
+					script_id?: string
+					session_id?: string
+					snapshot?: Json | null
+					status?: Database["feedback"]["Enums"]["report_status"]
+					updated_at?: string
+					user_id?: string
+				}
+				Relationships: []
+			}
+			scores: {
+				Row: {
+					created_at: string
+					revision: number
+					score: number
+					script_id: string
+					session_id: string
+					updated_at: string
+					user_id: string
+				}
+				Insert: {
+					created_at?: string
+					revision: number
+					score: number
+					script_id: string
+					session_id: string
+					updated_at?: string
+					user_id: string
+				}
+				Update: {
+					created_at?: string
+					revision?: number
+					score?: number
+					script_id?: string
+					session_id?: string
+					updated_at?: string
+					user_id?: string
+				}
+				Relationships: []
+			}
+		}
+		Views: {
+			[_ in never]: never
+		}
+		Functions: {
+			can_manage_report: { Args: { r: Database["feedback"]["Tables"]["reports"]["Row"] }; Returns: boolean }
+			can_view_report: { Args: { r: Database["feedback"]["Tables"]["reports"]["Row"] }; Returns: boolean }
+			clear_old_attachments: { Args: Record<PropertyKey, never>; Returns: number }
+			list_reports: {
+				Args: { p_script?: string }
+				Returns: {
+					assigned_to: string
+					assignee: string
+					created_at: string
+					description: string
+					has_diagnostics: boolean
+					has_log: boolean
+					has_snapshot: boolean
+					id: string
+					revision: number
+					script_id: string
+					script_title: string
+					script_url: string
+					session_id: string
+					status: Database["feedback"]["Enums"]["report_status"]
+					updated_at: string
+					user_id: string
+					username: string
+				}[]
+			}
+			list_testers: {
+				Args: Record<PropertyKey, never>
+				Returns: {
+					id: string
+					role: Database["profiles"]["Enums"]["roles"]
+					username: string
+				}[]
+			}
+			recent_session: {
+				Args: { p_session: string; p_user: string }
+				Returns: Database["payments"]["Tables"]["sessions"]["Row"]
+				SetofOptions: {
+					from: "*"
+					to: "sessions"
+					isOneToOne: true
+					isSetofReturn: false
+				}
+			}
+			recent_sessions: {
+				Args: { p_user: string }
+				Returns: {
+					ended_at: string
+					reports: number
+					revision: number
+					score: number
+					script_id: string
+					session_id: string
+					started_at: string
+					title: string
+					url: string
+				}[]
+			}
+			report_session: {
+				Args: {
+					p_description: string
+					p_diagnostics: Json
+					p_log: string
+					p_session: string
+					p_snapshot: Json
+					p_user: string
+				}
+				Returns: string
+			}
+			score_session: { Args: { p_score: number; p_session: string; p_user: string }; Returns: undefined }
+			score_summary: {
+				Args: { p_script: string }
+				Returns: {
+					average: number
+					count: number
+					histogram: number[]
+				}[]
+			}
+		}
+		Enums: {
+			report_status: "open" | "in_progress" | "resolved" | "rejected"
+		}
+		CompositeTypes: {
+			[_ in never]: never
+		}
+	}
 	graphql_public: {
 		Tables: {
 			[_ in never]: never
@@ -10,12 +182,7 @@ export type Database = {
 		}
 		Functions: {
 			graphql: {
-				Args: {
-					extensions?: Json
-					operationName?: string
-					query?: string
-					variables?: Json
-				}
+				Args: { extensions?: Json; operationName?: string; query?: string; variables?: Json }
 				Returns: Json
 			}
 		}
@@ -35,7 +202,6 @@ export type Database = {
 					user_id: string
 					version: number
 				}
-				ComputedFields: never
 				Insert: {
 					accepted_at?: string
 					kind: Database["info"]["Enums"]["kind"]
@@ -52,6 +218,7 @@ export type Database = {
 					{
 						foreignKeyName: "acceptances_document_fkey"
 						columns: ["kind", "version"]
+						isOneToOne: false
 						referencedRelation: "documents"
 						referencedColumns: ["kind", "version"]
 					}
@@ -64,7 +231,6 @@ export type Database = {
 					kind: Database["info"]["Enums"]["kind"]
 					version: number
 				}
-				ComputedFields: never
 				Insert: {
 					content: string
 					created_at?: string
@@ -105,7 +271,6 @@ export type Database = {
 					updated_at: string
 					user_id: string
 				}
-				ComputedFields: never
 				Insert: {
 					credits?: number
 					earnings?: number
@@ -127,7 +292,6 @@ export type Database = {
 					platform_fee_bps: number
 					session_timeout_minutes: number
 				}
-				ComputedFields: never
 				Insert: {
 					id?: boolean
 					min_balance_minutes?: number
@@ -157,7 +321,6 @@ export type Database = {
 					session_id: string | null
 					user_id: string
 				}
-				ComputedFields: never
 				Insert: {
 					amount: number
 					balance_after: number
@@ -190,6 +353,7 @@ export type Database = {
 					{
 						foreignKeyName: "credits_ledger_payment_id_fkey"
 						columns: ["payment_id"]
+						isOneToOne: false
 						referencedRelation: "payments"
 						referencedColumns: ["id"]
 					}
@@ -208,7 +372,6 @@ export type Database = {
 					session_id: string | null
 					user_id: string
 				}
-				ComputedFields: never
 				Insert: {
 					amount: number
 					balance_after: number
@@ -249,7 +412,6 @@ export type Database = {
 					status: Database["payments"]["Enums"]["payment_status"]
 					user_id: string
 				}
-				ComputedFields: never
 				Insert: {
 					amount: number
 					bonus?: number
@@ -293,7 +455,6 @@ export type Database = {
 					unpaid: number
 					user_id: string
 				}
-				ComputedFields: never
 				Insert: {
 					author_id: string
 					charged_until?: string
@@ -330,24 +491,13 @@ export type Database = {
 		}
 		Functions: {
 			adjust_credits: {
-				Args: {
-					p_admin: string
-					p_amount: number
-					p_note: string
-					p_user: string
-				}
+				Args: { p_admin: string; p_amount: number; p_note: string; p_user: string }
 				Returns: number
 			}
 			average_price: { Args: Record<PropertyKey, never>; Returns: number }
-			charge_session: {
-				Args: { p_minutes: number; p_session: string }
-				Returns: number
-			}
+			charge_session: { Args: { p_minutes: number; p_session: string }; Returns: number }
 			end_session: {
-				Args: {
-					p_reason: Database["payments"]["Enums"]["session_end"]
-					p_session: string
-				}
+				Args: { p_reason: Database["payments"]["Enums"]["session_end"]; p_session: string }
 				Returns: number
 			}
 			end_stale_sessions: { Args: Record<PropertyKey, never>; Returns: number }
@@ -414,7 +564,6 @@ export type Database = {
 					reason: string
 					user_id: string
 				}
-				ComputedFields: never
 				Insert: {
 					admin_id: string
 					banned: boolean
@@ -440,7 +589,6 @@ export type Database = {
 					id: number
 					user_id: string
 				}
-				ComputedFields: never
 				Insert: {
 					admin_id: string
 					created_at?: string
@@ -464,7 +612,6 @@ export type Database = {
 					role: Database["profiles"]["Enums"]["roles"]
 					username: string
 				}
-				ComputedFields: never
 				Insert: {
 					avatar?: string
 					banned_at?: string | null
@@ -490,47 +637,21 @@ export type Database = {
 		Functions: {
 			clean_avatar: { Args: { url: string }; Returns: string }
 			clean_username: { Args: { id: string; name: string }; Returns: string }
-			get_provider_id: {
-				Args: { provider: string; user_id: string }
-				Returns: string
-			}
+			get_provider_id: { Args: { provider: string; user_id: string }; Returns: string }
 			get_roles_enum: { Args: Record<PropertyKey, never>; Returns: string[] }
-			get_user_id: {
-				Args: { provider: string; provider_id: string }
-				Returns: string
-			}
+			get_user_id: { Args: { provider: string; provider_id: string }; Returns: string }
 			has_accepted_terms: { Args: { user_id: string }; Returns: boolean }
 			is_banned: { Args: { user_id: string }; Returns: boolean }
 			is_role:
-				| {
-						Args: { target_role: Database["profiles"]["Enums"]["roles"] }
-						Returns: boolean
-				  }
-				| {
-						Args: {
-							target_role: Database["profiles"]["Enums"]["roles"]
-							user_id: string
-						}
-						Returns: boolean
-				  }
-			log_impersonation: {
-				Args: { p_admin: string; p_user: string }
-				Returns: undefined
-			}
+				| { Args: { target_role: Database["profiles"]["Enums"]["roles"] }; Returns: boolean }
+				| { Args: { target_role: Database["profiles"]["Enums"]["roles"]; user_id: string }; Returns: boolean }
+			log_impersonation: { Args: { p_admin: string; p_user: string }; Returns: undefined }
 			min_role: {
-				Args: {
-					target_role: Database["profiles"]["Enums"]["roles"]
-					user_id: string
-				}
+				Args: { target_role: Database["profiles"]["Enums"]["roles"]; user_id: string }
 				Returns: boolean
 			}
 			set_banned: {
-				Args: {
-					p_admin: string
-					p_banned: boolean
-					p_reason: string
-					p_user: string
-				}
+				Args: { p_admin: string; p_banned: boolean; p_reason: string; p_user: string }
 				Returns: boolean
 			}
 			uid: { Args: Record<PropertyKey, never>; Returns: string }
@@ -550,10 +671,7 @@ export type Database = {
 			[_ in never]: never
 		}
 		Functions: {
-			generate_hmac: {
-				Args: { message: string; secret_key: string }
-				Returns: string
-			}
+			generate_hmac: { Args: { message: string; secret_key: string }; Returns: string }
 		}
 		Enums: {
 			[_ in never]: never
@@ -571,7 +689,6 @@ export type Database = {
 					name: string
 					scripts: string[]
 				}
-				ComputedFields: never
 				Insert: {
 					author?: string
 					id?: string
@@ -596,7 +713,6 @@ export type Database = {
 					redeem_max_failures: number
 					redeem_window_minutes: number
 				}
-				ComputedFields: never
 				Insert: {
 					id?: boolean
 					max_community_bytes?: number
@@ -627,7 +743,6 @@ export type Database = {
 					script_id: string
 					token_hash: string
 				}
-				ComputedFields: never
 				Insert: {
 					created_at?: string
 					created_by?: string
@@ -650,6 +765,7 @@ export type Database = {
 					{
 						foreignKeyName: "deploy_tokens_script_id_fkey"
 						columns: ["script_id"]
+						isOneToOne: false
 						referencedRelation: "scripts"
 						referencedColumns: ["id"]
 					}
@@ -662,7 +778,6 @@ export type Database = {
 					script_id: string
 					user_id: string
 				}
-				ComputedFields: never
 				Insert: {
 					code_id: string
 					granted_at?: string
@@ -679,12 +794,14 @@ export type Database = {
 					{
 						foreignKeyName: "grants_code_id_fkey"
 						columns: ["code_id"]
+						isOneToOne: false
 						referencedRelation: "share_codes"
 						referencedColumns: ["id"]
 					},
 					{
 						foreignKeyName: "grants_script_id_fkey"
 						columns: ["script_id"]
+						isOneToOne: false
 						referencedRelation: "scripts"
 						referencedColumns: ["id"]
 					}
@@ -698,7 +815,6 @@ export type Database = {
 					stage: Database["scripts"]["Enums"]["stage"]
 					type: Database["scripts"]["Enums"]["type"]
 				}
-				ComputedFields: never
 				Insert: {
 					categories?: Database["scripts"]["Enums"]["category"][]
 					id: string
@@ -717,6 +833,7 @@ export type Database = {
 					{
 						foreignKeyName: "metadata_id_fkey"
 						columns: ["id"]
+						isOneToOne: true
 						referencedRelation: "scripts"
 						referencedColumns: ["id"]
 					}
@@ -731,7 +848,6 @@ export type Database = {
 					revision: number
 					updated_at: string
 				}
-				ComputedFields: never
 				Insert: {
 					author?: string
 					created_at?: string
@@ -752,6 +868,7 @@ export type Database = {
 					{
 						foreignKeyName: "protected_id_fkey"
 						columns: ["id"]
+						isOneToOne: true
 						referencedRelation: "scripts"
 						referencedColumns: ["id"]
 					}
@@ -762,7 +879,6 @@ export type Database = {
 					attempted_at: string
 					user_id: string
 				}
-				ComputedFields: never
 				Insert: {
 					attempted_at?: string
 					user_id: string
@@ -785,7 +901,6 @@ export type Database = {
 					is_community: boolean | null
 					is_granted: boolean | null
 				}
-				ComputedFields: "author_banned" | "is_community" | "is_granted"
 				Insert: {
 					content: string
 					description: string
@@ -815,7 +930,6 @@ export type Database = {
 					redeemed_by: string | null
 					script_id: string
 				}
-				ComputedFields: never
 				Insert: {
 					code_hash: string
 					created_at?: string
@@ -840,6 +954,7 @@ export type Database = {
 					{
 						foreignKeyName: "share_codes_script_id_fkey"
 						columns: ["script_id"]
+						isOneToOne: false
 						referencedRelation: "scripts"
 						referencedColumns: ["id"]
 					}
@@ -850,7 +965,6 @@ export type Database = {
 					id: string
 					slug: string
 				}
-				ComputedFields: never
 				Insert: {
 					id: string
 					slug: string
@@ -863,6 +977,7 @@ export type Database = {
 					{
 						foreignKeyName: "slugs_id_fkey"
 						columns: ["id"]
+						isOneToOne: false
 						referencedRelation: "scripts"
 						referencedColumns: ["id"]
 					}
@@ -875,7 +990,6 @@ export type Database = {
 					key: string
 					revision: number
 				}
-				ComputedFields: never
 				Insert: {
 					created_at?: string
 					id: string
@@ -892,6 +1006,7 @@ export type Database = {
 					{
 						foreignKeyName: "version_keys_version_fkey"
 						columns: ["id", "revision"]
+						isOneToOne: true
 						referencedRelation: "versions"
 						referencedColumns: ["id", "revision"]
 					}
@@ -908,7 +1023,6 @@ export type Database = {
 					sizes: number[]
 					status: Database["scripts"]["Enums"]["version_status"]
 				}
-				ComputedFields: never
 				Insert: {
 					created_at?: string
 					entry: string
@@ -933,6 +1047,7 @@ export type Database = {
 					{
 						foreignKeyName: "versions_id_fkey"
 						columns: ["id"]
+						isOneToOne: false
 						referencedRelation: "scripts"
 						referencedColumns: ["id"]
 					}
@@ -943,15 +1058,7 @@ export type Database = {
 			[_ in never]: never
 		}
 		Functions: {
-			author_banned: {
-				Args: {
-					s: Omit<
-						Database["scripts"]["Tables"]["scripts"]["Row"],
-						Database["scripts"]["Tables"]["scripts"]["ComputedFields"]
-					>
-				}
-				Returns: boolean
-			}
+			author_banned: { Args: { s: Database["scripts"]["Tables"]["scripts"]["Row"] }; Returns: boolean }
 			author_is_banned: { Args: { script_id: string }; Returns: boolean }
 			author_is_community: { Args: { script_id: string }; Returns: boolean }
 			can_access:
@@ -959,10 +1066,7 @@ export type Database = {
 				| { Args: { script_id: string }; Returns: boolean }
 			can_create_script: { Args: Record<PropertyKey, never>; Returns: boolean }
 			can_upload: { Args: { object_name: string }; Returns: boolean }
-			can_view: {
-				Args: { script_id: string; viewer_id: string }
-				Returns: boolean
-			}
+			can_view: { Args: { script_id: string; viewer_id: string }; Returns: boolean }
 			create_share_code: {
 				Args: { p_expires_at: string; p_script: string }
 				Returns: {
@@ -971,14 +1075,8 @@ export type Database = {
 					id: string
 				}[]
 			}
-			delete_expired_share_codes: {
-				Args: Record<PropertyKey, never>
-				Returns: number
-			}
-			discard_version: {
-				Args: { revision: number; script_id: string }
-				Returns: undefined
-			}
+			delete_expired_share_codes: { Args: Record<PropertyKey, never>; Returns: number }
+			discard_version: { Args: { revision: number; script_id: string }; Returns: undefined }
 			get_authors: {
 				Args: { script_ids: string[] }
 				Returns: {
@@ -996,43 +1094,15 @@ export type Database = {
 				}[]
 			}
 			get_revision: { Args: { script_id: string }; Returns: number }
-			has_grant: {
-				Args: { script_id: string; user_id: string }
-				Returns: boolean
-			}
-			is_author: {
-				Args: { script_id: string; user_id: string }
-				Returns: boolean
-			}
-			is_community: {
-				Args: {
-					s: Omit<
-						Database["scripts"]["Tables"]["scripts"]["Row"],
-						Database["scripts"]["Tables"]["scripts"]["ComputedFields"]
-					>
-				}
-				Returns: boolean
-			}
-			is_granted: {
-				Args: {
-					s: Omit<
-						Database["scripts"]["Tables"]["scripts"]["Row"],
-						Database["scripts"]["Tables"]["scripts"]["ComputedFields"]
-					>
-				}
-				Returns: boolean
-			}
-			is_object_author: {
-				Args: { object_name: string; user_id: string }
-				Returns: boolean
-			}
+			has_grant: { Args: { script_id: string; user_id: string }; Returns: boolean }
+			is_author: { Args: { script_id: string; user_id: string }; Returns: boolean }
+			is_community: { Args: { s: Database["scripts"]["Tables"]["scripts"]["Row"] }; Returns: boolean }
+			is_granted: { Args: { s: Database["scripts"]["Tables"]["scripts"]["Row"] }; Returns: boolean }
+			is_object_author: { Args: { object_name: string; user_id: string }; Returns: boolean }
 			is_premium: { Args: { script_id: string }; Returns: boolean }
 			is_reviewable: { Args: { script_id: string }; Returns: boolean }
 			is_stage: {
-				Args: {
-					script_id: string
-					target_stage: Database["scripts"]["Enums"]["stage"]
-				}
+				Args: { script_id: string; target_stage: Database["scripts"]["Enums"]["stage"] }
 				Returns: boolean
 			}
 			list_grantees: {
@@ -1044,23 +1114,14 @@ export type Database = {
 				}[]
 			}
 			max_stage: {
-				Args: {
-					script_id: string
-					target_stage: Database["scripts"]["Enums"]["stage"]
-				}
+				Args: { script_id: string; target_stage: Database["scripts"]["Enums"]["stage"] }
 				Returns: boolean
 			}
 			min_stage: {
-				Args: {
-					script_id: string
-					target_stage: Database["scripts"]["Enums"]["stage"]
-				}
+				Args: { script_id: string; target_stage: Database["scripts"]["Enums"]["stage"] }
 				Returns: boolean
 			}
-			publish_version: {
-				Args: { revision: number; script_id: string }
-				Returns: undefined
-			}
+			publish_version: { Args: { revision: number; script_id: string }; Returns: undefined }
 			redeem_share_code: {
 				Args: { p_code: string }
 				Returns: {
@@ -1070,18 +1131,9 @@ export type Database = {
 				}[]
 			}
 			safe_uuid: { Args: { value: string }; Returns: string }
-			set_version_key: {
-				Args: { key: string; revision: number; script_id: string }
-				Returns: undefined
-			}
-			storage_used: {
-				Args: { author_id: string; reserve_pending?: boolean }
-				Returns: number
-			}
-			use_deploy_token: {
-				Args: { p_script: string; p_token_hash: string }
-				Returns: string
-			}
+			set_version_key: { Args: { key: string; revision: number; script_id: string }; Returns: undefined }
+			storage_used: { Args: { author_id: string; reserve_pending?: boolean }; Returns: number }
+			use_deploy_token: { Args: { p_script: string; p_token_hash: string }; Returns: string }
 			valid_files: { Args: { files: string[] }; Returns: boolean }
 		}
 		Enums: {
@@ -1128,7 +1180,6 @@ export type Database = {
 					xp_max: number
 					xp_min: number
 				}
-				ComputedFields: never
 				Insert: {
 					gp_max?: number
 					gp_min?: number
@@ -1152,7 +1203,6 @@ export type Database = {
 					minima: number[]
 					trackers: string[]
 				}
-				ComputedFields: never
 				Insert: {
 					id: string
 					maxima?: number[]
@@ -1175,7 +1225,6 @@ export type Database = {
 					levels: number
 					runtime: number
 				}
-				ComputedFields: never
 				Insert: {
 					experience?: number
 					gold?: number
@@ -1200,7 +1249,6 @@ export type Database = {
 					levels: number
 					runtime: number
 				}
-				ComputedFields: never
 				Insert: {
 					experience?: number
 					gold?: number
@@ -1222,7 +1270,6 @@ export type Database = {
 					id: string
 					values: number[]
 				}
-				ComputedFields: never
 				Insert: {
 					id: string
 					values?: number[]
@@ -1239,7 +1286,6 @@ export type Database = {
 					id: string
 					total: number | null
 				}
-				ComputedFields: never
 				Insert: {
 					downloads?: string[]
 					id: string
@@ -1259,7 +1305,6 @@ export type Database = {
 					id: string
 					total: number | null
 				}
-				ComputedFields: never
 				Insert: {
 					date?: string
 					downloads?: string[]
@@ -1283,7 +1328,6 @@ export type Database = {
 					levels: number | null
 					runtime: number | null
 				}
-				ComputedFields: never
 				Relationships: []
 			}
 		}
@@ -1291,21 +1335,11 @@ export type Database = {
 			can_manage: { Args: { script_id: string }; Returns: boolean }
 			get_level: { Args: { experience: number }; Returns: number }
 			increment_script_stats: {
-				Args: {
-					add_experience: number
-					add_gold: number
-					add_runtime: number
-					script_id: string
-				}
+				Args: { add_experience: number; add_gold: number; add_runtime: number; script_id: string }
 				Returns: undefined
 			}
 			increment_user_stats: {
-				Args: {
-					add_experience: number
-					add_gold: number
-					add_runtime: number
-					user_id: string
-				}
+				Args: { add_experience: number; add_gold: number; add_runtime: number; user_id: string }
 				Returns: undefined
 			}
 			online_count: { Args: Record<PropertyKey, never>; Returns: number }
@@ -1353,7 +1387,6 @@ export type Database = {
 					updated_at: string | null
 					versioning_status: string
 				}
-				ComputedFields: never
 				Insert: {
 					allowed_mime_types?: string[] | null
 					avif_autodetection?: boolean | null
@@ -1398,7 +1431,6 @@ export type Database = {
 					type: Database["storage"]["Enums"]["buckettype"]
 					updated_at: string
 				}
-				ComputedFields: never
 				Insert: {
 					created_at?: string
 					deleted_at?: string | null
@@ -1426,7 +1458,6 @@ export type Database = {
 					type: Database["storage"]["Enums"]["buckettype"]
 					updated_at: string
 				}
-				ComputedFields: never
 				Insert: {
 					created_at?: string
 					id: string
@@ -1451,7 +1482,6 @@ export type Database = {
 					name: string
 					updated_at: string
 				}
-				ComputedFields: never
 				Insert: {
 					bucket_name: string
 					catalog_id: string
@@ -1474,6 +1504,7 @@ export type Database = {
 					{
 						foreignKeyName: "iceberg_namespaces_catalog_id_fkey"
 						columns: ["catalog_id"]
+						isOneToOne: false
 						referencedRelation: "buckets_analytics"
 						referencedColumns: ["id"]
 					}
@@ -1493,7 +1524,6 @@ export type Database = {
 					shard_key: string | null
 					updated_at: string
 				}
-				ComputedFields: never
 				Insert: {
 					bucket_name: string
 					catalog_id: string
@@ -1524,12 +1554,14 @@ export type Database = {
 					{
 						foreignKeyName: "iceberg_tables_catalog_id_fkey"
 						columns: ["catalog_id"]
+						isOneToOne: false
 						referencedRelation: "buckets_analytics"
 						referencedColumns: ["id"]
 					},
 					{
 						foreignKeyName: "iceberg_tables_namespace_id_fkey"
 						columns: ["namespace_id"]
+						isOneToOne: false
 						referencedRelation: "iceberg_namespaces"
 						referencedColumns: ["id"]
 					}
@@ -1542,7 +1574,6 @@ export type Database = {
 					id: number
 					name: string
 				}
-				ComputedFields: never
 				Insert: {
 					executed_at?: string | null
 					hash: string
@@ -1575,7 +1606,6 @@ export type Database = {
 					user_metadata: Json | null
 					version: string | null
 				}
-				ComputedFields: never
 				Insert: {
 					archived_at?: string | null
 					bucket_id?: string | null
@@ -1614,6 +1644,7 @@ export type Database = {
 					{
 						foreignKeyName: "objects_bucketId_fkey"
 						columns: ["bucket_id"]
+						isOneToOne: false
 						referencedRelation: "buckets"
 						referencedColumns: ["id"]
 					}
@@ -1632,7 +1663,6 @@ export type Database = {
 					user_metadata: Json | null
 					version: string
 				}
-				ComputedFields: never
 				Insert: {
 					bucket_id: string
 					created_at?: string
@@ -1661,6 +1691,7 @@ export type Database = {
 					{
 						foreignKeyName: "s3_multipart_uploads_bucket_id_fkey"
 						columns: ["bucket_id"]
+						isOneToOne: false
 						referencedRelation: "buckets"
 						referencedColumns: ["id"]
 					}
@@ -1679,7 +1710,6 @@ export type Database = {
 					upload_id: string
 					version: string
 				}
-				ComputedFields: never
 				Insert: {
 					bucket_id: string
 					created_at?: string
@@ -1708,12 +1738,14 @@ export type Database = {
 					{
 						foreignKeyName: "s3_multipart_uploads_parts_bucket_id_fkey"
 						columns: ["bucket_id"]
+						isOneToOne: false
 						referencedRelation: "buckets"
 						referencedColumns: ["id"]
 					},
 					{
 						foreignKeyName: "s3_multipart_uploads_parts_upload_id_fkey"
 						columns: ["upload_id"]
+						isOneToOne: false
 						referencedRelation: "s3_multipart_uploads"
 						referencedColumns: ["id"]
 					}
@@ -1731,7 +1763,6 @@ export type Database = {
 					name: string
 					updated_at: string
 				}
-				ComputedFields: never
 				Insert: {
 					bucket_id: string
 					created_at?: string
@@ -1758,6 +1789,7 @@ export type Database = {
 					{
 						foreignKeyName: "vector_indexes_bucket_id_fkey"
 						columns: ["bucket_id"]
+						isOneToOne: false
 						referencedRelation: "buckets_vectors"
 						referencedColumns: ["id"]
 					}
@@ -1768,14 +1800,8 @@ export type Database = {
 			[_ in never]: never
 		}
 		Functions: {
-			allow_any_operation: {
-				Args: { expected_operations: string[] }
-				Returns: boolean
-			}
-			allow_only_operation: {
-				Args: { expected_operation: string }
-				Returns: boolean
-			}
+			allow_any_operation: { Args: { expected_operations: string[] }; Returns: boolean }
+			allow_only_operation: { Args: { expected_operation: string }; Returns: boolean }
 			can_insert_object: {
 				Args: { bucketid: string; metadata: Json; name: string; owner: string }
 				Returns: undefined
@@ -1783,10 +1809,7 @@ export type Database = {
 			extension: { Args: { name: string }; Returns: string }
 			filename: { Args: { name: string }; Returns: string }
 			foldername: { Args: { name: string }; Returns: string[] }
-			get_common_prefix: {
-				Args: { p_delimiter: string; p_key: string; p_prefix: string }
-				Returns: string
-			}
+			get_common_prefix: { Args: { p_delimiter: string; p_key: string; p_prefix: string }; Returns: string }
 			get_size_by_bucket: {
 				Args: { delete_markers?: string; noncurrent_versions?: string }
 				Returns: {
@@ -1945,9 +1968,7 @@ export type Tables<
 		? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
 				DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
 		: never) = never
-> = DefaultSchemaTableNameOrOptions extends {
-	schema: keyof DatabaseWithoutInternals
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
 	? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
 			DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
 			Row: infer R
@@ -1970,9 +1991,7 @@ export type TablesInsert<
 	}
 		? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
 		: never) = never
-> = DefaultSchemaTableNameOrOptions extends {
-	schema: keyof DatabaseWithoutInternals
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
 	? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
 			Insert: infer I
 		}
@@ -1994,9 +2013,7 @@ export type TablesUpdate<
 	}
 		? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
 		: never) = never
-> = DefaultSchemaTableNameOrOptions extends {
-	schema: keyof DatabaseWithoutInternals
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
 	? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
 			Update: infer U
 		}
@@ -2018,9 +2035,7 @@ export type Enums<
 	}
 		? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
 		: never) = never
-> = DefaultSchemaEnumNameOrOptions extends {
-	schema: keyof DatabaseWithoutInternals
-}
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
 	? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
 	: DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
 		? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
@@ -2034,15 +2049,18 @@ export type CompositeTypes<
 	}
 		? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
 		: never) = never
-> = PublicCompositeTypeNameOrOptions extends {
-	schema: keyof DatabaseWithoutInternals
-}
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
 	? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
 	: PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
 		? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
 		: never
 
 export const Constants = {
+	feedback: {
+		Enums: {
+			report_status: ["open", "in_progress", "resolved", "rejected"]
+		}
+	},
 	graphql_public: {
 		Enums: {}
 	},

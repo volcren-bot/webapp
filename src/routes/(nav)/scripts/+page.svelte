@@ -12,7 +12,7 @@
 	import Clock from "@lucide/svelte/icons/clock"
 	import FileCode from "@lucide/svelte/icons/file-code"
 	import { goto } from "$app/navigation"
-	import { listKey, useShortcuts } from "#lib/shortcuts.svelte.js"
+	import { useKeys } from "#lib/keys.svelte.js"
 	import { CATEGORIES, CATEGORY_ICONS, STAGE_COLORS, TYPES } from "#lib/scripts"
 
 	const { data, form } = $props()
@@ -21,7 +21,7 @@
 	const canCreate = $derived(profile != null)
 	const filters = $derived(data.filters)
 
-	// Row highlighted by the arrow keys; -1 until one is pressed.
+	// Row highlighted by j/k or the arrow keys; -1 until one is pressed.
 	let selected = $state(-1)
 	let list = $state<HTMLElement>()
 	let search = $state<HTMLInputElement>()
@@ -40,59 +40,22 @@
 		if (script) goto(`/scripts/${script.url}`)
 	}
 
-	useShortcuts(() => {
-		const keys = data.scripts.flatMap((_, i) => listKey(i) ?? [])
-		return [
-			{
-				display: "↑ ↓",
-				label: "Previous / next script",
-				scope: "This page",
-				keys: ["ArrowUp", "ArrowDown"],
-				run: (e) => {
-					const last = data.scripts.length - 1
-					if (last < 0) return
-					selected =
-						e.key === "ArrowDown"
-							? Math.min(selected + 1, last)
-							: selected < 0
-								? last
-								: Math.max(selected - 1, 0)
-				}
-			},
-			{
-				display: "Enter",
-				label: "Open the highlighted script",
-				scope: "This page",
-				keys: ["Enter"],
-				run: () => open(selected)
-			},
-			{
-				display: keys.length ? `${keys[0]}–${keys[keys.length - 1]}` : "0–9",
-				label: "Open that script",
-				scope: "This page",
-				keys,
-				run: (e) => open(data.scripts.findIndex((_, i) => listKey(i) === e.key))
-			},
-			{
-				display: "/",
-				label: "Focus the search box",
-				scope: "This page",
-				keys: ["/"],
-				run: () => search?.focus()
-			},
-			...(canCreate
-				? [
-						{
-							display: "n",
-							label: "Create a new script",
-							scope: "This page",
-							keys: ["n"],
-							run: () => goto("/scripts/new")
-						}
-					]
-				: [])
-		]
-	})
+	// Moves the highlight, stopping at either end; up with nothing highlighted starts from the bottom.
+	function move(by: 1 | -1) {
+		const last = data.scripts.length - 1
+		if (last < 0) return
+		selected = by === 1 ? Math.min(selected + 1, last) : selected < 0 ? last : Math.max(selected - 1, 0)
+	}
+
+	useKeys(() => [
+		{ keys: ["j", "ArrowDown"], display: "j ↓", label: "Next script", run: () => move(1) },
+		{ keys: ["k", "ArrowUp"], display: "k ↑", label: "Previous script", run: () => move(-1) },
+		{ keys: ["Enter"], display: "Enter", label: "Open the highlighted script", run: () => open(selected) },
+		{ keys: ["s", "/"], display: "s /", label: "Focus the search box", run: () => search?.focus() },
+		...(canCreate
+			? [{ keys: ["n"], display: "n", label: "Create a new script", run: () => goto("/scripts/new") }]
+			: [])
+	])
 </script>
 
 <Head title="Scripts" description="Browse and manage available scripts." />
@@ -199,7 +162,6 @@
 					>
 						<div class="flex items-center justify-between gap-3">
 							<span class="flex items-center gap-2 font-bold text-(--tn-blue)">
-								{#if listKey(i)}<span class="nv-key">{listKey(i)}</span>{/if}
 								<FileCode class="size-4 shrink-0" />
 								{script.title}
 							</span>

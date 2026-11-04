@@ -340,16 +340,26 @@ dialog::backdrop {
 		padding: 0 1.5ch;
 		color: var(--tn-fg-dark);
 	}
-	/* A fixed-width tree: guides and icons keep their size, the name is cut off with an ellipsis */
-	.nv-tree a > span:last-child {
+	/* A fixed-width tree: guides, icons and keys keep their size, the name is cut off with an ellipsis */
+	.nv-tree a > .nv-name {
 		min-width: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 	.nv-tree a > .nv-guide,
-	.nv-tree a > .nv-icon {
+	.nv-tree a > .nv-icon,
+	.nv-tree a > .nv-tree-key {
 		flex: none;
+	}
+	/* The key that picks this row in the go panel, after `g` and its parents' keys */
+	.nv-tree-key {
+		margin-left: auto;
+		color: var(--tn-comment);
+	}
+	.nv-tree a:hover > .nv-tree-key,
+	.nv-tree a.active > .nv-tree-key {
+		color: var(--tn-orange);
 	}
 	.nv-tree a:hover {
 		background: var(--tn-bg-hl);

@@ -2,7 +2,7 @@
 	import { enhance } from "$app/forms"
 	import { navigating, page } from "$app/state"
 	import { sidebar } from "#lib/sidebar.svelte.js"
-	import { useShortcuts } from "#lib/shortcuts.svelte.js"
+	import { useKeys } from "#lib/keys.svelte.js"
 	import Logo from "./Logo.svelte"
 	import ThemeSwitcher from "./ThemeSwitcher.svelte"
 
@@ -15,15 +15,12 @@
 	// Use the destination while navigating so the tabs update on click, not after the load finishes.
 	const path = $derived(navigating.to?.url.pathname ?? page.url.pathname)
 
-	useShortcuts(() => [
-		{
-			display: "u",
-			label: "Toggle the user panel",
-			scope: "Global",
-			keys: ["u"],
-			run: () => (showProfile = !showProfile)
-		}
-	])
+	useKeys(
+		() => [
+			{ keys: ["u"], display: "u", label: "Toggle the user panel", run: () => (showProfile = !showProfile) }
+		],
+		"Global"
+	)
 </script>
 
 <svelte:window

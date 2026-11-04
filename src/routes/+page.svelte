@@ -2,7 +2,7 @@
 	import { onMount } from "svelte"
 	import Head from "#lib/components/Head.svelte"
 	import { SITE_NAME, SITE_DESCRIPTION } from "#lib/utils"
-	import { cheatSheet } from "#lib/shortcuts.svelte.js"
+	import { HELP, help } from "#lib/keys.svelte.js"
 
 	const { data } = $props()
 	const { profile } = $derived(data)
@@ -157,10 +157,10 @@
 
 		<button
 			type="button"
-			onclick={() => (cheatSheet.open = true)}
+			onclick={() => (help.open = true)}
 			class="flex cursor-pointer items-center gap-2 rounded border border-(--tn-blue) p-2 px-[1.5ch] hover:bg-(--tn-bg-hl) hover:text-(--tn-blue)"
 		>
-			<span class="nv-key">K</span>
+			<span class="nv-key">{HELP}</span>
 			<span>Cheat sheet</span>
 		</button>
 	</div>

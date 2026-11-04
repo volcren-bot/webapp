@@ -1,74 +1,33 @@
 <script lang="ts">
 	import "../app.css"
-	import { goto, invalidate, preloadCode } from "$app/navigation"
+	import { invalidate, preloadCode } from "$app/navigation"
 	import { match } from "$app/paths"
-	import { page } from "$app/state"
 	import { onMount } from "svelte"
 	import Navigation from "./Navigation.svelte"
 	import Footer from "./Footer.svelte"
 	import Sidebar from "./Sidebar.svelte"
 	import CheatSheet from "./CheatSheet.svelte"
-	import KeyPopups from "./KeyPopups.svelte"
-	import { cheatSheet, handleKey, type Shortcut } from "#lib/shortcuts.svelte.js"
-	import { NAV_ROUTES, routeHref } from "#lib/utils"
+	import KeyPanel from "./KeyPanel.svelte"
+	import { handleKey, setRouteTree } from "#lib/keys.svelte.js"
+	import { routeTree } from "#lib/routes"
 	import { getSupabaseBrowser } from "#lib/supabase.browser"
 
 	let { data, children } = $props()
 	const { user, expiresAt } = $derived(data)
 
-	const NAV_KEYS: Record<string, string> = {
-		Home: "v",
-		Scripts: "s",
-		Stats: "d",
-		Information: "i",
-		Tutorials: "t"
-	}
+	// One tree of the pages this viewer may open feeds the sidebar, the key sequences and the cheat sheet.
+	const root = $derived(
+		routeTree({
+			member: !!data.profile,
+			admin: data.profile?.role === "administrator",
+			scripts: data.sidebarScripts.map((s: { url: string }) => s.url)
+		})
+	)
+	setRouteTree(() => root)
 
-	const globals = $derived<Shortcut[]>([
-		...NAV_ROUTES.filter((route) => route in NAV_KEYS).map((route) => ({
-			display: NAV_KEYS[route],
-			label: `Go to ${route.toLowerCase()}`,
-			scope: "Global",
-			keys: [NAV_KEYS[route]],
-			href: routeHref(route),
-			run: () => goto(routeHref(route))
-		})),
-		...(data.profile
-			? [
-					{
-						display: "a",
-						label: "Go to account",
-						scope: "Global",
-						keys: ["a"],
-						href: "/account",
-						run: () => goto("/account")
-					}
-				]
-			: []),
-		{
-			display: "K",
-			label: "Open the cheat sheet",
-			scope: "Global",
-			keys: ["k"],
-			run: () => (cheatSheet.open = true)
-		},
-		{
-			display: "Backspace",
-			label: "Go to the parent page",
-			scope: "Global",
-			keys: ["Backspace"],
-			run: () => {
-				const parent = page.url.pathname.replace(/\/+$/, "").replace(/\/[^/]*$/, "") || "/"
-				if (parent !== page.url.pathname) goto(parent)
-			}
-		},
-		{ display: "Alt + ←", label: "Go back", scope: "Global" },
-		{ display: "Esc", label: "Close menus and modals", scope: "Global" }
-	])
-
-	// Shortcuts call goto() without the hover preload, so fetch the nav pages' code (not data) up front.
+	// Key sequences call goto() without the hover preload, so fetch the top-level pages' code (not data) up front.
 	onMount(() => {
-		for (const route of NAV_ROUTES) match(routeHref(route)).then((found) => found && preloadCode(found.id))
+		for (const node of root.children) match(node.href).then((found) => found && preloadCode(found.id))
 	})
 
 	let callTimestamps: number[] = []
@@ -103,10 +62,10 @@
 	})
 </script>
 
-<svelte:window onkeydown={(e) => handleKey(e, globals)} />
+<svelte:window onkeydown={(e) => handleKey(e, root)} />
 
-<CheatSheet {globals} />
-<KeyPopups />
+<CheatSheet />
+<KeyPanel />
 
 <div class="flex h-full flex-col overflow-hidden">
 	<Navigation />

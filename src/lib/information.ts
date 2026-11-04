@@ -1,12 +1,12 @@
 export const informationPages = [
-	{ key: "f", href: "/information/faq", label: "Frequently asked questions" },
-	{ key: "t", href: "/information/terms", label: "Terms of service" },
-	{ key: "p", href: "/information/privacy", label: "Privacy policy" },
-	{ key: "s", href: "/information/security", label: "Security" }
+	{ href: "/information/faq", label: "Frequently asked questions" },
+	{ href: "/information/terms", label: "Terms of service" },
+	{ href: "/information/privacy", label: "Privacy policy" },
+	{ href: "/information/security", label: "Security" }
 ]
 
 export const termsPages = [
-	{ key: "u", href: "/information/terms/users", label: "User terms of service" },
-	{ key: "s", href: "/information/terms/scripters", label: "Scripter terms of service" },
-	{ key: "c", href: "/information/terms/community", label: "Community scripts addendum" }
+	{ href: "/information/terms/users", label: "User terms of service" },
+	{ href: "/information/terms/scripters", label: "Scripter terms of service" },
+	{ href: "/information/terms/community", label: "Community scripts addendum" }
 ]

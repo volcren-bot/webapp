@@ -4,36 +4,23 @@
 	import Head from "#lib/components/Head.svelte"
 	import { faqs } from "#lib/faqs"
 	import { newFaqUrl } from "#lib/github"
-	import { useShortcuts } from "#lib/shortcuts.svelte.js"
+	import { useKeys } from "#lib/keys.svelte.js"
 
 	let { children } = $props()
 
 	const currentId = $derived(page.url.pathname.split("/")[3])
 
-	useShortcuts(() => [
-		{
-			display: "↑ ↓",
-			label: "Previous / next question",
-			scope: "This page",
-			keys: ["ArrowUp", "ArrowDown"],
-			run: (e) => {
-				const current = faqs.findIndex((f) => f.id === currentId)
-				const next =
-					current === -1
-						? e.key === "ArrowDown"
-							? 0
-							: faqs.length - 1
-						: Math.min(Math.max(current + (e.key === "ArrowDown" ? 1 : -1), 0), faqs.length - 1)
-				if (next !== current) goto(`/information/faq/${faqs[next].id}`)
-			}
-		},
-		{
-			display: `${faqs[0].key}–${faqs[faqs.length - 1].key}`,
-			label: "Open that question",
-			scope: "This page",
-			keys: faqs.flatMap((f) => (f.key ? [f.key] : [])),
-			run: (e) => goto(`/information/faq/${faqs.find((f) => f.key === e.key)?.id}`)
-		}
+	// Moves to the neighbouring question; from the index, down opens the first and up the last.
+	function move(by: 1 | -1) {
+		const current = faqs.findIndex((f) => f.id === currentId)
+		const last = faqs.length - 1
+		const next = current === -1 ? (by === 1 ? 0 : last) : Math.min(Math.max(current + by, 0), last)
+		if (next !== current) goto(`/information/faq/${faqs[next].id}`)
+	}
+
+	useKeys(() => [
+		{ keys: ["j", "ArrowDown"], display: "j ↓", label: "Next question", run: () => move(1) },
+		{ keys: ["k", "ArrowUp"], display: "k ↑", label: "Previous question", run: () => move(-1) }
 	])
 
 	let list = $state<HTMLElement>()
@@ -62,12 +49,11 @@
 			{@const active = currentId === faq.id}
 			<a
 				href="/information/faq/{faq.id}"
-				class="grid min-h-9 shrink-0 grid-cols-[4ch_1fr] items-start gap-4 px-3 py-1.5 text-(--tn-fg) hover:bg-(--tn-bg-hl) hover:text-(--tn-blue) hover:no-underline {active
+				class="flex min-h-9 shrink-0 items-start px-3 py-1.5 text-(--tn-fg) hover:bg-(--tn-bg-hl) hover:text-(--tn-blue) hover:no-underline {active
 					? 'bg-(--tn-bg-hl)'
 					: ''}"
 				aria-current={active ? "page" : undefined}
 			>
-				<span class="nv-key">{faq.key}</span>
 				<span class="min-w-0 wrap-break-word {active ? 'text-(--tn-blue)' : ''}">{faq.q}</span>
 			</a>
 		{/each}

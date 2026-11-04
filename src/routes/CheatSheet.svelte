@@ -1,30 +1,44 @@
 <script lang="ts">
-	import { cheatSheet, localShortcuts, type Shortcut } from "#lib/shortcuts.svelte.js"
+	import { GO, HELP, UP, activeKeys, help, useRouteTree } from "#lib/keys.svelte.js"
+	import { sequences } from "#lib/routes"
 
-	let { globals }: { globals: Shortcut[] } = $props()
-
+	const tree = useRouteTree()
 	let dialog = $state<HTMLDialogElement>()
 	let query = $state("")
 
 	$effect(() => {
 		if (!dialog) return
-		if (cheatSheet.open && !dialog.open) {
+		if (help.open && !dialog.open) {
 			query = ""
 			dialog.showModal()
-		} else if (!cheatSheet.open && dialog.open) dialog.close()
+		} else if (!help.open && dialog.open) dialog.close()
 	})
 
+	const layoutKeys = [
+		{ display: GO, label: "Go to a page, following the panel", scope: "Global" },
+		{ display: HELP, label: "Open this cheat sheet", scope: "Global" },
+		{ display: UP, label: "Go to the parent page, or close a dialog", scope: "Global" },
+		{ display: "Esc", label: "Close menus and panels", scope: "Global" }
+	]
+
 	const rows = $derived.by(() => {
+		const all = [
+			...layoutKeys,
+			...activeKeys(),
+			...sequences(tree()).map(({ node, keys }) => ({
+				display: keys.join(" "),
+				label: node.href,
+				scope: "Pages"
+			}))
+		]
 		const q = query.trim().toLowerCase()
-		return [...localShortcuts(), ...globals].filter(
-			(s) => !q || `${s.display} ${s.label} ${s.scope}`.toLowerCase().includes(q)
-		)
+		return all.filter((s) => !q || `${s.display} ${s.label} ${s.scope}`.toLowerCase().includes(q))
 	})
 </script>
 
 <dialog
 	bind:this={dialog}
-	onclose={() => (cheatSheet.open = false)}
+	onclose={() => (help.open = false)}
 	onclick={(e) => e.target === dialog && dialog.close()}
 	aria-label="Keyboard shortcuts"
 	class="m-auto w-[min(40rem,92vw)] rounded-md border border-(--tn-bg-hl) bg-(--tn-bg) p-4 text-(--tn-fg) backdrop:bg-black/60"
@@ -44,7 +58,7 @@
 			<table class="w-full border-collapse text-left">
 				<thead class="nv-dim sticky top-0 bg-(--tn-bg)">
 					<tr>
-						<th class="py-1 pr-4 font-normal">Key</th>
+						<th class="py-1 pr-4 font-normal">Keys</th>
 						<th class="py-1 pr-4 font-normal">Action</th>
 						<th class="py-1 font-normal">Where</th>
 					</tr>

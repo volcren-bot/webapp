@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state"
 	import MessageCircle from "@lucide/svelte/icons/message-circle"
-	import { cheatSheet } from "#lib/shortcuts.svelte.js"
+	import { HELP, help } from "#lib/keys.svelte.js"
 
 	const { profile } = $derived(page.data)
 
@@ -46,9 +46,9 @@
 			<button
 				type="button"
 				class="nv-seg cursor-pointer hover:text-(--tn-blue) max-sm:hidden"
-				onclick={() => (cheatSheet.open = true)}
+				onclick={() => (help.open = true)}
 			>
-				<span style="color: var(--tn-orange)">K</span> cheat sheet
+				<span style="color: var(--tn-orange)">{HELP}</span> cheat sheet
 			</button>
 		{/if}
 		<a

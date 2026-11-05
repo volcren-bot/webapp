@@ -106,7 +106,7 @@
 					code-signed yet: choose <em>More info</em>, then <em>Run anyway</em>.
 				</li>
 				<li>
-					Choose who to install it for. Just for you needs no administrator and updates in one click. For
+					Choose who to install it for. Just for you needs no administrator and updates without asking. For
 					everyone on this PC asks an administrator to approve the install and every update.
 				</li>
 				<li>Start <em>VOLCREN</em> from the Start menu.</li>
@@ -121,8 +121,8 @@
 			</small>
 			<ul class="flex list-disc flex-col gap-2 pl-6">
 				<li>
-					The loader offers new versions itself and installs them when you click <em>Update and restart</em>.
-					If you used the old zip, delete its folder.
+					The loader updates itself when you open it, as long as no script is running. If you used the old
+					zip, delete its folder.
 				</li>
 				<li>
 					To switch between the two install types, uninstall first. Installing the other type keeps both.
@@ -177,8 +177,8 @@
 					<code>agent.dll</code>. Keep them together; the loader finds the others next to itself.
 				</li>
 				<li>
-					The loader offers new versions itself and installs them when you click <em>Update and restart</em>,
-					as long as its folder is writable. Otherwise, run the same commands again.
+					The loader updates itself when you open it, as long as its folder is writable. Otherwise, run the
+					same commands again.
 				</li>
 				<li>
 					Sign-in keeps its token in your system keyring, so a keyring service such as gnome-keyring or

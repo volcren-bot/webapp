@@ -9,9 +9,6 @@
 	const presets = [5, 7, 12]
 
 	let amount = $state(10)
-	// Credits are shown at 1 = 1 EUR, so the two fields hold the same number
-	const credits = $derived(Number.isFinite(amount) ? Math.round(amount * 100) / 100 : "")
-
 	// Same rounding as the server: the invoice is created for whole cents
 	const cents = $derived(Number.isFinite(amount) ? Math.round(amount * 100) : 0)
 	const purchase = $derived(creditsFor(cents))
@@ -39,46 +36,32 @@
 		<div class="mx-auto flex w-full max-w-md flex-col gap-2">
 			{#each presets as preset (preset)}
 				<button type="button" class="btn w-full" onclick={() => (amount = preset)}>
-					{fmt.credits(preset * CREDITS_PER_EUR)} · {fmt.eur(preset * 100)}
+					{fmt.credits(preset * 10000)}
 				</button>
 			{/each}
 		</div>
 
-		<div class="mx-auto grid w-full max-w-md grid-cols-1 gap-3">
-			<label class="label">
-				<span class="label-text">credits</span>
-				<input
-					class="input text-center"
-					type="number"
-					step="0.01"
-					min={data.limits.min / 100}
-					max={data.limits.max / 100}
-					value={credits}
-					oninput={(e) => (amount = e.currentTarget.valueAsNumber)}
-				/>
-			</label>
-			<label class="label">
-				<span class="label-text">amount (EUR)</span>
-				<input
-					class="input text-center"
-					name="amount"
-					type="number"
-					step="0.01"
-					min={data.limits.min / 100}
-					max={data.limits.max / 100}
-					bind:value={amount}
-					required
-				/>
-			</label>
-		</div>
+		<label class="label mx-auto w-full max-w-md">
+			<span class="label-text">credits</span>
+			<input
+				class="input text-center"
+				name="amount"
+				type="number"
+				step="0.01"
+				min={data.limits.min / 100}
+				max={data.limits.max / 100}
+				bind:value={amount}
+				required
+			/>
+		</label>
 
 		<div class="mx-auto flex w-full max-w-md flex-col gap-1">
 			{#if !valid}
 				<small class="text-error-400">
 					{#if cents > data.limits.max}
-						maximum is {fmt.credits(data.limits.max * CREDITS_PER_CENT)} ({fmt.eur(data.limits.max)})
+						maximum is {fmt.credits(data.limits.max * CREDITS_PER_CENT)}
 					{:else}
-						minimum is {fmt.credits(data.limits.min * CREDITS_PER_CENT)} ({fmt.eur(data.limits.min)})
+						minimum is {fmt.credits(data.limits.min * CREDITS_PER_CENT)}
 					{/if}
 				</small>
 			{/if}
@@ -101,18 +84,13 @@
 
 		<div class="nv-dim">
 			<p class="my-4">
-				paid script average costs {fmt.credits(data.averagePerMonth)}
-				(≈ {fmt.eur(data.averagePerMonth / CREDITS_PER_CENT)}) to run for 30 days
+				paid script average costs {fmt.credits(data.averagePerMonth)} to run for 30 days
 			</p>
 			{#if data.extraSessionFee > 0}
 				<p class="my-4">
-					running one script is included in its price. every extra script running at the same time adds
-					<b class="text-(--tn-fg)">{fmt.credits(data.extraSessionFee)}</b>
-					(≈ {fmt.eur(data.extraSessionFee / CREDITS_PER_CENT)}) per 30 days of running on top of its own
-					price: two scripts add {fmt.eur(data.extraSessionFee / CREDITS_PER_CENT)} a month, three add
-					{fmt.eur((2 * data.extraSessionFee) / CREDITS_PER_CENT)}, five add
-					{fmt.eur((4 * data.extraSessionFee) / CREDITS_PER_CENT)}.
-					<a href="/information/faq/what-does-running-several-scripts-at-once-cost">how is that billed?</a>
+					extra sessions are charged {fmt.credits(data.extraSessionFee)} extra per 30 days, read about
+					<a href="/information/faq/what-does-running-several-scripts-at-once-cost">multiple sessions</a>
+					for more information.
 				</p>
 			{/if}
 			<p>all sales are final.</p>
@@ -137,7 +115,7 @@
 							{fmt.credits(payment.credits)}{#if payment.bonus}<span class="nv-dim">
 									incl. {fmt.creditAmount(payment.bonus)} bonus</span
 								>{/if}
-							<span class="nv-dim">({fmt.eur(payment.amount)}) ·</span>
+							<span class="nv-dim">·</span>
 							{#if payment.status === "pending"}
 								<a href="/credits/{payment.id}">pay</a>
 							{:else}

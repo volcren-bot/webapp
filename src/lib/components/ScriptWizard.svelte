@@ -122,6 +122,11 @@
 
 	const current = $derived(STEPS[step])
 	const done = $derived(step >= STEPS.length)
+	const listHint = $derived(
+		current?.kind === "multi"
+			? "click to toggle · ↑/↓ move (past the ends: previous/next question) · space toggle · enter confirm"
+			: "click to choose · ↑/↓ move (past the ends: previous/next question) · space select · enter confirm"
+	)
 
 	// A boxed form sits among other things, so it only takes the keyboard once clicked or tabbed into.
 	let active = !untrack(() => boxed)
@@ -233,6 +238,18 @@
 		}
 	}
 
+	function toggle(option: string) {
+		if (selected.includes(option)) selected = selected.filter((o) => o !== option)
+		else if (selected.length < 5) selected = [...selected, option]
+	}
+
+	function clickOption(i: number) {
+		const option = current.options![i]
+		cursor = i
+		if (current.kind === "single") accept(option)
+		else toggle(option)
+	}
+
 	function onListKey(e: KeyboardEvent) {
 		e.stopPropagation()
 		const s = current
@@ -251,12 +268,26 @@
 		} else if (e.key === " ") {
 			const option = options[cursor]
 			if (s.kind === "single") selected = [option]
-			else if (selected.includes(option)) selected = selected.filter((o) => o !== option)
-			else if (selected.length < 5) selected = [...selected, option]
+			else toggle(option)
 		} else if (e.key === "Enter") {
 			submitList()
 		} else return
 		e.preventDefault()
+	}
+
+	function confirmYes() {
+		say(`${current.label} y`)
+		say(progress, "dim")
+		busy = true
+		step = STEPS.length
+		submit()
+	}
+
+	// Clear the whole screen and ask everything again, keeping the previous answers.
+	function confirmNo() {
+		lines = header()
+		revisiting = true
+		enter(0)
 	}
 
 	function onConfirmKey(e: KeyboardEvent) {
@@ -264,20 +295,13 @@
 		const key = e.key.toLowerCase()
 		if (key === "y") {
 			e.preventDefault()
-			say(`${current.label} y`)
-			say(progress, "dim")
-			busy = true
-			step = STEPS.length
-			submit()
+			confirmYes()
 		} else if (e.key === "ArrowUp") {
 			e.preventDefault()
 			goBack()
 		} else if (key === "n") {
 			e.preventDefault()
-			// Clear the whole screen and ask everything again, keeping the previous answers.
-			lines = header()
-			revisiting = true
-			enter(0)
+			confirmNo()
 		}
 	}
 
@@ -345,7 +369,10 @@
 							bind:this={list}
 							onkeydown={onConfirmKey}
 						>
-							<span class="caret" aria-hidden="true">&gt;</span> <span class="nv-cursor"></span>
+							<span class="caret" aria-hidden="true">&gt;</span>
+							<button type="button" class="choice" tabindex="-1" onclick={confirmYes}>[y] yes</button>
+							<button type="button" class="choice" tabindex="-1" onclick={confirmNo}>[n] no</button>
+							<span class="nv-cursor"></span>
 						</div>
 					{:else}
 						<div
@@ -358,21 +385,24 @@
 							onkeydown={onListKey}
 						>
 							{#each current.options! as option, i (option)}
+								<!-- svelte-ignore a11y_click_events_have_key_events, a11y_interactive_supports_focus -->
 								<div
 									class="option"
 									class:active={i === cursor}
 									role="option"
 									aria-selected={selected.includes(option)}
+									onclick={() => clickOption(i)}
 								>
 									{i === cursor ? "›" : " "} [{selected.includes(option) ? "x" : " "}] {option}
 								</div>
 							{/each}
 						</div>
-						<div class="dim">
-							↑/↓ move (past the ends: previous/next question) · space {current.kind === "multi"
-								? "toggle"
-								: "select"} · enter confirm
-						</div>
+						{#if current.kind === "multi"}
+							<button type="button" class="choice" tabindex="-1" onclick={() => accept(selected)}
+								>[ continue ]</button
+							>
+						{/if}
+						<div class="dim">{listHint}</div>
 					{/if}
 				{/if}
 			</div>
@@ -485,8 +515,36 @@
 	textarea:focus {
 		border: 0;
 	}
+	.option {
+		cursor: pointer;
+		user-select: none;
+	}
 	.option.active {
 		color: var(--tn-blue);
 		background: var(--tn-bg-hl);
+	}
+	.choice {
+		padding: 0;
+		border: 0;
+		background: transparent;
+		color: var(--tn-blue);
+		font: inherit;
+		cursor: pointer;
+	}
+	.choice + .choice {
+		margin-left: 2ch;
+	}
+	@media (hover: hover) {
+		.option:hover,
+		.choice:hover {
+			background: var(--tn-bg-hl);
+		}
+	}
+	/* The terminal's line height is too short to hit with a finger. */
+	@media (pointer: coarse) {
+		.option,
+		.choice {
+			padding-block: 0.5rem;
+		}
 	}
 </style>

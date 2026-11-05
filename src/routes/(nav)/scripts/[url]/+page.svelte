@@ -122,7 +122,7 @@
 					</dd>
 					{#if data.extraSessionFee > 0}
 						<dd class="nv-dim text-xs">
-							per running script. An extra script running at the same time adds {fmt.eur(
+							per running script. Extra sessions are charged at {fmt.eur(
 								data.extraSessionFee / CREDITS_PER_CENT
 							)} per 30 days,
 							<a href="/information/faq/what-does-running-several-scripts-at-once-cost">see how</a>.

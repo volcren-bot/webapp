@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from "$app/state"
 	import Head from "#lib/components/Head.svelte"
 	import { SITE_NAME } from "#lib/utils"
 	import Clipboard from "@lucide/svelte/icons/clipboard"
@@ -21,13 +22,30 @@
 			: ""
 	)
 
-	let copied = $state(false)
+	const shortcutCommands = $derived(
+		[
+			"mkdir -p ~/.local/share/icons ~/.local/share/applications",
+			`curl -fSL -o ~/.local/share/icons/volcren.png ${page.url.origin}/favicon.png`,
+			"cat > ~/.local/share/applications/volcren.desktop <<EOF",
+			"[Desktop Entry]",
+			"Type=Application",
+			"Name=VOLCREN",
+			"Exec=$HOME/volcren/volcren/loader",
+			"Path=$HOME/volcren/volcren",
+			"Icon=$HOME/.local/share/icons/volcren.png",
+			"Terminal=false",
+			"Categories=Game;",
+			"EOF"
+		].join("\n")
+	)
+
+	let copied = $state<string | null>(null)
 
 	async function copy(text: string) {
 		try {
 			await navigator.clipboard.writeText(text)
-			copied = true
-			setTimeout(() => (copied = false), 2000)
+			copied = text
+			setTimeout(() => (copied = null), 2000)
 		} catch {
 			// Clipboard access can be refused; the commands are selectable as well
 		}
@@ -126,8 +144,27 @@
 			<div class="relative">
 				<pre class="overflow-x-auto bg-(--tn-bg-dark) p-3 pr-24 text-sm"><code>{linuxCommands}</code></pre>
 				<button class="btn absolute top-2 right-2 text-sm" type="button" onclick={() => copy(linuxCommands)}>
-					{copied ? "Copied" : "Copy"}
-					{#if copied}
+					{copied === linuxCommands ? "Copied" : "Copy"}
+					{#if copied === linuxCommands}
+						<ClipboardCheck class="size-3.5 shrink-0" />
+					{:else}
+						<Clipboard class="size-3.5 shrink-0" />
+					{/if}
+				</button>
+			</div>
+			<p>
+				Optionally, add a <em>VOLCREN</em> entry with the site logo to your application menu. Run this after the
+				commands above:
+			</p>
+			<div class="relative">
+				<pre class="overflow-x-auto bg-(--tn-bg-dark) p-3 pr-24 text-sm"><code>{shortcutCommands}</code></pre>
+				<button
+					class="btn absolute top-2 right-2 text-sm"
+					type="button"
+					onclick={() => copy(shortcutCommands)}
+				>
+					{copied === shortcutCommands ? "Copied" : "Copy"}
+					{#if copied === shortcutCommands}
 						<ClipboardCheck class="size-3.5 shrink-0" />
 					{:else}
 						<Clipboard class="size-3.5 shrink-0" />

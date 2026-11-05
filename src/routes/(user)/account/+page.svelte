@@ -36,8 +36,14 @@
 						<span>
 							<span class="nv-dim">{fmt.dateTime(entry.created_at)} ·</span>
 							{creditSource(entry)}
-							{#if entry.bonus}
-								<span class="nv-dim">(incl. {fmt.credits(entry.bonus)} bonus)</span>
+							{#if entry.topupBonus}
+								<span class="nv-dim">(incl. {fmt.credits(entry.topupBonus)} bonus)</span>
+							{/if}
+							{#if entry.fee}
+								<span class="nv-dim">(incl. {fmt.creditAmount(entry.fee)} extra-session fee)</span>
+							{/if}
+							{#if entry.kind !== "topup" && entry.bonus}
+								<span class="nv-dim">({fmt.creditAmount(-entry.bonus)} of it bonus credits)</span>
 							{/if}
 							{#if entry.note}<span class="nv-dim">({entry.note})</span>{/if}
 						</span>

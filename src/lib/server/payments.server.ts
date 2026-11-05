@@ -1,6 +1,25 @@
 import { getInvoice, type BitcartInvoice } from "#lib/server/bitcart.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 
+const FEE_CACHE_MS = 60_000
+let feeCache: { value: number; until: number } | null = null
+
+/** payments.config.extra_session_fee: what every extra concurrent session costs per 30 days of running, in credits. Cached for a minute. */
+export async function extraSessionFee() {
+	if (feeCache && feeCache.until > Date.now()) return feeCache.value
+	const { data, error } = await supabaseAdmin()
+		.schema("payments")
+		.from("config")
+		.select("extra_session_fee")
+		.single()
+	if (error) {
+		console.error("Could not load the extra session fee", error)
+		return feeCache?.value ?? 0
+	}
+	feeCache = { value: data.extra_session_fee, until: Date.now() + FEE_CACHE_MS }
+	return data.extra_session_fee
+}
+
 /** Asks Bitcart for the invoice's real status and applies it to our payment row, crediting once complete (settle_payment is idempotent); shared by webhook and checkout. */
 export async function syncPayment(paymentId: string, invoiceId: string): Promise<BitcartInvoice> {
 	const invoice = await getInvoice(invoiceId)

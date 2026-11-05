@@ -11,7 +11,7 @@ export const load = async ({ locals: { user, supabaseServer } }) => {
 		payments.from("accounts").select("credits").eq("user_id", user.id).maybeSingle(),
 		payments
 			.from("credits_ledger")
-			.select("id, kind, amount, balance_after, note, created_at, payments(provider, bonus)")
+			.select("id, kind, amount, balance_after, note, fee, bonus, created_at, payments(provider, bonus)")
 			.eq("user_id", user.id)
 			// id follows insertion order like created_at, and is what credits_ledger_user_id_idx covers
 			.order("id", { ascending: false })
@@ -26,7 +26,7 @@ export const load = async ({ locals: { user, supabaseServer } }) => {
 		ledger: (ledger.data ?? []).map(({ payments: payment, ...entry }) => ({
 			...entry,
 			provider: payment?.provider ?? null,
-			bonus: payment?.bonus ?? 0
+			topupBonus: payment?.bonus ?? 0
 		})),
 		blockers
 	}

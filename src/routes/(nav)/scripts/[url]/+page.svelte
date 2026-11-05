@@ -17,6 +17,7 @@
 	import Coins from "@lucide/svelte/icons/coins"
 	import { CATEGORY_ICONS, STAGE_COLORS } from "#lib/scripts"
 	import { metaDescription } from "#lib/utils"
+	import { CREDITS_PER_CENT } from "#lib/credits"
 	import { page } from "$app/state"
 	import { SvelteURLSearchParams } from "svelte/reactivity"
 
@@ -118,6 +119,14 @@
 							/>{/if}
 						{fmt.price(script.price)}
 					</dd>
+					{#if data.extraSessionFee > 0}
+						<dd class="nv-dim text-xs">
+							per running script. An extra script running at the same time adds {fmt.eur(
+								data.extraSessionFee / CREDITS_PER_CENT
+							)} per 30 days,
+							<a href="/information/faq/what-does-running-several-scripts-at-once-cost">see how</a>.
+						</dd>
+					{/if}
 				</div>
 				<div>
 					<dt class="nv-dim flex items-center gap-1"><User class="size-4 shrink-0" /> author</dt>

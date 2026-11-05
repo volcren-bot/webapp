@@ -103,6 +103,17 @@
 				paid script average costs {fmt.credits(data.averagePerMonth)}
 				(≈ {fmt.eur(data.averagePerMonth / CREDITS_PER_CENT)}) to run for 30 days
 			</p>
+			{#if data.extraSessionFee > 0}
+				<p class="my-4">
+					running one script is included in its price. every extra script running at the same time adds
+					<b class="text-(--tn-fg)">{fmt.credits(data.extraSessionFee)}</b>
+					(≈ {fmt.eur(data.extraSessionFee / CREDITS_PER_CENT)}) per 30 days of running on top of its own
+					price: two scripts add {fmt.eur(data.extraSessionFee / CREDITS_PER_CENT)} a month, three add
+					{fmt.eur((2 * data.extraSessionFee) / CREDITS_PER_CENT)}, five add
+					{fmt.eur((4 * data.extraSessionFee) / CREDITS_PER_CENT)}.
+					<a href="/information/faq/what-does-running-several-scripts-at-once-cost">how is that billed?</a>
+				</p>
+			{/if}
 			<p>all sales are final.</p>
 			<p>refunds are not possible.</p>
 		</div>

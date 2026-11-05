@@ -266,18 +266,21 @@ export type Database = {
 		Tables: {
 			accounts: {
 				Row: {
+					bonus_credits: number
 					credits: number
 					earnings: number
 					updated_at: string
 					user_id: string
 				}
 				Insert: {
+					bonus_credits?: number
 					credits?: number
 					earnings?: number
 					updated_at?: string
 					user_id: string
 				}
 				Update: {
+					bonus_credits?: number
 					credits?: number
 					earnings?: number
 					updated_at?: string
@@ -287,18 +290,21 @@ export type Database = {
 			}
 			config: {
 				Row: {
+					extra_session_fee: number
 					id: boolean
 					min_balance_minutes: number
 					platform_fee_bps: number
 					session_timeout_minutes: number
 				}
 				Insert: {
+					extra_session_fee?: number
 					id?: boolean
 					min_balance_minutes?: number
 					platform_fee_bps?: number
 					session_timeout_minutes?: number
 				}
 				Update: {
+					extra_session_fee?: number
 					id?: boolean
 					min_balance_minutes?: number
 					platform_fee_bps?: number
@@ -310,7 +316,9 @@ export type Database = {
 				Row: {
 					amount: number
 					balance_after: number
+					bonus: number
 					created_at: string
+					fee: number
 					granted_by: string | null
 					id: number
 					kind: Database["payments"]["Enums"]["credit_kind"]
@@ -324,7 +332,9 @@ export type Database = {
 				Insert: {
 					amount: number
 					balance_after: number
+					bonus?: number
 					created_at?: string
+					fee?: number
 					granted_by?: string | null
 					id?: never
 					kind: Database["payments"]["Enums"]["credit_kind"]
@@ -338,7 +348,9 @@ export type Database = {
 				Update: {
 					amount?: number
 					balance_after?: number
+					bonus?: number
 					created_at?: string
+					fee?: number
 					granted_by?: string | null
 					id?: never
 					kind?: Database["payments"]["Enums"]["credit_kind"]
@@ -363,6 +375,7 @@ export type Database = {
 				Row: {
 					amount: number
 					balance_after: number
+					bonus: number
 					created_at: string
 					id: number
 					kind: Database["payments"]["Enums"]["earning_kind"]
@@ -375,6 +388,7 @@ export type Database = {
 				Insert: {
 					amount: number
 					balance_after: number
+					bonus?: number
 					created_at?: string
 					id?: never
 					kind: Database["payments"]["Enums"]["earning_kind"]
@@ -387,6 +401,7 @@ export type Database = {
 				Update: {
 					amount?: number
 					balance_after?: number
+					bonus?: number
 					created_at?: string
 					id?: never
 					kind?: Database["payments"]["Enums"]["earning_kind"]
@@ -446,6 +461,8 @@ export type Database = {
 					charged_until: string
 					end_reason: Database["payments"]["Enums"]["session_end"] | null
 					ended_at: string | null
+					fee_accrued: number
+					fee_charged: number
 					id: string
 					last_seen: string
 					price: number
@@ -460,6 +477,8 @@ export type Database = {
 					charged_until?: string
 					end_reason?: Database["payments"]["Enums"]["session_end"] | null
 					ended_at?: string | null
+					fee_accrued?: number
+					fee_charged?: number
 					id?: string
 					last_seen?: string
 					price: number
@@ -474,6 +493,8 @@ export type Database = {
 					charged_until?: string
 					end_reason?: Database["payments"]["Enums"]["session_end"] | null
 					ended_at?: string | null
+					fee_accrued?: number
+					fee_charged?: number
 					id?: string
 					last_seen?: string
 					price?: number
@@ -503,10 +524,13 @@ export type Database = {
 			end_stale_sessions: { Args: Record<PropertyKey, never>; Returns: number }
 			end_user_sessions: { Args: { p_user: string }; Returns: number }
 			heartbeat_session: { Args: { p_session: string }; Returns: boolean }
+			minutes_per_month: { Args: Record<PropertyKey, never>; Returns: number }
 			post_credits: {
 				Args: {
 					p_actor?: string
 					p_amount: number
+					p_bonus?: number
+					p_fee?: number
 					p_kind: Database["payments"]["Enums"]["credit_kind"]
 					p_minutes?: number
 					p_note?: string
@@ -520,6 +544,7 @@ export type Database = {
 			post_earnings: {
 				Args: {
 					p_amount: number
+					p_bonus?: number
 					p_kind: Database["payments"]["Enums"]["earning_kind"]
 					p_minutes?: number
 					p_note?: string
@@ -529,13 +554,28 @@ export type Database = {
 				}
 				Returns: number
 			}
-			required_balance: { Args: { p_price: number }; Returns: number }
+			required_balance:
+				| { Args: { p_price: number }; Returns: number }
+				| { Args: { p_fee: number; p_price: number }; Returns: number }
+			session_fee: { Args: { p_rank: number; p_user: string }; Returns: number }
+			session_quote: {
+				Args: { p_script: string; p_user: string }
+				Returns: {
+					fee: number
+					price: number
+					rank: number
+					required: number
+				}[]
+			}
+			session_rank: { Args: { p_session: string }; Returns: number }
 			settle_payment: { Args: { p_payment: string }; Returns: boolean }
 			start_session: {
 				Args: { p_script: string; p_user: string }
 				Returns: {
 					entry: string
+					fee: number
 					files: string[]
+					rank: number
 					revision: number
 					session_id: string
 				}[]

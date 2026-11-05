@@ -2,6 +2,7 @@
 	import { fmt } from "#lib/format.svelte.js"
 	import Head from "#lib/components/Head.svelte"
 	import ScriptBadges from "#lib/components/ScriptBadges.svelte"
+	import Price from "#lib/components/Price.svelte"
 	import { enhance } from "$app/forms"
 	import Gift from "@lucide/svelte/icons/gift"
 	import Plus from "@lucide/svelte/icons/plus"
@@ -183,7 +184,7 @@
 									{#if script.type === "premium"}<Lock class="size-4 shrink-0" />{:else}<LockOpen
 											class="size-4 shrink-0"
 										/>{/if}
-									{fmt.price(script.price)}
+									<Price credits={script.price} />
 								</span>
 							</span>
 						</div>

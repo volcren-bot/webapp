@@ -6,6 +6,7 @@
 	import RevisionUpload from "./RevisionUpload.svelte"
 	import ShareCodes from "./ShareCodes.svelte"
 	import ScriptBadges from "#lib/components/ScriptBadges.svelte"
+	import Price from "#lib/components/Price.svelte"
 	import Lock from "@lucide/svelte/icons/lock"
 	import LockOpen from "@lucide/svelte/icons/lock-open"
 	import User from "@lucide/svelte/icons/user"
@@ -110,14 +111,14 @@
 				<div>
 					<dt class="nv-dim flex items-center gap-1"><Coins class="size-4 shrink-0" /> price</dt>
 					<dd
-						class="flex items-center gap-1 text-lg font-bold {script.type === 'premium'
+						class="flex items-center gap-1 {script.type === 'premium'
 							? 'text-(--tn-yellow)'
 							: 'text-(--tn-green)'}"
 					>
 						{#if script.type === "premium"}<Lock class="size-4 shrink-0" />{:else}<LockOpen
 								class="size-4 shrink-0"
 							/>{/if}
-						{fmt.price(script.price)}
+						<Price credits={script.price} />
 					</dd>
 					{#if data.extraSessionFee > 0}
 						<dd class="nv-dim text-xs">

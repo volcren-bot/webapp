@@ -4,6 +4,21 @@
 	import { enhance } from "$app/forms"
 	import UUID from "#lib/components/UUID.svelte"
 	import { creditSource } from "#lib/utils"
+	import Credits from "#lib/components/Credits.svelte"
+	import Price from "#lib/components/Price.svelte"
+	import { enhance as enhanceStop } from "$app/forms"
+
+	const minutesSince = (iso: string) =>
+		Math.max(Math.floor((Date.now() - new Date(iso).getTime()) / 60_000), 0)
+	const runningFor = (iso: string) => {
+		const minutes = minutesSince(iso)
+		return minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h ${minutes % 60} min`
+	}
+	const END_REASONS: Record<string, string> = {
+		stopped: "stopped",
+		timeout: "timed out",
+		insufficient_credits: "out of credits"
+	}
 
 	const { data, form } = $props()
 	const profile = $derived(data.profile!)
@@ -23,8 +38,64 @@
 
 	<section class="nv-float flex flex-col items-start gap-3">
 		<span class="nv-title">balance</span>
-		<p class="text-lg font-bold">{fmt.credits(data.credits)}</p>
+		<p class="text-lg font-bold"><Credits amount={data.credits} /></p>
 		<a class="btn" href="/credits">add funds</a>
+	</section>
+
+	<section class="nv-float flex flex-col gap-3">
+		<span class="nv-title">running scripts</span>
+		{#if data.running.length}
+			<p class="nv-dim">
+				Stopping a script here ends its session; the loader stops the script within a minute. Every running
+				script past the oldest pays the extra-session fee.
+			</p>
+			<ul class="flex flex-col gap-2">
+				{#each data.running as session (session.id)}
+					<li class="flex flex-wrap items-center gap-x-4 gap-y-1">
+						{#if session.url}
+							<a href="/scripts/{session.url}" class="font-bold">{session.title}</a>
+						{:else}
+							<span class="font-bold">{session.title}</span>
+						{/if}
+						<span class="nv-dim">started {fmt.dateTime(session.started_at)}</span>
+						<span class="nv-dim">running {runningFor(session.started_at)}</span>
+						<Price credits={session.price} />
+						{#if session.fee_charged}
+							<span class="nv-dim">fee so far <Credits amount={session.fee_charged} /></span>
+						{/if}
+						<form
+							method="POST"
+							action="?/stop"
+							class="ml-auto"
+							use:enhanceStop={({ cancel }) => {
+								if (!confirm(`Stop ${session.title}? The loader stops it within a minute.`)) cancel()
+							}}
+						>
+							<input type="hidden" name="session" value={session.id} />
+							<button type="submit" class="btn btn-danger">stop</button>
+						</form>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="nv-dim">Nothing is running right now.</p>
+		{/if}
+		{#if form && "stopMessage" in form}
+			<small class={form.stopError ? "text-error-400" : "text-success-400"}>{form.stopMessage}</small>
+		{/if}
+		{#if data.ended.length}
+			<p class="nv-dim mt-2">Recent sessions:</p>
+			<ul class="flex flex-col gap-1 text-sm">
+				{#each data.ended as session (session.id)}
+					<li class="flex flex-wrap items-baseline gap-x-3">
+						<span>{session.title}</span>
+						<span class="nv-dim">{fmt.dateTime(session.started_at)}</span>
+						<span class="nv-dim">→ {session.ended_at ? fmt.dateTime(session.ended_at) : ""}</span>
+						<span class="nv-dim">{END_REASONS[session.end_reason ?? ""] ?? session.end_reason}</span>
+					</li>
+				{/each}
+			</ul>
+		{/if}
 	</section>
 
 	<section class="nv-float">
@@ -37,13 +108,13 @@
 							<span class="nv-dim">{fmt.dateTime(entry.created_at)} ·</span>
 							{creditSource(entry)}
 							{#if entry.topupBonus}
-								<span class="nv-dim">(incl. {fmt.credits(entry.topupBonus)} bonus)</span>
+								<span class="nv-dim">(incl. <Credits amount={entry.topupBonus} /> bonus)</span>
 							{/if}
 							{#if entry.fee}
-								<span class="nv-dim">(incl. {fmt.creditAmount(entry.fee)} extra-session fee)</span>
+								<span class="nv-dim">(incl. <Credits amount={entry.fee} /> extra-session fee)</span>
 							{/if}
 							{#if entry.kind !== "topup" && entry.bonus}
-								<span class="nv-dim">({fmt.creditAmount(-entry.bonus)} of it bonus credits)</span>
+								<span class="nv-dim">(<Credits amount={-entry.bonus} /> of it bonus credits)</span>
 							{/if}
 							{#if entry.note}<span class="nv-dim">({entry.note})</span>{/if}
 						</span>
@@ -52,8 +123,8 @@
 								? 'text-error-400'
 								: 'text-success-400'}"
 						>
-							{entry.amount > 0 ? "+" : ""}{fmt.creditAmount(entry.amount)}
-							<span class="nv-dim">→ {fmt.creditAmount(entry.balance_after)}</span>
+							{entry.amount > 0 ? "+" : ""}<Credits amount={entry.amount} />
+							<span class="nv-dim">→ <Credits amount={entry.balance_after} /></span>
 						</span>
 					</li>
 				{/each}

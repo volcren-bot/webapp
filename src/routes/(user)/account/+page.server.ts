@@ -7,7 +7,7 @@ export const load = async ({ locals: { user, supabaseServer } }) => {
 	if (!user) redirect(303, "/")
 
 	const payments = supabaseServer.schema("payments")
-	const [account, ledger, blockers] = await Promise.all([
+	const [account, ledger, blockers, running, ended] = await Promise.all([
 		payments.from("accounts").select("credits").eq("user_id", user.id).maybeSingle(),
 		payments
 			.from("credits_ledger")
@@ -18,8 +18,33 @@ export const load = async ({ locals: { user, supabaseServer } }) => {
 			.limit(50),
 		deletionBlockers(user.id).catch((e) => [
 			errorRef("Could not check whether your account can be deleted", e)
-		])
+		]),
+		payments
+			.from("sessions")
+			.select("id, script_id, started_at, price, fee_charged")
+			.eq("user_id", user.id)
+			.is("ended_at", null)
+			.order("started_at"),
+		payments
+			.from("sessions")
+			.select("id, script_id, started_at, ended_at, end_reason")
+			.eq("user_id", user.id)
+			.not("ended_at", "is", null)
+			.order("ended_at", { ascending: false })
+			.limit(10)
 	])
+
+	// Script names, for the ones the user may still see
+	const scriptIds = [...new Set([...(running.data ?? []), ...(ended.data ?? [])].map((s) => s.script_id))]
+	const { data: scripts } = scriptIds.length
+		? await supabaseServer.schema("scripts").from("scripts").select("id, title, url").in("id", scriptIds)
+		: { data: [] }
+	const named = new Map((scripts ?? []).map((s) => [s.id, s]))
+	const withScript = <T extends { script_id: string }>(session: T) => ({
+		...session,
+		title: named.get(session.script_id)?.title ?? "a script",
+		url: named.get(session.script_id)?.url ?? null
+	})
 
 	return {
 		credits: account.data?.credits ?? 0,
@@ -28,11 +53,32 @@ export const load = async ({ locals: { user, supabaseServer } }) => {
 			provider: payment?.provider ?? null,
 			topupBonus: payment?.bonus ?? 0
 		})),
-		blockers
+		blockers,
+		running: (running.data ?? []).map(withScript),
+		ended: (ended.data ?? []).map(withScript)
 	}
 }
 
 export const actions = {
+	// The database checks the session is the user's; the loader stops the script at its next heartbeat
+	stop: async ({ request, locals: { user, supabaseServer } }) => {
+		if (!user) return fail(401, { stopMessage: "You need to login.", stopError: true })
+		const id = String((await request.formData()).get("session") ?? "")
+		if (!/^[0-9a-f-]{36}$/i.test(id)) return fail(400, { stopMessage: "Pick a session.", stopError: true })
+
+		const { data, error: err } = await supabaseServer
+			.schema("payments")
+			.rpc("stop_session", { p_session: id })
+		if (err?.code === "42501") return fail(403, { stopMessage: "That session isn't yours.", stopError: true })
+		if (err) return fail(500, { stopMessage: errorRef("Could not stop the session", err), stopError: true })
+		return {
+			stopMessage: data
+				? "Stopped. The loader ends the script within a minute."
+				: "That session had already ended.",
+			stopError: false
+		}
+	},
+
 	// Deletes the auth user; the database cascades to profile, balance, stats and deploy tokens, while payment and usage records stay.
 	delete: async ({ request, locals: { user, getProfile, supabaseServer } }) => {
 		if (!user) return fail(401, { deleteMessage: "You need to login." })

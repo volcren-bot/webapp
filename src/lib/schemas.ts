@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { CATEGORIES, MAX_PRICE, STAGES, TYPES } from "#lib/scripts"
-import { formatCredits } from "#lib/utils"
+import { formatPrice } from "#lib/scripts"
 
 // Kept out of #lib/scripts so pages that only list scripts don't ship zod.
 export const scriptSchema = z
@@ -23,13 +23,13 @@ export const scriptSchema = z
 		type: z.enum(TYPES),
 		price: z
 			.number("Must be a number.")
-			.int("Must be a whole number of credits.")
+			.int("Must be a whole number of minute-credits.")
 			.min(0)
-			.max(MAX_PRICE, `Must be at most ${formatCredits(MAX_PRICE)} per minute (under €100 a month).`),
+			.max(MAX_PRICE, `Must be at most ${MAX_PRICE} (${formatPrice(MAX_PRICE)}, under €100 a month).`),
 		stage: z.enum(STAGES),
 		categories: z.array(z.enum(CATEGORIES)).max(5, "Pick at most 5 categories.")
 	})
 	.refine((s) => (s.type === "free") === (s.price === 0), {
 		path: ["price"],
-		message: `Free scripts cost nothing, premium scripts cost at least ${formatCredits(1)} per minute.`
+		message: `Free scripts cost nothing, premium scripts cost at least 1 minute-credit (${formatPrice(1)}).`
 	})

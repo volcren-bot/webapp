@@ -580,6 +580,7 @@ export type Database = {
 					session_id: string
 				}[]
 			}
+			stop_session: { Args: { p_session: string }; Returns: boolean }
 			transfer_earnings: { Args: { p_amount: number }; Returns: number }
 		}
 		Enums: {

@@ -80,9 +80,9 @@
 		{ key: "type", label: "Script type:", kind: "single", options: TYPES, skip: () => community },
 		{
 			key: "price",
-			label: "Price (credits per minute):",
+			label: "Price (whole minute-credits):",
 			kind: "text",
-			hint: `${fmt.credits(1)} to ${fmt.credits(MAX_PRICE)}, whole numbers.`,
+			hint: `1 to ${MAX_PRICE}. Each is ${fmt.credits(1)} a minute: 1 shows as ${fmt.price(1)}, ${MAX_PRICE} as ${fmt.price(MAX_PRICE)}.`,
 			skip: () => community || $form.type === "free"
 		},
 		{

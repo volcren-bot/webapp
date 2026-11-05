@@ -21,7 +21,7 @@ import Zap from "@lucide/svelte/icons/zap"
 import Target from "@lucide/svelte/icons/target"
 import Anvil from "@lucide/svelte/icons/anvil"
 import Sailboat from "@lucide/svelte/icons/sailboat"
-import { formatCredits } from "#lib/utils"
+import { formatCreditAmount, formatCredits } from "#lib/utils"
 import { ENCRYPTION_OVERHEAD } from "#lib/encryption"
 import { Constants, type Database } from "#lib/types/supabase"
 
@@ -114,6 +114,8 @@ export const validFileName = (name: string) =>
 	name.length <= 200 &&
 	name.split("/").every((part) => /^[A-Za-z0-9_.-]+$/.test(part) && part !== "." && part !== "..")
 
-/** Prices are in credits per minute. */
+/** Prices are stored in credits per minute and read per hour: "0.06 credits/h (0.0010/min)". */
 export const formatPrice = (credits: number, locale?: string) =>
-	credits === 0 ? "free" : `${formatCredits(credits, locale)}/min`
+	credits === 0
+		? "free"
+		: `${formatCredits(credits * 60, locale)}/h (${formatCreditAmount(credits, locale)}/min)`

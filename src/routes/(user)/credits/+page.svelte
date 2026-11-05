@@ -9,7 +9,8 @@
 	const presets = [5, 7, 12]
 
 	let amount = $state(10)
-	const credits = $derived(Number.isFinite(amount) ? Math.round(amount * CREDITS_PER_EUR) : "")
+	// Credits are shown at 1 = 1 EUR, so the two fields hold the same number
+	const credits = $derived(Number.isFinite(amount) ? Math.round(amount * 100) / 100 : "")
 
 	// Same rounding as the server: the invoice is created for whole cents
 	const cents = $derived(Number.isFinite(amount) ? Math.round(amount * 100) : 0)
@@ -49,11 +50,11 @@
 				<input
 					class="input text-center"
 					type="number"
-					step="100"
-					min={data.limits.min * CREDITS_PER_CENT}
-					max={data.limits.max * CREDITS_PER_CENT}
+					step="0.01"
+					min={data.limits.min / 100}
+					max={data.limits.max / 100}
 					value={credits}
-					oninput={(e) => (amount = e.currentTarget.valueAsNumber / CREDITS_PER_EUR)}
+					oninput={(e) => (amount = e.currentTarget.valueAsNumber)}
 				/>
 			</label>
 			<label class="label">

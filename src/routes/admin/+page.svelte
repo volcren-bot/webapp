@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fmt } from "#lib/format.svelte.js"
 	import Head from "#lib/components/Head.svelte"
+	import Credits from "#lib/components/Credits.svelte"
 	import { enhance } from "$app/forms"
 	import { untrack } from "svelte"
 	import { CREDITS_PER_EUR } from "#lib/credits"
@@ -111,8 +112,8 @@
 			<span><span class="nv-dim">email</span> {u.email ?? "none"}</span>
 			<span><span class="nv-dim">role</span> {u.role}</span>
 			<span><span class="nv-dim">joined</span> {fmt.dateTime(u.created_at)}</span>
-			<span><span class="nv-dim">credits</span> {fmt.credits(u.credits)}</span>
-			<span><span class="nv-dim">earnings</span> {fmt.credits(u.earnings)}</span>
+			<span><span class="nv-dim">credits</span> <Credits amount={u.credits} /></span>
+			<span><span class="nv-dim">earnings</span> <Credits amount={u.earnings} /></span>
 			<span>
 				<span class="nv-dim">status</span>
 				{#if u.banned_at}
@@ -272,7 +273,7 @@
 							<span class="nv-dim">{fmt.dateTime(row.created_at)} ·</span>
 							{row.user} <span class="nv-dim">({row.user_id})</span>:
 							<span class={row.amount < 0 ? "text-error-400" : "text-success-400"}
-								>{row.amount > 0 ? "+" : ""}{fmt.credits(row.amount)}</span
+								>{row.amount > 0 ? "+" : ""}<Credits amount={row.amount} /></span
 							>
 						</span>
 						<small class="nv-dim">by {row.admin ?? "unknown"} · {row.note}</small>

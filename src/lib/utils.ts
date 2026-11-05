@@ -69,22 +69,19 @@ export const creditSource = (entry: { kind: string; provider: string | null }) =
 	}
 }
 
-const CREDIT_UNITS = [
-	{ size: 1_000_000_000, suffix: "B" },
-	{ size: 1_000_000, suffix: "M" },
-	{ size: 1_000, suffix: "k" }
-]
+/** Credits are shown at 1 = 1 EUR, with as many decimals as the amount needs (a single internal credit is 0.0001). */
+export const DISPLAY_CREDITS_PER_UNIT = 10_000
 
-/** Shortens only when exact: "50k", "50.5k", "1.5M", but "50,550". */
-export const formatCreditAmount = (credits: number, locale = "en-US") => {
-	const unit = CREDIT_UNITS.find(({ size }) => Math.abs(credits) >= size && credits % (size / 10) === 0)
-	if (!unit) return credits.toLocaleString(locale)
-	return `${(credits / unit.size).toLocaleString(locale, { maximumFractionDigits: 1 })}${unit.suffix}`
-}
+/** "12.50", "0.0010" */
+export const formatCreditAmount = (credits: number, locale = "en-US") =>
+	(credits / DISPLAY_CREDITS_PER_UNIT).toLocaleString(locale, {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 4
+	})
 
-/** "50.5k credits" */
+/** "12.50 credits" */
 export const formatCredits = (credits: number, locale = "en-US") =>
-	`${formatCreditAmount(credits, locale)} ${credits === 1 ? "credit" : "credits"}`
+	`${formatCreditAmount(credits, locale)} credits`
 
 /** "€12.50" */
 export const formatEur = (cents: number, locale = "en-US") =>

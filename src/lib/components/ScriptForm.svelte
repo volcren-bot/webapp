@@ -4,6 +4,7 @@
 	import { zod4Client } from "sveltekit-superforms/adapters"
 	import { CATEGORIES, CATEGORY_ICONS, MAX_PRICE, STAGES, TYPES } from "#lib/scripts"
 	import { scriptSchema } from "#lib/schemas"
+	import { fmt } from "#lib/format.svelte.js"
 
 	let {
 		data,
@@ -111,7 +112,10 @@
 	</fieldset>
 
 	<div class="cli-field">
-		<label for="f-price" class="cli-q">price <span class="nv-dim">credits per minute</span></label>
+		<label for="f-price" class="cli-q"
+			>price <span class="nv-dim">whole minute-credits, 1 to {MAX_PRICE}; 10 shows as {fmt.price(10)}</span
+			></label
+		>
 		<div class="cli-line">
 			<span class="cli-prompt" aria-hidden="true">❯</span>
 			<input

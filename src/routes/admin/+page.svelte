@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { fmt } from "#lib/format.svelte.js"
 	import Head from "#lib/components/Head.svelte"
-	import Credits from "#lib/components/Credits.svelte"
 	import { enhance } from "$app/forms"
 	import { untrack } from "svelte"
 	import { CREDITS_PER_EUR } from "#lib/credits"
@@ -70,7 +69,7 @@
 	}
 </script>
 
-<Head title="Admin" description="Adjust credits, log in as users and ban accounts." noindex />
+<Head title="Admin" description="Adjust CREDIT, log in as users and ban accounts." noindex />
 
 <section class="mx-auto my-8 flex w-full max-w-3xl flex-col gap-6">
 	<form class="nv-float flex flex-col gap-3" method="GET">
@@ -112,8 +111,8 @@
 			<span><span class="nv-dim">email</span> {u.email ?? "none"}</span>
 			<span><span class="nv-dim">role</span> {u.role}</span>
 			<span><span class="nv-dim">joined</span> {fmt.dateTime(u.created_at)}</span>
-			<span><span class="nv-dim">credits</span> <Credits amount={u.credits} /></span>
-			<span><span class="nv-dim">earnings</span> <Credits amount={u.earnings} /></span>
+			<span><span class="nv-dim">balance</span> {fmt.credits(u.credits, true)}</span>
+			<span><span class="nv-dim">earnings</span> {fmt.credits(u.earnings)}</span>
 			<span>
 				<span class="nv-dim">status</span>
 				{#if u.banned_at}
@@ -128,7 +127,7 @@
 	{/if}
 
 	<header>
-		<h1 class="text-2xl font-bold">Adjust credits</h1>
+		<h1 class="text-2xl font-bold">Adjust CREDIT</h1>
 		<p class="nv-dim">Every change is recorded with your name and the note.</p>
 	</header>
 
@@ -145,7 +144,8 @@
 		</label>
 		<label class="label">
 			<span class="label-text"
-				>credits <span class="nv-dim">negative to remove, {fmt.number(CREDITS_PER_EUR)} = {fmt.eur(100)}</span
+				>amount <span class="nv-dim"
+					>negative to remove, {fmt.number(CREDITS_PER_EUR)} = {fmt.credits(CREDITS_PER_EUR)}</span
 				></span
 			>
 			<input class="input" name="amount" type="number" step="1" required />
@@ -273,7 +273,7 @@
 							<span class="nv-dim">{fmt.dateTime(row.created_at)} ·</span>
 							{row.user} <span class="nv-dim">({row.user_id})</span>:
 							<span class={row.amount < 0 ? "text-error-400" : "text-success-400"}
-								>{row.amount > 0 ? "+" : ""}<Credits amount={row.amount} /></span
+								>{row.amount > 0 ? "+" : ""}{fmt.credits(row.amount)}</span
 							>
 						</span>
 						<small class="nv-dim">by {row.admin ?? "unknown"} · {row.note}</small>

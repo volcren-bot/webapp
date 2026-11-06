@@ -113,7 +113,7 @@
 
 	<div class="cli-field">
 		<label for="f-price" class="cli-q"
-			>price <span class="nv-dim">whole minute-credits, 1 to {MAX_PRICE}; 10 shows as {fmt.price(10)}</span
+			>price <span class="nv-dim">whole minute-CREDIT, 1 to {MAX_PRICE}; 10 shows as {fmt.price(10)}</span
 			></label
 		>
 		<div class="cli-line">

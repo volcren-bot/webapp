@@ -80,7 +80,7 @@
 		{ key: "type", label: "Script type:", kind: "single", options: TYPES, skip: () => community },
 		{
 			key: "price",
-			label: "Price (whole minute-credits):",
+			label: "Price (whole minute-CREDIT):",
 			kind: "text",
 			hint: `1 to ${MAX_PRICE}. Each is ${fmt.credits(1)} a minute: 1 shows as ${fmt.price(1)}, ${MAX_PRICE} as ${fmt.price(MAX_PRICE)}.`,
 			skip: () => community || $form.type === "free"
@@ -192,7 +192,7 @@
 	}
 
 	function check(key: Field, raw: string): string | null {
-		if (key === "price" && !/^\d+$/.test(raw)) return "Must be a whole number of credits."
+		if (key === "price" && !/^\d+$/.test(raw)) return "Must be a whole number of minute-CREDIT."
 		const value = key === "price" ? Number(raw) : raw
 		const result = scriptSchema.shape[key].safeParse(value)
 		return result.success ? null : result.error.issues[0].message

@@ -4,7 +4,6 @@
 	import { enhance } from "$app/forms"
 	import UUID from "#lib/components/UUID.svelte"
 	import { creditSource } from "#lib/utils"
-	import Credits from "#lib/components/Credits.svelte"
 	import Price from "#lib/components/Price.svelte"
 	import { enhance as enhanceStop } from "$app/forms"
 
@@ -17,7 +16,7 @@
 	const END_REASONS: Record<string, string> = {
 		stopped: "stopped",
 		timeout: "timed out",
-		insufficient_credits: "out of credits"
+		insufficient_credits: "out of CREDIT"
 	}
 
 	const { data, form } = $props()
@@ -38,7 +37,7 @@
 
 	<section class="nv-float flex flex-col items-start gap-3">
 		<span class="nv-title">balance</span>
-		<p class="text-lg font-bold"><Credits amount={data.credits} /></p>
+		<p class="text-lg font-bold">{fmt.credits(data.credits, true)}</p>
 		<a class="btn" href="/credits">add funds</a>
 	</section>
 
@@ -61,7 +60,7 @@
 						<span class="nv-dim">running {runningFor(session.started_at)}</span>
 						<Price credits={session.price} />
 						{#if session.fee_charged}
-							<span class="nv-dim">fee so far <Credits amount={session.fee_charged} /></span>
+							<span class="nv-dim">fee so far {fmt.credits(session.fee_charged)}</span>
 						{/if}
 						<form
 							method="POST"
@@ -108,13 +107,13 @@
 							<span class="nv-dim">{fmt.dateTime(entry.created_at)} ·</span>
 							{creditSource(entry)}
 							{#if entry.topupBonus}
-								<span class="nv-dim">(incl. <Credits amount={entry.topupBonus} /> bonus)</span>
+								<span class="nv-dim">(incl. {fmt.credits(entry.topupBonus)} bonus)</span>
 							{/if}
 							{#if entry.fee}
-								<span class="nv-dim">(incl. <Credits amount={entry.fee} /> extra-session fee)</span>
+								<span class="nv-dim">(incl. {fmt.credits(entry.fee)} extra-session fee)</span>
 							{/if}
 							{#if entry.kind !== "topup" && entry.bonus}
-								<span class="nv-dim">(<Credits amount={-entry.bonus} /> of it bonus credits)</span>
+								<span class="nv-dim">({fmt.credits(-entry.bonus)} of it bonus CREDIT)</span>
 							{/if}
 							{#if entry.note}<span class="nv-dim">({entry.note})</span>{/if}
 						</span>
@@ -123,8 +122,8 @@
 								? 'text-error-400'
 								: 'text-success-400'}"
 						>
-							{entry.amount > 0 ? "+" : ""}<Credits amount={entry.amount} />
-							<span class="nv-dim">→ <Credits amount={entry.balance_after} /></span>
+							{entry.amount > 0 ? "+" : ""}{fmt.credits(entry.amount)}
+							<span class="nv-dim">→ {fmt.credits(entry.balance_after, true)}</span>
 						</span>
 					</li>
 				{/each}
@@ -139,7 +138,7 @@
 		<p>
 			this permanently deletes your profile, discord link and stats, and signs you out.
 			<strong>
-				your {fmt.credits(data.credits)} are lost.
+				your {fmt.credits(data.credits, true)} are lost.
 			</strong>
 			payment and usage records are kept, linked only to your account id (see the
 			<a href="/information/privacy">privacy policy</a>).

@@ -23,7 +23,7 @@ export const scriptSchema = z
 		type: z.enum(TYPES),
 		price: z
 			.number("Must be a number.")
-			.int("Must be a whole number of minute-credits.")
+			.int("Must be a whole number of minute-CREDIT.")
 			.min(0)
 			.max(MAX_PRICE, `Must be at most ${MAX_PRICE} (${formatPrice(MAX_PRICE)}, under €100 a month).`),
 		stage: z.enum(STAGES),
@@ -31,5 +31,5 @@ export const scriptSchema = z
 	})
 	.refine((s) => (s.type === "free") === (s.price === 0), {
 		path: ["price"],
-		message: `Free scripts cost nothing, premium scripts cost at least 1 minute-credit (${formatPrice(1)}).`
+		message: `Free scripts cost nothing, premium scripts cost at least 1 minute-CREDIT (${formatPrice(1)}).`
 	})

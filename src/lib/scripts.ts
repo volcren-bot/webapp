@@ -114,7 +114,7 @@ export const validFileName = (name: string) =>
 	name.length <= 200 &&
 	name.split("/").every((part) => /^[A-Za-z0-9_.-]+$/.test(part) && part !== "." && part !== "..")
 
-/** Prices are stored in credits per minute and read per hour: "0.06 credits/h (0.0010/min)". */
+/** Prices are stored in credits per minute and read per hour: "0.06 CREDIT/h (0.001/min)". */
 export const formatPrice = (credits: number, locale?: string) =>
 	credits === 0
 		? "free"

@@ -23,7 +23,7 @@ export async function deletionBlockers(userId: string) {
 		)
 	}
 	if (account.data?.earnings)
-		blockers.push("You have unpaid earnings. Move them to credits or withdraw them first.")
+		blockers.push("You have unpaid earnings. Move them to CREDIT or withdraw them first.")
 	if (open.length) blockers.push("You have an unpaid invoice. Finish paying it or wait for it to expire.")
 	return blockers
 }

@@ -198,7 +198,7 @@ export const actions = {
 
 		if (!UUID.test(userId)) return fail(400, { message: "Enter a valid user UUID." })
 		if (!Number.isSafeInteger(amount) || amount === 0) {
-			return fail(400, { message: "Credits must be a whole number other than 0." })
+			return fail(400, { message: "The amount must be a whole number other than 0." })
 		}
 		if (!note) return fail(400, { message: "A note is required." })
 
@@ -220,11 +220,11 @@ export const actions = {
 		})
 		// 23514 is the account check: removing more credits than the user has
 		if (err?.code === "23514")
-			return fail(400, { message: `${target.username} doesn't have that many credits.` })
-		if (err) return fail(500, { message: errorRef("Could not adjust the credits", err) })
+			return fail(400, { message: `${target.username} doesn't have that much CREDIT.` })
+		if (err) return fail(500, { message: errorRef("Could not adjust the CREDIT", err) })
 
 		return {
-			message: `Done: ${target.username} now has ${formatCredits(balance, localeFrom(request.headers.get("accept-language")))}.`,
+			message: `Done: ${target.username} now has ${formatCredits(balance, localeFrom(request.headers.get("accept-language")), true)}.`,
 			ok: true
 		}
 	},

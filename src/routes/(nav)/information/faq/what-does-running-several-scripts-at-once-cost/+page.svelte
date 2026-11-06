@@ -16,8 +16,8 @@
 	script running at the same time on your account adds a fee of {credits(1)}
 	per 30 days of running: two scripts at once add {credits(1)} a month, three add {credits(2)}, five add {credits(
 		4
-	)}, ten add {credits(9)}. The fee accrues per minute and is charged a whole credit at a time, so a short run
+	)}, ten add {credits(9)}. The fee accrues per minute and is charged a whole CREDIT at a time, so a short run
 	only pays its share, and it follows your running scripts: when the oldest one stops, the next one becomes
-	the free one. It applies to free scripts too, and you need at least a credit of balance to start an extra
+	the free one. It applies to free scripts too, and you need at least 1 CREDIT of balance to start an extra
 	script. Testers and script authors pay no fee.
 </FaqAnswer>

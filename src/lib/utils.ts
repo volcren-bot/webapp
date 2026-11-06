@@ -72,17 +72,36 @@ export const creditSource = (entry: { kind: string; provider: string | null }) =
 /** Credits are shown at 1 = 1 EUR, with as many decimals as the amount needs (a single internal credit is 0.0001). */
 export const DISPLAY_CREDITS_PER_UNIT = 10_000
 
-/** "12.50", "0.0010" */
-export const formatCreditAmount = (credits: number, locale = "en-US") =>
-	(credits / DISPLAY_CREDITS_PER_UNIT).toLocaleString(locale, {
-		minimumFractionDigits: 2,
+/** "12", "12.50", "0.001" */
+export const formatCreditAmount = (credits: number, locale = "en-US") => {
+	const amount = credits / DISPLAY_CREDITS_PER_UNIT
+	return amount.toLocaleString(locale, {
+		minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
 		maximumFractionDigits: 4
 	})
+}
 
 /** "12.50 credits" */
 export const formatCredits = (credits: number, locale = "en-US") =>
 	`${formatCreditAmount(credits, locale)} credits`
 
-/** "€12.50" */
+const symbolAfter = new Map<string, boolean>()
+
+/** Whether the locale writes a currency symbol after the number, "12 €", rather than before, "€12". */
+export const currencySymbolAfter = (locale = "en-US") => {
+	let after = symbolAfter.get(locale)
+	if (after === undefined) {
+		const parts = new Intl.NumberFormat(locale, { style: "currency", currency: "EUR" }).formatToParts(1)
+		after = parts.findIndex((p) => p.type === "currency") > parts.findIndex((p) => p.type === "integer")
+		symbolAfter.set(locale, after)
+	}
+	return after
+}
+
+/** "€12", "€12.50" */
 export const formatEur = (cents: number, locale = "en-US") =>
-	(cents / 100).toLocaleString(locale, { style: "currency", currency: "EUR" })
+	(cents / 100).toLocaleString(locale, {
+		style: "currency",
+		currency: "EUR",
+		minimumFractionDigits: Number.isInteger(cents / 100) ? 0 : 2
+	})

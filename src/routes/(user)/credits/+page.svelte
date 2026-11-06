@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fmt } from "#lib/format.svelte.js"
 	import Head from "#lib/components/Head.svelte"
+	import Credits from "#lib/components/Credits.svelte"
 	import { enhance } from "$app/forms"
 	import { bonusRate, creditsFor, CREDITS_PER_CENT, CREDITS_PER_EUR } from "#lib/credits"
 
@@ -27,7 +28,7 @@
 		<span class="nv-title">add funds</span>
 		<div class="my-6">
 			<p class="nv-dim">pay with crypto through bitcart.</p>
-			<p class="font-bold">{fmt.credits(CREDITS_PER_EUR)} = {fmt.eur(100)}</p>
+			<p class="font-bold"><Credits amount={CREDITS_PER_EUR} /> = {fmt.eur(100)}</p>
 		</div>
 		{#if form?.message}
 			<small class="text-error-400">{form.message}</small>
@@ -36,7 +37,7 @@
 		<div class="mx-auto flex w-full max-w-md flex-col gap-2">
 			{#each presets as preset (preset)}
 				<button type="button" class="btn w-full" onclick={() => (amount = preset)}>
-					{fmt.credits(preset * 10000)}
+					<Credits amount={preset * CREDITS_PER_EUR} />
 				</button>
 			{/each}
 		</div>

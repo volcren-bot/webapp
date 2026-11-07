@@ -3,7 +3,7 @@
 	import { tick, untrack } from "svelte"
 	import { superForm } from "sveltekit-superforms"
 	import { zod4Client } from "sveltekit-superforms/adapters"
-	import { CATEGORIES, MAX_PRICE, STAGES, TYPES } from "#lib/scripts"
+	import { CATEGORIES, MAX_PRICE, monthlyCents, STAGES, TYPES } from "#lib/scripts"
 	import { scriptSchema } from "#lib/schemas"
 	import type { Infer, SuperValidated } from "sveltekit-superforms"
 
@@ -17,7 +17,8 @@
 		fresh = false,
 		boxed = false,
 		minStage = "prototype",
-		community = false
+		community = false,
+		authorShare = null
 	}: {
 		data: SuperValidated<Infer<typeof scriptSchema>>
 		action?: string
@@ -37,6 +38,8 @@
 		minStage?: (typeof STAGES)[number]
 		/** Community scripts are never premium, so the type and price are not asked. */
 		community?: boolean
+		/** The author's fraction of each charge (payments.config.platform_fee_bps); null leaves the earnings out. */
+		authorShare?: number | null
 	} = $props()
 
 	const { form, enhance, submit, message } = superForm(
@@ -64,8 +67,19 @@
 		label: string
 		kind: "text" | "single" | "multi" | "confirm"
 		options?: readonly string[]
+		/** How a list option is written, when it isn't the stored value itself. */
+		display?: (option: string) => string
 		hint?: string
 		skip?: () => boolean
+	}
+
+	const PRICES = Array.from({ length: MAX_PRICE }, (_, i) => String(i + 1))
+	const priceWidth = $derived(Math.max(...PRICES.map((p) => fmt.price(Number(p)).length)))
+
+	function priceSummary(price: number) {
+		const pays = `Buyers pay ${fmt.price(price)}, ${fmt.eur(monthlyCents(price))} for 30 days of nonstop use (1 CREDIT = €1).`
+		if (authorShare === null) return pays
+		return `${pays}\nYou earn ${fmt.percent(authorShare)} of that, ${fmt.credits(price * 60 * authorShare)}/h, except on what buyers pay with bonus credits.`
 	}
 
 	const STEPS: Step[] = [
@@ -80,9 +94,14 @@
 		{ key: "type", label: "Script type:", kind: "single", options: TYPES, skip: () => community },
 		{
 			key: "price",
-			label: "Price (whole minute-CREDIT):",
-			kind: "text",
-			hint: `1 to ${MAX_PRICE}. Each is ${fmt.credits(1)} a minute: 1 shows as ${fmt.price(1)}, ${MAX_PRICE} as ${fmt.price(MAX_PRICE)}.`,
+			label: "Price per hour:",
+			kind: "single",
+			options: PRICES,
+			display: (p) =>
+				`${fmt.price(Number(p)).padEnd(priceWidth)}  ${fmt.eur(monthlyCents(Number(p)))} / 30 days`,
+			get hint() {
+				return priceSummary(Number(PRICES[cursor] ?? PRICES[0]))
+			},
 			skip: () => community || $form.type === "free"
 		},
 		{
@@ -182,7 +201,7 @@
 		say(`title:        ${$form.title}`)
 		say(`description:  ${$form.description}`)
 		say(`type:         ${$form.type}`)
-		say(`price:        ${$form.price === 0 ? "free" : fmt.price($form.price)}`)
+		say(`price:        ${fmt.price($form.price)}`)
 		say(`stage:        ${$form.stage}`)
 		say(`categories:   ${$form.categories.join(", ") || "none"}`)
 		say("content:")
@@ -192,14 +211,13 @@
 	}
 
 	function check(key: Field, raw: string): string | null {
-		if (key === "price" && !/^\d+$/.test(raw)) return "Must be a whole number of minute-CREDIT."
-		const value = key === "price" ? Number(raw) : raw
-		const result = scriptSchema.shape[key].safeParse(value)
+		const result = scriptSchema.shape[key].safeParse(raw)
 		return result.success ? null : result.error.issues[0].message
 	}
 
-	function accept(value: string | number | string[]) {
+	function accept(answer: string | string[]) {
 		const s = current
+		const value = s.key === "price" ? Number(answer) : answer
 		const shown =
 			s.key === "price" ? fmt.price(Number(value)) : Array.isArray(value) ? value.join(", ") || "none" : value
 		say(`${s.label} ${shown}`)
@@ -219,7 +237,7 @@
 			focusActive()
 			return
 		}
-		accept(s.key === "price" ? Number(value) : value)
+		accept(value)
 	}
 
 	function onTextKey(e: KeyboardEvent) {
@@ -393,7 +411,9 @@
 									aria-selected={selected.includes(option)}
 									onclick={() => clickOption(i)}
 								>
-									{i === cursor ? "›" : " "} [{selected.includes(option) ? "x" : " "}] {option}
+									{i === cursor ? "›" : " "} [{selected.includes(option) ? "x" : " "}] {current.display?.(
+										option
+									) ?? option}
 								</div>
 							{/each}
 						</div>

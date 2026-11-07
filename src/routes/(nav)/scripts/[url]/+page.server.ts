@@ -8,7 +8,7 @@ import { getPublicScript, refreshScript } from "#lib/server/scripts.cache"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
 import { hasAcceptedTerms } from "#lib/server/terms.server"
-import { extraSessionFee } from "#lib/server/payments.server"
+import { authorShare, extraSessionFee } from "#lib/server/payments.server"
 import type { Database } from "#lib/types/supabase"
 
 /** Share codes expire after 1 to this many days (scripts.config.max_share_code_days, which enforces it). */
@@ -185,8 +185,8 @@ export const load = async ({ params, url, locals: { supabaseServer, user, getPro
 		}
 	}
 
-	// The streamed sections above are already on their way; these two only need to finish before the page.
-	const [author, grant, form, fee] = await Promise.all([
+	// The streamed sections above are already on their way; these only need to finish before the page.
+	const [author, grant, form, fee, share] = await Promise.all([
 		cached ? null : scripts.rpc("get_authors", { script_ids: [script.id] }).maybeSingle(),
 		// The cache doesn't know if the script was shared with this visitor
 		cached && user
@@ -212,11 +212,13 @@ export const load = async ({ params, url, locals: { supabaseServer, user, getPro
 					{ errors: false }
 				)
 			: null,
-		extraSessionFee()
+		extraSessionFee(),
+		canEdit ? authorShare() : null
 	])
 
 	return {
 		extraSessionFee: fee,
+		authorShare: share,
 		script: {
 			id: script.id,
 			title: script.title,

@@ -1,24 +1,35 @@
 import { getInvoice, type BitcartInvoice } from "#lib/server/bitcart.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 
-const FEE_CACHE_MS = 60_000
-let feeCache: { value: number; until: number } | null = null
+const CONFIG_CACHE_MS = 60_000
+type PaymentsConfig = { extraSessionFee: number; authorShare: number }
+let configCache: { value: PaymentsConfig; until: number } | null = null
 
-/** payments.config.extra_session_fee: what every extra concurrent session costs per 30 days of running, in credits. Cached for a minute. */
-export async function extraSessionFee() {
-	if (feeCache && feeCache.until > Date.now()) return feeCache.value
+/** payments.config, cached for a minute; on a failed read the last value, or null if there is none. */
+async function paymentsConfig() {
+	if (configCache && configCache.until > Date.now()) return configCache.value
 	const { data, error } = await supabaseAdmin()
 		.schema("payments")
 		.from("config")
-		.select("extra_session_fee")
+		.select("extra_session_fee, platform_fee_bps")
 		.single()
 	if (error) {
-		console.error("Could not load the extra session fee", error)
-		return feeCache?.value ?? 0
+		console.error("Could not load payments.config", error)
+		return configCache?.value ?? null
 	}
-	feeCache = { value: data.extra_session_fee, until: Date.now() + FEE_CACHE_MS }
-	return data.extra_session_fee
+	const value = {
+		extraSessionFee: data.extra_session_fee,
+		authorShare: (10_000 - data.platform_fee_bps) / 10_000
+	}
+	configCache = { value, until: Date.now() + CONFIG_CACHE_MS }
+	return value
 }
+
+/** payments.config.extra_session_fee: what every extra concurrent session costs per 30 days of running, in credits. */
+export const extraSessionFee = async () => (await paymentsConfig())?.extraSessionFee ?? 0
+
+/** The author's fraction of a script's usage charge, from payments.config.platform_fee_bps; null if it can't be read. */
+export const authorShare = async () => (await paymentsConfig())?.authorShare ?? null
 
 /** Asks Bitcart for the invoice's real status and applies it to our payment row, crediting once complete (settle_payment is idempotent); shared by webhook and checkout. */
 export async function syncPayment(paymentId: string, invoiceId: string): Promise<BitcartInvoice> {

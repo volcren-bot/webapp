@@ -21,7 +21,8 @@ import Zap from "@lucide/svelte/icons/zap"
 import Target from "@lucide/svelte/icons/target"
 import Anvil from "@lucide/svelte/icons/anvil"
 import Sailboat from "@lucide/svelte/icons/sailboat"
-import { formatCreditAmount, formatCredits } from "#lib/utils"
+import { CREDITS_PER_CENT, MINUTES_PER_MONTH } from "#lib/credits"
+import { formatCredits } from "#lib/utils"
 import { ENCRYPTION_OVERHEAD } from "#lib/encryption"
 import { Constants, type Database } from "#lib/types/supabase"
 
@@ -85,7 +86,7 @@ export const STAGE_COLORS: Record<ScriptStage, string> = {
 	archived: "var(--tn-comment)"
 }
 
-/** Credits per minute. 22 is about €98 for a 31-day month of nonstop use (metadata_price_max_check). */
+/** Credits per minute. 22 is €95.04 for 30 days of nonstop use (metadata_price_max_check). */
 export const MAX_PRICE = 22
 export const MAX_FILES = 50
 /** The scripts bucket allows 5 MB per object, and the encrypted file is a little larger than the plain one. */
@@ -114,8 +115,9 @@ export const validFileName = (name: string) =>
 	name.length <= 200 &&
 	name.split("/").every((part) => /^[A-Za-z0-9_.-]+$/.test(part) && part !== "." && part !== "..")
 
-/** Prices are stored in credits per minute and read per hour: "0.06 CREDIT/h (0.001/min)". */
+/** Prices are stored in credits per minute and read per hour: "0.06 CREDIT/h". */
 export const formatPrice = (credits: number, locale?: string) =>
-	credits === 0
-		? "free"
-		: `${formatCredits(credits * 60, locale)}/h (${formatCreditAmount(credits, locale)}/min)`
+	credits === 0 ? "free" : `${formatCredits(credits * 60, locale)}/h`
+
+/** What a price costs over 30 days of nonstop use, in EUR cents. */
+export const monthlyCents = (credits: number) => (credits * MINUTES_PER_MONTH) / CREDITS_PER_CENT

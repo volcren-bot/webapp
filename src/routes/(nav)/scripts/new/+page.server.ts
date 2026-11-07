@@ -3,6 +3,7 @@ import { message, superValidate } from "sveltekit-superforms"
 import { zod4 } from "sveltekit-superforms/adapters"
 import { scriptSchema } from "#lib/schemas"
 import { isCommunityRole } from "#lib/scripts"
+import { authorShare } from "#lib/server/payments.server"
 import { errorRef } from "#lib/server/supabase.server"
 import { hasAcceptedTerms, termsRedirect } from "#lib/server/terms.server"
 
@@ -21,6 +22,7 @@ export const load = async ({ locals: { user, getProfile, supabaseServer } }) => 
 
 	return {
 		community,
+		authorShare: community ? null : await authorShare(),
 		usage: usage
 			? {
 					scripts: usage.script_count,

@@ -26,6 +26,7 @@
 	data={data.form}
 	fresh
 	community={data.community}
+	authorShare={data.authorShare}
 	label="New script"
 	heading="VOLCREN script creator"
 	confirm="Create this script?"

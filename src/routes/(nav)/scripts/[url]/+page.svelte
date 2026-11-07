@@ -378,6 +378,7 @@
 				progress="Saving changes..."
 				minStage={script.stage}
 				community={script.community}
+				authorShare={data.authorShare}
 			/>
 		{/await}
 	{/if}

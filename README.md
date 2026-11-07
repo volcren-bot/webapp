@@ -56,7 +56,8 @@ Every script running at once on an account past the oldest pays `payments.config
 Every `+page.svelte` is found at build time (`src/lib/routes.ts`) and nested by URL into one tree, so a new page
 is reachable the moment its file exists. The root layout builds the tree for the current viewer (member-only and
 admin-only pages are left out, the viewer's scripts are added under `/scripts`) and the sidebar, the key
-sequences and the cheat sheet all render from it.
+sequences and the cheat sheet all render from it. Siblings are sorted by name, except `/scripts/new`, which always
+comes first under `/scripts`, and the FAQ entries, which follow their order in `src/lib/faqs.ts`.
 
 Pages are reached with sequences: `g`, then one key per level, e.g. `g s` for `/scripts` and `g i f` for
 `/information/faq`. Each key is the first letter of the page's folder name that no sibling took, so keys are

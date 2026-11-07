@@ -26,8 +26,11 @@ const PAGES = Object.keys(import.meta.glob("/src/routes/**/+page.svelte"))
 const MEMBER_ONLY = ["/scripts/new"]
 const ADMIN_ONLY = ["/admin"]
 
-// Pages listed in a fixed order instead of by name.
-const ORDER = new Map(faqs.map((faq, i) => [`/information/faq/${faq.id}`, i]))
+// Pages listed in a fixed order instead of by name; negative values come before every named page.
+const ORDER = new Map([
+	["/scripts/new", -1],
+	...faqs.map((faq, i): [string, number] => [`/information/faq/${faq.id}`, i])
+])
 
 const KEYS = "abcdefghijklmnopqrstuvwxyz0123456789"
 

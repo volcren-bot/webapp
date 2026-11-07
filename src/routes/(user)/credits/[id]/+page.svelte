@@ -184,7 +184,9 @@
 						/>
 					</a>
 					<p class="text-lg font-bold">{method.amount} {method.symbol}</p>
-					<p class="nv-dim">{method.rate}</p>
+					<p class="nv-dim">
+						Exchange rate: 1 {method.symbol} = {fmt.number(method.rate, { maximumFractionDigits: 2 })}€
+					</p>
 				</div>
 
 				<div class="label">

@@ -26,7 +26,8 @@ export interface BitcartPaymentMethod {
 	/** The sender address registered for this method; Bitcart matches EVM payments only by it. */
 	user_address: string | null
 	wallet: { sender_address_required: boolean } | null
-	rate_str: string
+	/** EUR for one coin or token, as a decimal string. */
+	rate: string
 	payment_address: string
 	/** Wallet URI (bitcoin:..., monero:..., ethereum:...), not a web page. */
 	payment_url: string

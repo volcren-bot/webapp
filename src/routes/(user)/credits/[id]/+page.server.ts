@@ -93,7 +93,7 @@ export const load = async ({ params, depends, locals: { supabaseServer, user } }
 				name: method.name,
 				amount: method.amount,
 				symbol,
-				rate: method.rate_str,
+				rate: Number(method.rate),
 				address: method.payment_address,
 				uri: method.payment_url,
 				qr: await qrCode(method.payment_url),

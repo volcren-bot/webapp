@@ -3,18 +3,12 @@
 	import Head from "#lib/components/Head.svelte"
 	import { REPORT_STATUSES, STATUS_COLORS, STATUS_LABELS } from "#lib/feedback"
 	import { page } from "$app/state"
-	import { SvelteURLSearchParams } from "svelte/reactivity"
+	import { withParam } from "#lib/utils"
 
 	const { data } = $props()
 
 	// Filters are query parameters, so they work without JavaScript and can be linked
-	const statusHref = (status: string | null) => {
-		const params = new SvelteURLSearchParams(page.url.search)
-		if (status) params.set("status", status)
-		else params.delete("status")
-		const query = params.toString()
-		return query ? `?${query}` : page.url.pathname
-	}
+	const statusHref = (status: string | null) => withParam(page.url, "status", status)
 </script>
 
 <Head title="Bug reports" description="Bug reports on scripts, sent from the loader." noindex />
@@ -26,7 +20,7 @@
 			Reports users sent from the loader: yours, those on your scripts and those assigned to you.
 			{#if data.filter.script}
 				Showing <b class="text-(--tn-fg)">{data.scriptTitle ?? "one script"}</b> only,
-				<a href={statusHref(data.filter.status).replace(/[?&]script=[^&]*/, "") || "/reports"}>show all</a>.
+				<a href={withParam(page.url, "script", null)}>show all</a>.
 			{/if}
 		</p>
 	</header>

@@ -8,7 +8,7 @@ export type RouteNode = {
 	children: RouteNode[]
 }
 
-export type Viewer = { member: boolean; admin: boolean; scripts: string[] }
+type Viewer = { member: boolean; admin: boolean; scripts: string[] }
 
 // Every static page. Route groups like (nav) are not part of the URL.
 const PAGES = Object.keys(import.meta.glob("/src/routes/**/+page.svelte"))
@@ -56,7 +56,7 @@ function assignKeys(nodes: RouteNode[]) {
 function finish(node: RouteNode) {
 	node.children.sort(byOrder)
 	// Home shares a level with its children, so `g` can reach it too.
-	assignKeys(node.href === "/" ? [node, ...node.children] : node.children)
+	assignKeys(options(node))
 	for (const child of node.children) finish(child)
 }
 
@@ -91,15 +91,6 @@ export function routeTree(viewer: Viewer): RouteNode {
 /** The rows the go panel offers at a node: its children, plus home itself at the root. */
 export function options(node: RouteNode): RouteNode[] {
 	return node.href === "/" ? [node, ...node.children] : node.children
-}
-
-export function findNode(root: RouteNode, href: string): RouteNode | undefined {
-	if (root.href === href) return root
-	for (const child of root.children) {
-		const found = findNode(child, href)
-		if (found) return found
-	}
-	return undefined
 }
 
 /** Every page with the keys that reach it, e.g. ["g", "i", "f"], in tree order. */

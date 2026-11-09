@@ -8,6 +8,7 @@ import {
 } from "#lib/server/bitcart.server"
 import { syncPayment } from "#lib/server/payments.server"
 import { errorRef } from "#lib/server/supabase.server"
+import { UUID } from "#lib/utils"
 
 // The page polls this load and a pending invoice keeps its addresses, so each QR code is drawn once and capped so old invoices don't pile up.
 const MAX_CACHED_QRS = 500
@@ -60,6 +61,7 @@ export const load = async ({ params, depends, locals: { supabaseServer, user } }
 	if (!user) redirect(303, "/auth")
 	// The page polls with this instead of invalidateAll, so the layout's loads don't re-run with it
 	depends("payment:status")
+	if (!UUID.test(params.id)) error(404, "Payment not found")
 
 	// RLS only returns the user's own payments
 	const { data: payment } = await supabaseServer
@@ -123,6 +125,7 @@ export const actions = {
 		const address = String(data.get("address") ?? "").trim()
 		if (!EVM_ADDRESS.test(address))
 			return fail(400, { senderMessage: "Enter a 0x address with 40 hex characters." })
+		if (!UUID.test(params.id)) return fail(404, { senderMessage: "Payment not found." })
 
 		// RLS only returns the user's own payments
 		const { data: payment } = await supabaseServer

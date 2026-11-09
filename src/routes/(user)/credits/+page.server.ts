@@ -1,16 +1,10 @@
 import { fail, redirect } from "@sveltejs/kit"
-import {
-	createInvoice,
-	MAX_PENDING_PAYMENTS,
-	MAX_TOPUP_CENTS,
-	MIN_TOPUP_CENTS
-} from "#lib/server/bitcart.server"
+import { createInvoice, MAX_PENDING_PAYMENTS } from "#lib/server/bitcart.server"
 import { extraSessionFee, openPayments } from "#lib/server/payments.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
-import { creditsFor, MINUTES_PER_MONTH } from "#lib/credits"
-import { localeFrom } from "#lib/format.svelte.js"
-import { formatEur } from "#lib/utils"
+import { creditsFor, MAX_TOPUP_CENTS, MIN_TOPUP_CENTS, MINUTES_PER_MONTH } from "#lib/credits"
+import { formatEur, localeFrom } from "#lib/utils"
 
 export const load = async ({ locals: { supabaseServer, user } }) => {
 	if (!user) redirect(303, "/auth")
@@ -51,7 +45,7 @@ export const actions = {
 		const cents = Math.round(eur * 100)
 
 		if (!Number.isFinite(cents) || cents < MIN_TOPUP_CENTS || cents > MAX_TOPUP_CENTS) {
-			const locale = localeFrom(request.headers.get("accept-language"))
+			const locale = localeFrom(request)
 			return fail(400, {
 				message: `Amount must be between ${formatEur(MIN_TOPUP_CENTS, locale)} and ${formatEur(MAX_TOPUP_CENTS, locale)}.`
 			})

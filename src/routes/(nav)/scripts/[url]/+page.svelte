@@ -17,23 +17,16 @@
 	import Hash from "@lucide/svelte/icons/hash"
 	import Coins from "@lucide/svelte/icons/coins"
 	import { CATEGORY_ICONS, STAGE_COLORS } from "#lib/scripts"
-	import { metaDescription } from "#lib/utils"
+	import { metaDescription, withParam } from "#lib/utils"
 	import { CREDITS_PER_CENT } from "#lib/credits"
 	import { page } from "$app/state"
-	import { SvelteURLSearchParams } from "svelte/reactivity"
 
 	const { data, form: result } = $props()
 	const script = $derived(data.script)
 	const statusColor = { live: "var(--tn-green)", pending: "var(--tn-yellow)", discarded: "var(--tn-comment)" }
 
 	// Revision pages are a query parameter, so they work without JavaScript and can be linked
-	const revisionsHref = (n: number) => {
-		const params = new SvelteURLSearchParams(page.url.search)
-		if (n > 1) params.set("revisions", String(n))
-		else params.delete("revisions")
-		const query = params.toString()
-		return query ? `?${query}` : page.url.pathname
-	}
+	const revisionsHref = (n: number) => withParam(page.url, "revisions", n > 1 ? String(n) : null)
 
 	// The Origin header gets the multipart upload past SvelteKit's CSRF check; the token is the auth
 	const deployCommand = $derived(

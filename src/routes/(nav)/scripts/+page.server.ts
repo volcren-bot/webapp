@@ -4,6 +4,7 @@ import { getPublicScripts, type CachedScript } from "#lib/server/scripts.cache"
 import { createLimiter } from "#lib/server/ratelimit.server"
 import { errorRef } from "#lib/server/supabase.server"
 import type { Database } from "#lib/types/supabase"
+import { likeEscape } from "#lib/utils"
 
 const MAX_LISTED = 500
 
@@ -25,11 +26,6 @@ const listed = (s: CachedScript): ListedScript => ({
 	is_granted: false,
 	author_banned: false
 })
-
-// Matches the search text literally rather than as a LIKE pattern.
-function likeEscape(text: string) {
-	return text.replace(/[\\%_]/g, "\\$&")
-}
 
 /** The code is 256 random bits (scripts.create_share_code), so this only slows down someone guessing. */
 const redeemLimiter = createLimiter(5, 60 * 1000)

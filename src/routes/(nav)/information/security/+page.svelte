@@ -62,7 +62,7 @@
 					rel="noopener noreferrer">code</a
 				>
 				is public, so you, or someone you trust, can see what it really does instead of taking our word for it.
-				If you find a problem, hellp everyone and please report it as an issue in the respectice repository .
+				If you find a problem, help everyone and please report it as an issue in the respective repository.
 			</p>
 		</div>
 	</article>

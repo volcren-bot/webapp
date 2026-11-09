@@ -1,5 +1,7 @@
+import type { SupabaseClient } from "@supabase/supabase-js"
 import { openPayments } from "#lib/server/payments.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
+import type { Database } from "#lib/types/supabase"
 
 /** Why the account can't be deleted yet, as messages for the account page; the database enforces the first two, these checks only explain why. */
 export async function deletionBlockers(userId: string) {
@@ -26,4 +28,17 @@ export async function deletionBlockers(userId: string) {
 		blockers.push("You have unpaid earnings. Move them to CREDIT or withdraw them first.")
 	if (open.length) blockers.push("You have an unpaid invoice. Finish paying it or wait for it to expire.")
 	return blockers
+}
+
+/** What a community author has used of their limits, or null when it can't be read. */
+export async function communityUsage(supabase: SupabaseClient<Database>) {
+	const { data } = await supabase.schema("scripts").rpc("get_community_usage").maybeSingle()
+	return data
+		? {
+				scripts: data.script_count,
+				maxScripts: data.max_scripts,
+				bytes: data.used_bytes,
+				maxBytes: data.max_bytes
+			}
+		: null
 }

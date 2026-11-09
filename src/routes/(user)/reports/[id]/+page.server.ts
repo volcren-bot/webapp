@@ -2,8 +2,7 @@ import { error, fail, redirect } from "@sveltejs/kit"
 import { isReportStatus } from "#lib/feedback"
 import { roleAtLeast } from "#lib/scripts"
 import { errorRef } from "#lib/server/supabase.server"
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+import { UUID } from "#lib/utils"
 
 export const load = async ({ params, locals: { user, supabaseServer, getProfile } }) => {
 	if (!user) redirect(303, "/auth")

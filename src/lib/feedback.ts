@@ -1,6 +1,6 @@
 import { Constants, type Database } from "#lib/types/supabase"
 
-export type ReportStatus = Database["feedback"]["Enums"]["report_status"]
+type ReportStatus = Database["feedback"]["Enums"]["report_status"]
 
 /** `feedback.report_status`, in workflow order. */
 export const REPORT_STATUSES = Constants.feedback.Enums.report_status

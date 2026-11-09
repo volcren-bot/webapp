@@ -4,6 +4,7 @@ import { sequence, type Handle, type HandleServerError } from "@sveltejs/kit/hoo
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "$app/env/public"
 import type { Database } from "#lib/types/supabase"
 import { isProtected } from "#lib/server/supabase.server"
+import { SESSION_PROFILE_COLUMNS } from "#lib/types/profile"
 
 const supabase: Handle = async ({ event, resolve }) => {
 	event.locals.supabaseServer = createServerClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -50,7 +51,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
 		const { data, error: err } = await event.locals.supabaseServer
 			.schema("profiles")
 			.from("profiles")
-			.select("id, username, avatar, role, banned_at")
+			.select(SESSION_PROFILE_COLUMNS)
 			.eq("id", user.id)
 			.single()
 
@@ -80,8 +81,7 @@ const authGuard: Handle = async ({ event, resolve }) => {
 		redirect(303, "/auth")
 	}
 
-	const response = resolve(event)
-	return response
+	return resolve(event)
 }
 
 const performanceCheck: Handle = async ({ event, resolve }) => {
@@ -106,6 +106,6 @@ export const handleError: HandleServerError = ({ error }) => {
 		return
 	}
 
-	console.error("Unexpected error ocurred: ", error)
+	console.error("Unexpected error occurred: ", error)
 	return { message: "An unexpected error occurred" }
 }

@@ -5,12 +5,9 @@
 	import UUID from "#lib/components/UUID.svelte"
 	import { creditSource } from "#lib/utils"
 	import Price from "#lib/components/Price.svelte"
-	import { enhance as enhanceStop } from "$app/forms"
 
-	const minutesSince = (iso: string) =>
-		Math.max(Math.floor((Date.now() - new Date(iso).getTime()) / 60_000), 0)
 	const runningFor = (iso: string) => {
-		const minutes = minutesSince(iso)
+		const minutes = Math.max(Math.floor((Date.now() - new Date(iso).getTime()) / 60_000), 0)
 		return minutes < 60 ? `${minutes} min` : `${Math.floor(minutes / 60)} h ${minutes % 60} min`
 	}
 	const END_REASONS: Record<string, string> = {
@@ -66,7 +63,7 @@
 							method="POST"
 							action="?/stop"
 							class="ml-auto"
-							use:enhanceStop={({ cancel }) => {
+							use:enhance={({ cancel }) => {
 								if (!confirm(`Stop ${session.title}? The loader stops it within a minute.`)) cancel()
 							}}
 						>

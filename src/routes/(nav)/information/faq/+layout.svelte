@@ -3,7 +3,7 @@
 	import { page } from "$app/state"
 	import Head from "#lib/components/Head.svelte"
 	import { faqs } from "#lib/faqs"
-	import { newFaqUrl } from "#lib/github"
+	import { NEW_FAQ_URL } from "#lib/github"
 	import { useKeys } from "#lib/keys.svelte.js"
 
 	let { children } = $props()
@@ -63,6 +63,6 @@
 
 	<small class="nv-dim">
 		Missing a question?
-		<a href={newFaqUrl()} target="_blank" rel="noopener noreferrer">Add one on GitHub</a>.
+		<a href={NEW_FAQ_URL} target="_blank" rel="noopener noreferrer">Add one on GitHub</a>.
 	</small>
 </section>

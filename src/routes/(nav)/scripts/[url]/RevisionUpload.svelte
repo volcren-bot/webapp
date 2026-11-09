@@ -3,8 +3,7 @@
 	import Upload from "@lucide/svelte/icons/upload"
 	import { fmt } from "#lib/format.svelte.js"
 	import { getSupabaseBrowser } from "#lib/supabase.browser"
-	import { MAX_FILES, MAX_FILE_BYTES, uploadAll, validFileName } from "#lib/scripts"
-	import { encryptFile, encryptedSize, keyHex, newRevisionKey } from "#lib/encryption"
+	import { createRevision, filesProblem, storeRevision } from "#lib/revisions"
 
 	let { id }: { id: string } = $props()
 
@@ -14,15 +13,7 @@
 	let status = $state("")
 	let failed = $state(false)
 
-	const problem = $derived.by(() => {
-		if (files.length > MAX_FILES) return `At most ${MAX_FILES} files per revision.`
-		const big = files.find((f) => f.size > MAX_FILE_BYTES)
-		if (big) return `${big.name} is larger than ${fmt.megabytes(MAX_FILE_BYTES)} MB.`
-		if (new Set(files.map((f) => f.name)).size !== files.length) return "File names must be unique."
-		const bad = files.find((f) => !validFileName(f.name))
-		if (bad) return `${bad.name}: file names may only use letters, digits, _ . and -.`
-		return ""
-	})
+	const problem = $derived(filesProblem(files, fmt.locale))
 
 	// One file is the entry. With several, the author picks (main.luau is offered first if there is one).
 	const entry = $derived(
@@ -33,66 +24,29 @@
 		if (!files.length || problem || !entry || busy) return
 		busy = true
 		failed = false
-		let revision: number | undefined
 
 		const supabase = await getSupabaseBrowser()
 		try {
 			status = "creating revision..."
-			const created = await supabase
-				.schema("scripts")
-				.from("versions")
-				// Clients may only insert id, files, sizes and entry (column grants); a trigger assigns the revision, so its required type is cast away, and sizes tell the database what is coming.
-				.insert({
-					id,
-					files: files.map((f) => f.name),
-					sizes: files.map((f) => encryptedSize(f.size)),
-					entry
-				} as {
-					id: string
-					files: string[]
-					sizes: number[]
-					entry: string
-					revision: number
-				})
-				.select("revision")
-				.single()
+			const created = await createRevision(supabase, id, files, entry)
 			if (created.error) throw created.error
-			revision = created.data.revision
-			const folder = `${id}/${String(revision).padStart(9, "0")}`
+			const revision = created.data.revision
 
-			// Every revision is stored encrypted; the database keeps the key and hands it to the loader.
-			const key = newRevisionKey()
-			const keyed = await supabase
-				.schema("scripts")
-				.rpc("set_version_key", { script_id: id, revision, key: keyHex(key) })
-			if (keyed.error) throw keyed.error
-
-			let uploaded = 0
-			status = `uploading files (0/${files.length})...`
-			await uploadAll(files, async (file) => {
-				const sealed = await encryptFile(file, key, id, revision!, file.name)
-				const { error } = await supabase.storage.from("scripts").upload(`${folder}/${file.name}`, sealed)
-				if (error) throw error
-				status = `uploading files (${++uploaded}/${files.length})...`
+			const count = files.length
+			status = `uploading files (0/${count})...`
+			await storeRevision(supabase, id, revision, files, (done) => {
+				status = done < count ? `uploading files (${done}/${count})...` : "publishing..."
 			})
-
-			status = "publishing..."
-			const published = await supabase.schema("scripts").rpc("publish_version", { script_id: id, revision })
-			if (published.error) throw published.error
 
 			status = `Revision ${revision} is live.`
 			files = []
-			await invalidateAll()
 		} catch (e) {
 			failed = true
 			status = `Upload failed: ${e instanceof Error ? e.message : "unknown error"}`
-			// A pending revision blocks the next one, so drop it.
-			if (revision != null)
-				await supabase.schema("scripts").rpc("discard_version", { script_id: id, revision })
-			await invalidateAll()
 		} finally {
 			busy = false
 		}
+		await invalidateAll()
 	}
 </script>
 

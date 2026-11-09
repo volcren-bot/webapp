@@ -5,7 +5,7 @@ export const GET = async ({ url: { origin, searchParams }, cookies, locals: { su
 	const takeLoginRedirect = () => {
 		const path = cookies.get(LOGIN_REDIRECT_COOKIE)
 		cookies.delete(LOGIN_REDIRECT_COOKIE, { path: "/" })
-		return (path && safePath(path, origin)) ?? "/"
+		return safePath(path, origin) ?? "/"
 	}
 
 	// The provider's error goes to the logs, never onto the page, since anyone can put text in these parameters and share the link.

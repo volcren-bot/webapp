@@ -1,12 +1,11 @@
 import { SUPABASE_URL } from "$app/env/public"
-import type { AuthError, PostgrestError, SupabaseClient, Provider } from "@supabase/supabase-js"
+import type { SupabaseClient, Provider } from "@supabase/supabase-js"
 import { error, redirect } from "@sveltejs/kit"
-import { formatError } from "#lib/utils"
 
 export const LOGIN_REDIRECT_COOKIE = "login_redirect"
 
 // Routes that require a logged in user
-export const PROTECTED_PATHS = ["/account", "/credits", "/reports"]
+const PROTECTED_PATHS = ["/account", "/credits", "/reports"]
 
 export const isProtected = (pathname: string) => PROTECTED_PATHS.some((path) => pathname.startsWith(path))
 
@@ -19,6 +18,19 @@ export function errorRef(message: string, detail?: unknown) {
 
 export function refError(status: number, message: string, detail?: unknown): never {
 	error(status, errorRef(message, detail))
+}
+
+/** Why a request is refused: the status and a message to show. */
+export type Refusal = { status: 400 | 401 | 403 | 404 | 500; message: string }
+
+/** The signed-in administrator, or why the request is refused. */
+export async function requireAdmin({
+	user,
+	getProfile
+}: App.Locals): Promise<Refusal | { user: NonNullable<App.Locals["user"]> }> {
+	if (!user) return { status: 401, message: "You need to login." }
+	if ((await getProfile())?.role !== "administrator") return { status: 403, message: "Administrators only." }
+	return { user }
 }
 
 export async function doLogin(
@@ -34,15 +46,15 @@ export async function doLogin(
 		options: { redirectTo: origin + "/auth/callback/" }
 	})
 
-	if (err) error(400, formatError(err as AuthError | PostgrestError))
+	if (err) refError(400, err.message, err)
 
 	// The authorize URL lives on the Supabase origin, so only that origin is allowed
 	redirect(303, data.url, { external: [new URL(SUPABASE_URL).origin] })
 }
 
 /** Only same-origin absolute paths, so the post-login redirect can't leave the site. */
-export function safePath(path: string, origin: string) {
-	if (!path.startsWith("/")) return null
+export function safePath(path: string | null | undefined, origin: string) {
+	if (!path?.startsWith("/")) return null
 	try {
 		const url = new URL(path, origin)
 		return url.origin === origin ? url.pathname + url.search + url.hash : null

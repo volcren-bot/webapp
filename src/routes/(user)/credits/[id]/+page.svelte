@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { clipboard } from "#lib/clipboard.svelte.js"
 	import { fmt } from "#lib/format.svelte.js"
 	import Head from "#lib/components/Head.svelte"
 	import { deserialize, enhance } from "$app/forms"
@@ -14,7 +15,7 @@
 
 	let selected = $state(0)
 	let now = $state(Date.now())
-	let copied = $state(false)
+	const clip = clipboard(1500)
 	let ethereum = $state<Eip1193>()
 	let paying = $state(false)
 	let walletMessage = $state("")
@@ -38,12 +39,6 @@
 			clearInterval(poll)
 		}
 	})
-
-	async function copy(text: string) {
-		await navigator.clipboard.writeText(text)
-		copied = true
-		setTimeout(() => (copied = false), 1500)
-	}
 
 	type Method = NonNullable<typeof invoice>["methods"][number]
 
@@ -199,7 +194,9 @@
 							value={method.address}
 							onclick={(e) => e.currentTarget.select()}
 						/>
-						<button class="btn" onclick={() => copy(method.address)}>{copied ? "copied" : "copy"}</button>
+						<button class="btn" onclick={() => clip.copy(method.address)}
+							>{clip.copied === method.address ? "copied" : "copy"}</button
+						>
 					</div>
 				</div>
 				{#if method.sender}

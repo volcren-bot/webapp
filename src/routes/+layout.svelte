@@ -43,7 +43,7 @@
 					callTimestamps = callTimestamps.filter((ts) => now - ts < 10000)
 					if (callTimestamps.length >= 10) {
 						console.error(
-							"Rate limit exceeded: invalidate('supabase:layout') blocked to prevent loop infinite loop."
+							"Rate limit exceeded: invalidate('supabase:auth') blocked to prevent an infinite loop."
 						)
 						return
 					}

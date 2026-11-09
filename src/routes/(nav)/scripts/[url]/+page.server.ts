@@ -5,11 +5,13 @@ import { scriptSchema } from "#lib/schemas"
 import { roleAtLeast } from "#lib/scripts"
 import { newDeployToken } from "#lib/server/deploy.server"
 import { getPublicScript, refreshScript } from "#lib/server/scripts.cache"
+import { communityUsage } from "#lib/server/account.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
 import { hasAcceptedTerms } from "#lib/server/terms.server"
 import { authorShare, extraSessionFee } from "#lib/server/payments.server"
 import type { Database } from "#lib/types/supabase"
+import { UUID } from "#lib/utils"
 
 /** Share codes expire after 1 to this many days (scripts.config.max_share_code_days, which enforces it). */
 const MAX_CODE_DAYS = 30
@@ -38,6 +40,12 @@ type ScriptPage = Pick<
 		ScriptTables["protected"]["Row"],
 		"author" | "revision" | "created_at" | "updated_at"
 	> | null
+}
+
+/** The id of the script at this url, if the user can see it. */
+async function scriptIdAt(supabase: App.Locals["supabaseServer"], url: string) {
+	const { data } = await supabase.schema("scripts").from("scripts").select("id").eq("url", url).maybeSingle()
+	return data?.id ?? null
 }
 
 /** Streamed data must not reject: an unhandled rejection would crash the server, so a failure shows as empty. */
@@ -111,21 +119,14 @@ export const load = async ({ params, url, locals: { supabaseServer, user, getPro
 						.order("revision", { ascending: false })
 						.range(from, from + REVISIONS_PER_PAGE - 1),
 					// The author's use of the community limits, shown next to the uploader
-					own && community ? scripts.rpc("get_community_usage").maybeSingle() : null,
+					own && community ? communityUsage(supabaseServer) : null,
 					termsAccepted
 				]).then(([versions, usage, accepted]) => ({
 					versions: versions.data ?? [],
 					total: versions.count ?? 0,
 					page: revisionPage,
 					perPage: REVISIONS_PER_PAGE,
-					usage: usage?.data
-						? {
-								scripts: usage.data.script_count,
-								maxScripts: usage.data.max_scripts,
-								bytes: usage.data.used_bytes,
-								maxBytes: usage.data.max_bytes
-							}
-						: null,
+					usage,
 					termsAccepted: accepted
 				})),
 				{
@@ -247,9 +248,9 @@ export const actions = {
 		if (!user) return message(form, "You need to login to edit a script.", { status: 401 })
 		if (!form.valid) return fail(400, { form })
 
+		const id = await scriptIdAt(supabaseServer, params.url)
+		if (!id) return message(form, "Script not found.", { status: 404 })
 		const scripts = supabaseServer.schema("scripts")
-		const { data: script } = await scripts.from("scripts").select("id").eq("url", params.url).maybeSingle()
-		if (!script) return message(form, "Script not found.", { status: 404 })
 
 		const { title, description, content, type, price, stage, categories } = form.data
 
@@ -257,18 +258,18 @@ export const actions = {
 		const base = await scripts
 			.from("scripts")
 			.update({ title, description, content })
-			.eq("id", script.id)
+			.eq("id", id)
 			.select("id")
 		if (base.error) return message(form, errorRef("Could not save the script", base.error), { status: 500 })
 		if (!base.data.length) return message(form, "You can't edit this script.", { status: 403 })
 
-		const meta = await scripts.from("metadata").update({ type, price, stage, categories }).eq("id", script.id)
+		const meta = await scripts.from("metadata").update({ type, price, stage, categories }).eq("id", id)
 		if (meta.error) return message(form, errorRef("Could not save the script", meta.error), { status: 400 })
 
-		await refreshScript(script.id)
+		await refreshScript(id)
 
 		// The slug follows the title, so a rename moves the page.
-		const { data: renamed } = await scripts.from("scripts").select("url").eq("id", script.id).single()
+		const { data: renamed } = await scripts.from("scripts").select("url").eq("id", id).single()
 		if (renamed && renamed.url !== params.url) redirect(303, `/scripts/${renamed.url}`)
 
 		return message(form, "Saved.")
@@ -297,14 +298,14 @@ export const actions = {
 		const name = String((await request.formData()).get("name") ?? "").trim()
 		if (!name || name.length > 64) return fail(400, { tokenError: "Name the token (at most 64 characters)." })
 
-		const scripts = supabaseServer.schema("scripts")
-		const { data: script } = await scripts.from("scripts").select("id").eq("url", params.url).maybeSingle()
-		if (!script) return fail(404, { tokenError: "Script not found." })
+		const scriptId = await scriptIdAt(supabaseServer, params.url)
+		if (!scriptId) return fail(404, { tokenError: "Script not found." })
 
 		const { token, hash } = newDeployToken()
-		const { error: err } = await scripts
+		const { error: err } = await supabaseServer
+			.schema("scripts")
 			.from("deploy_tokens")
-			.insert({ script_id: script.id, name, token_hash: hash })
+			.insert({ script_id: scriptId, name, token_hash: hash })
 		// 42501 is the RLS check: only the author and moderators manage tokens
 		if (err?.code === "42501") return fail(403, { tokenError: "You can't manage this script's tokens." })
 		if (err) return fail(500, { tokenError: errorRef("Could not create the token", err) })
@@ -315,17 +316,17 @@ export const actions = {
 	revokeToken: async ({ request, params, locals: { user, supabaseServer } }) => {
 		if (!user) return fail(401, { tokenError: "You need to login." })
 		const id = String((await request.formData()).get("id") ?? "")
-
-		const scripts = supabaseServer.schema("scripts")
-		const { data: script } = await scripts.from("scripts").select("id").eq("url", params.url).maybeSingle()
-		if (!script) return fail(404, { tokenError: "Script not found." })
+		if (!UUID.test(id)) return fail(404, { tokenError: "Token not found." })
+		const scriptId = await scriptIdAt(supabaseServer, params.url)
+		if (!scriptId) return fail(404, { tokenError: "Script not found." })
 
 		// RLS lets only the author and moderators through; zero rows means the delete was refused.
-		const { data, error: err } = await scripts
+		const { data, error: err } = await supabaseServer
+			.schema("scripts")
 			.from("deploy_tokens")
 			.delete()
 			.eq("id", id)
-			.eq("script_id", script.id)
+			.eq("script_id", scriptId)
 			.select("id")
 		if (err) return fail(500, { tokenError: errorRef("Could not revoke the token", err) })
 		if (!data.length) return fail(404, { tokenError: "Token not found." })
@@ -340,14 +341,13 @@ export const actions = {
 		if (!Number.isInteger(days) || days < 1 || days > MAX_CODE_DAYS)
 			return fail(400, { codeError: `Pick an expiry between 1 and ${MAX_CODE_DAYS} days.` })
 
-		const scripts = supabaseServer.schema("scripts")
-		const { data: script } = await scripts.from("scripts").select("id").eq("url", params.url).maybeSingle()
-		if (!script) return fail(404, { codeError: "Script not found." })
+		const scriptId = await scriptIdAt(supabaseServer, params.url)
+		if (!scriptId) return fail(404, { codeError: "Script not found." })
 
 		// A minute short of the limit, so a clock a little ahead of the database's can't overshoot it
 		const expires = new Date(Date.now() + days * 86_400_000 - 60_000)
-		const { data, error: err } = await scripts.rpc("create_share_code", {
-			p_script: script.id,
+		const { data, error: err } = await supabaseServer.schema("scripts").rpc("create_share_code", {
+			p_script: scriptId,
 			p_expires_at: expires.toISOString()
 		})
 		if (err?.code === "42501")
@@ -364,16 +364,16 @@ export const actions = {
 	revokeCode: async ({ request, params, locals: { user, supabaseServer } }) => {
 		if (!user) return fail(401, { codeError: "You need to login." })
 		const id = String((await request.formData()).get("id") ?? "")
+		if (!UUID.test(id)) return fail(404, { codeError: "Code not found." })
+		const scriptId = await scriptIdAt(supabaseServer, params.url)
+		if (!scriptId) return fail(404, { codeError: "Script not found." })
 
-		const scripts = supabaseServer.schema("scripts")
-		const { data: script } = await scripts.from("scripts").select("id").eq("url", params.url).maybeSingle()
-		if (!script) return fail(404, { codeError: "Script not found." })
-
-		const { data, error: err } = await scripts
+		const { data, error: err } = await supabaseServer
+			.schema("scripts")
 			.from("share_codes")
 			.delete()
 			.eq("id", id)
-			.eq("script_id", script.id)
+			.eq("script_id", scriptId)
 			.is("redeemed_at", null)
 			.select("id")
 		if (err) return fail(500, { codeError: errorRef("Could not revoke the code", err) })
@@ -386,26 +386,22 @@ export const actions = {
 	revokeGrant: async ({ request, params, locals: { user, supabaseServer } }) => {
 		if (!user) return fail(401, { grantError: "You need to login." })
 		const userId = String((await request.formData()).get("user") ?? "")
+		if (!UUID.test(userId)) return fail(404, { grantError: "Nothing to remove." })
+		const scriptId = await scriptIdAt(supabaseServer, params.url)
+		if (!scriptId) return fail(404, { grantError: "Script not found." })
 
-		const scripts = supabaseServer.schema("scripts")
-		const { data: script } = await scripts.from("scripts").select("id").eq("url", params.url).maybeSingle()
-		if (!script) return fail(404, { grantError: "Script not found." })
-
-		const { data, error: err } = await scripts
+		const { data, error: err } = await supabaseServer
+			.schema("scripts")
 			.from("grants")
 			.delete()
-			.eq("script_id", script.id)
+			.eq("script_id", scriptId)
 			.eq("user_id", userId)
 			.select("user_id")
 		if (err) return fail(500, { grantError: errorRef("Could not remove the access", err) })
 		if (!data.length) return fail(404, { grantError: "Nothing to remove." })
 
 		// A recipient who removed their own access can no longer open the page
-		if (
-			userId === user.id &&
-			!(await scripts.from("scripts").select("id").eq("id", script.id).maybeSingle()).data
-		)
-			redirect(303, "/scripts")
+		if (userId === user.id && !(await scriptIdAt(supabaseServer, params.url))) redirect(303, "/scripts")
 		return { grantMessage: "Access removed." }
 	},
 
@@ -416,20 +412,15 @@ export const actions = {
 		if ((await request.formData()).get("confirm") !== params.url)
 			return fail(400, { message: "Type the script's url to confirm the delete." })
 
-		const { data: script } = await supabaseServer
-			.schema("scripts")
-			.from("scripts")
-			.select("id")
-			.eq("url", params.url)
-			.maybeSingle()
-		if (!script) return fail(404, { message: "Script not found." })
+		const scriptId = await scriptIdAt(supabaseServer, params.url)
+		if (!scriptId) return fail(404, { message: "Script not found." })
 
 		try {
-			await deleteScript(script.id)
+			await deleteScript(scriptId)
 		} catch (e) {
 			return fail(500, { message: errorRef("Could not delete the script", e) })
 		}
-		await refreshScript(script.id)
+		await refreshScript(scriptId)
 		redirect(303, "/scripts")
 	}
 }

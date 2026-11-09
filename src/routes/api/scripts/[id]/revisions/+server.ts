@@ -1,13 +1,10 @@
 import { error, json } from "@sveltejs/kit"
-import { localeFrom } from "#lib/format.svelte.js"
-import { MAX_FILES, MAX_FILE_BYTES, megabytes, uploadAll, validFileName } from "#lib/scripts"
-import { encryptFile, encryptedSize, keyHex, newRevisionKey } from "#lib/encryption"
+import { createRevision, filesProblem, storeRevision } from "#lib/revisions"
 import { hashDeployToken } from "#lib/server/deploy.server"
 import { refreshScript } from "#lib/server/scripts.cache"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
-
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+import { localeFrom, UUID } from "#lib/utils"
 
 /** CI uploads a revision with a deploy token: curl -H "Authorization: Bearer $TOKEN" -H "Origin: <site>" -F files=@main.luau -F entry=main.luau <site>/api/scripts/<id>/revisions (entry optional for one file; Origin passes the CSRF check). */
 export const POST = async ({ request, params }) => {
@@ -16,10 +13,9 @@ export const POST = async ({ request, params }) => {
 	if (!UUID.test(params.id)) error(404, "Script not found")
 
 	const admin = supabaseAdmin()
-	const scripts = admin.schema("scripts")
 
 	// Checked before the body is read, so an unauthenticated caller can't make us buffer an upload
-	const { error: tokenErr } = await scripts.rpc("use_deploy_token", {
+	const { error: tokenErr } = await admin.schema("scripts").rpc("use_deploy_token", {
 		p_script: params.id,
 		p_token_hash: hashDeployToken(token)
 	})
@@ -36,28 +32,10 @@ export const POST = async ({ request, params }) => {
 		typeof entryField === "string" && entryField ? entryField : files.length === 1 ? names[0] : null
 	if (!entry) error(400, 'A revision with several files needs an "entry" field naming the file to run.')
 	if (!names.includes(entry)) error(400, `The entry file ${entry} is not one of the uploaded files.`)
-	if (files.length > MAX_FILES) error(400, `At most ${MAX_FILES} files per revision.`)
-	if (new Set(names).size !== names.length) error(400, "File names must be unique.")
-	const badName = names.find((name) => !validFileName(name))
-	if (badName != null) error(400, `Invalid file name: ${badName}`)
-	const big = files.find((file) => file.size > MAX_FILE_BYTES)
-	if (big) {
-		const limit = megabytes(MAX_FILE_BYTES, localeFrom(request.headers.get("accept-language")))
-		error(400, `${big.name} is larger than ${limit} MB.`)
-	}
+	const problem = filesProblem(files, localeFrom(request))
+	if (problem) error(400, problem)
 
-	// A trigger assigns the revision, so the generated type's required `revision` is cast away (see RevisionUpload)
-	const created = await scripts
-		.from("versions")
-		.insert({ id: params.id, files: names, sizes: files.map((file) => encryptedSize(file.size)), entry } as {
-			id: string
-			files: string[]
-			sizes: number[]
-			entry: string
-			revision: number
-		})
-		.select("revision")
-		.single()
+	const created = await createRevision(admin, params.id, files, entry)
 	if (created.error?.code === "23505") {
 		error(409, "Another revision of this script is still pending. Discard it before uploading a new one.")
 	}
@@ -66,30 +44,12 @@ export const POST = async ({ request, params }) => {
 	if (created.error) error(500, errorRef("Could not create the revision", created.error))
 
 	const revision = created.data.revision
-	const folder = `${params.id}/${String(revision).padStart(9, "0")}`
-
 	try {
-		// Every revision is stored encrypted; the database keeps the key and hands it to the loader.
-		const key = newRevisionKey()
-		const { error: keyErr } = await scripts.rpc("set_version_key", {
-			script_id: params.id,
-			revision,
-			key: keyHex(key)
-		})
-		if (keyErr) throw keyErr
-		await uploadAll(files, async (file) => {
-			const sealed = await encryptFile(file, key, params.id, revision, file.name)
-			const { error: err } = await admin.storage.from("scripts").upload(`${folder}/${file.name}`, sealed)
-			if (err) throw err
-		})
-		const { error: err } = await scripts.rpc("publish_version", { script_id: params.id, revision })
-		if (err) throw err
-		await refreshScript(params.id)
+		await storeRevision(admin, params.id, revision, files)
 	} catch (e) {
-		// A pending revision blocks the next one, so drop it.
-		await scripts.rpc("discard_version", { script_id: params.id, revision })
 		error(500, errorRef(`Could not publish revision ${revision}`, e))
 	}
+	await refreshScript(params.id)
 
 	return json({ revision }, { status: 201 })
 }

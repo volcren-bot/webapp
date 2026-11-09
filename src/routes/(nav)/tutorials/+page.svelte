@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Head from "#lib/components/Head.svelte"
-	import { DOCS_URL, newTutorialUrl } from "#lib/github"
+	import { DOCS_URL, NEW_TUTORIAL_URL } from "#lib/github"
 	import { tutorials } from "#lib/tutorials"
 </script>
 
@@ -33,6 +33,6 @@
 
 	<small class="nv-dim">
 		Missing a tutorial?
-		<a href={newTutorialUrl()} target="_blank" rel="noopener noreferrer">Add one on GitHub</a>.
+		<a href={NEW_TUTORIAL_URL} target="_blank" rel="noopener noreferrer">Add one on GitHub</a>.
 	</small>
 </section>

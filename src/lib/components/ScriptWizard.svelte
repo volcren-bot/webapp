@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { fmt } from "#lib/format.svelte.js"
 	import { tick, untrack } from "svelte"
-	import { superForm } from "sveltekit-superforms"
+	import { superForm, type Infer, type SuperValidated } from "sveltekit-superforms"
 	import { zod4Client } from "sveltekit-superforms/adapters"
 	import { CATEGORIES, MAX_PRICE, monthlyCents, STAGES, TYPES } from "#lib/scripts"
 	import { scriptSchema } from "#lib/schemas"
-	import type { Infer, SuperValidated } from "sveltekit-superforms"
 
 	let {
 		data,
@@ -328,7 +327,7 @@
 		if ($message && busy) {
 			busy = false
 			say(`error: ${$message}`, "err")
-			lines.push({ text: "" })
+			say("")
 			enter(STEPS.length - 1)
 		}
 	})

@@ -2,14 +2,16 @@ import { fail, redirect } from "@sveltejs/kit"
 import { safePath, errorRef } from "#lib/server/supabase.server"
 import { TERMS, termsDocuments } from "#lib/server/terms.server"
 
+// Where the user was headed when they were sent here
+const nextPath = (url: URL) => safePath(url.searchParams.get("next"), url.origin) ?? "/scripts"
+
 export const load = async ({ url, locals: { user, supabaseServer } }) => {
 	if (!user) redirect(303, "/auth")
 	const { documents, error } = await termsDocuments(supabaseServer, user.id)
 	return {
 		documents,
 		error,
-		// Where the user was headed when they were sent here
-		next: safePath(url.searchParams.get("next") ?? "", url.origin) ?? "/scripts"
+		next: nextPath(url)
 	}
 }
 
@@ -36,6 +38,6 @@ export const actions = {
 			if (error) return fail(500, { message: errorRef("Could not record your acceptance", error) })
 		}
 
-		redirect(303, safePath(url.searchParams.get("next") ?? "", url.origin) ?? "/scripts")
+		redirect(303, nextPath(url))
 	}
 }

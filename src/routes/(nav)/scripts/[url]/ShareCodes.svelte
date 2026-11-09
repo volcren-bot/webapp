@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from "$app/forms"
 	import { page } from "$app/state"
+	import { clipboard } from "#lib/clipboard.svelte.js"
 	import { fmt } from "#lib/format.svelte.js"
 	import Copy from "@lucide/svelte/icons/copy"
 	import Check from "@lucide/svelte/icons/check"
@@ -30,17 +31,8 @@
 	// The days a code stays valid; the database caps it at 30
 	const EXPIRIES = [1, 3, 7, 14, 30]
 
-	let copied = $state(false)
-
-	async function copy(text: string) {
-		try {
-			await navigator.clipboard.writeText(text)
-			copied = true
-			setTimeout(() => (copied = false), 2000)
-		} catch {
-			// Clipboard access can be refused; the code is selectable on click as well
-		}
-	}
+	// Clipboard access can be refused; the code is selectable on click as well
+	const clip = clipboard()
 </script>
 
 <div class="nv-float flex flex-col gap-3">
@@ -66,8 +58,8 @@
 				</p>
 				<div class="flex flex-wrap items-center gap-2">
 					<code class="break-all select-all">{result.code}</code>
-					<button type="button" class="btn" onclick={() => copy(result.code ?? "")}>
-						{#if copied}<Check class="size-4 shrink-0" /> copied{:else}<Copy class="size-4 shrink-0" /> copy{/if}
+					<button type="button" class="btn" onclick={() => clip.copy(result.code ?? "")}>
+						{#if clip.copied}<Check class="size-4 shrink-0" /> copied{:else}<Copy class="size-4 shrink-0" /> copy{/if}
 					</button>
 				</div>
 			</div>

@@ -9,8 +9,8 @@ A SvelteKit starter with Supabase auth, Tailwind 4 UI, dark mode.
 - A `profiles` table with a role, created automatically on sign up (schema lives in the `database` repo)
 - Tailwind 4 with a fixed dark mode and a Neovim-style theme (`src/app.css`)
 - Account page (`/account`) with credit balance, ledger and account deletion
-- SEO `<Head>` component, security headers and a CSP in `svelte.config.js`
-- mdsvex + shiki for markdown pages
+- SEO `<Head>` component, security headers (`src/routes/+layout.server.ts`) and a CSP (`vite.config.ts`)
+- Legal documents stored as markdown and rendered on the server by comrak, with raw HTML escaped (`src/lib/server/documents.server.ts`)
 
 ## Getting started
 
@@ -34,11 +34,11 @@ A SvelteKit starter with Supabase auth, Tailwind 4 UI, dark mode.
 
 ## Making it yours
 
-- `src/lib/utils.ts`: `SITE_NAME`, `SITE_DESCRIPTION` and `WEBSITE_URL`
+- `src/lib/utils.ts`: `SITE_NAME` and `SITE_DESCRIPTION`
 - `src/routes/Logo.svelte`, `static/favicon.svg`: branding
 - `src/routes/Footer.svelte`: footer links
-- `src/hooks.server.ts`: add paths that require login to `PROTECTED_PATHS`
-- `svelte.config.js`: allow any extra domains your app talks to in the CSP
+- `src/lib/server/supabase.server.ts`: add paths that require login to `PROTECTED_PATHS`
+- `vite.config.ts`: allow any extra domains your app talks to in the CSP
 - `static/robots.txt`: add your sitemap
 
 After changing the database, regenerate the types with `bun gentypes` (needs the Supabase CLI).

@@ -1,10 +1,9 @@
 import { BITCART_API_URL, BITCART_API_TOKEN, BITCART_STORE_ID } from "$app/env/private"
 
-export { CREDITS_PER_CENT, MAX_TOPUP_CENTS, MIN_TOPUP_CENTS } from "#lib/credits"
 // Keep in sync with payments.limit_pending_payments (supabase/payments-pending-limit.sql)
 export const MAX_PENDING_PAYMENTS = 3
 
-export type BitcartStatus = "pending" | "paid" | "complete" | "expired" | "invalid"
+type BitcartStatus = "pending" | "paid" | "complete" | "expired" | "invalid"
 
 /** One coin the invoice can be paid in. */
 export interface BitcartPaymentMethod {

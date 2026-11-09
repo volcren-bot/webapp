@@ -3,6 +3,7 @@ import { message, superValidate } from "sveltekit-superforms"
 import { zod4 } from "sveltekit-superforms/adapters"
 import { scriptSchema } from "#lib/schemas"
 import { isCommunityRole } from "#lib/scripts"
+import { communityUsage } from "#lib/server/account.server"
 import { authorShare } from "#lib/server/payments.server"
 import { errorRef } from "#lib/server/supabase.server"
 import { hasAcceptedTerms, termsRedirect } from "#lib/server/terms.server"
@@ -15,30 +16,16 @@ export const load = async ({ locals: { user, getProfile, supabaseServer } }) => 
 	if (!(await hasAcceptedTerms(supabaseServer, user.id))) redirect(303, termsRedirect("/scripts/new"))
 
 	const community = isCommunityRole(profile.role)
-	// What a community author has used of their limits; scripter+ has none
-	const { data: usage } = community
-		? await supabaseServer.schema("scripts").rpc("get_community_usage").maybeSingle()
-		: { data: null }
+	// Scripter and up have no limits
+	const [usage, share, form] = await Promise.all([
+		community ? communityUsage(supabaseServer) : null,
+		community ? null : authorShare(),
+		superValidate({ type: "free", price: 0, stage: "prototype", categories: [] }, zod4(scriptSchema), {
+			errors: false
+		})
+	])
 
-	return {
-		community,
-		authorShare: community ? null : await authorShare(),
-		usage: usage
-			? {
-					scripts: usage.script_count,
-					maxScripts: usage.max_scripts,
-					bytes: usage.used_bytes,
-					maxBytes: usage.max_bytes
-				}
-			: null,
-		form: await superValidate(
-			{ type: "free", price: 0, stage: "prototype", categories: [] },
-			zod4(scriptSchema),
-			{
-				errors: false
-			}
-		)
-	}
+	return { community, authorShare: share, usage, form }
 }
 
 export const actions = {

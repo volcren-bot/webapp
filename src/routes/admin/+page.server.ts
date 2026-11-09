@@ -1,18 +1,29 @@
 import { fail, redirect, type RequestEvent } from "@sveltejs/kit"
-import { localeFrom } from "#lib/format.svelte.js"
 import { markStale } from "#lib/server/scripts.cache"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
-import { errorRef } from "#lib/server/supabase.server"
+import { errorRef, requireAdmin, type Refusal } from "#lib/server/supabase.server"
 import { Constants } from "#lib/types/supabase"
-import { formatCredits } from "#lib/utils"
+import { formatCredits, localeFrom, UUID } from "#lib/utils"
 
 const MAX_DOCUMENT_CHARS = 200_000
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-export const load = async ({ url, locals: { user, getProfile } }) => {
-	if (!user) redirect(303, "/auth")
-	const profile = await getProfile()
-	if (profile?.role !== "administrator") redirect(303, "/")
+/** The profile behind a UUID typed into a form, as a failure message when there is none. */
+async function findUser(userId: string): Promise<Refusal | { target: { id: string; username: string } }> {
+	if (!UUID.test(userId)) return { status: 400, message: "Enter a valid user UUID." }
+	const { data, error } = await supabaseAdmin()
+		.schema("profiles")
+		.from("profiles")
+		.select("id, username")
+		.eq("id", userId)
+		.maybeSingle()
+	if (error) return { status: 500, message: errorRef("Could not look up the user", error) }
+	if (!data) return { status: 404, message: `No user with the UUID ${userId}.` }
+	return { target: data }
+}
+
+export const load = async ({ url, locals }) => {
+	const auth = await requireAdmin(locals)
+	if ("status" in auth) redirect(303, auth.status === 401 ? "/auth" : "/")
 
 	const admin = supabaseAdmin()
 	const [{ data: ledger }, { data: logins }, { data: bans }] = await Promise.all([
@@ -47,6 +58,7 @@ export const load = async ({ url, locals: { user, getProfile } }) => {
 		? await admin.schema("profiles").from("profiles").select("id, username").in("id", ids)
 		: { data: [] }
 	const names = new Map((profiles ?? []).map((p) => [p.id, p.username]))
+	const name = (id: string) => names.get(id) ?? id
 
 	// A user to inspect: a UUID, or an exact username
 	const search = (url.searchParams.get("user") ?? "").trim().slice(0, 64)
@@ -82,19 +94,15 @@ export const load = async ({ url, locals: { user, getProfile } }) => {
 		inspected,
 		adjustments: (ledger ?? []).map((row) => ({
 			...row,
-			user: names.get(row.user_id) ?? row.user_id,
-			admin: row.granted_by ? (names.get(row.granted_by) ?? row.granted_by) : null
+			user: name(row.user_id),
+			admin: row.granted_by ? name(row.granted_by) : null
 		})),
 		impersonations: (logins ?? []).map((row) => ({
 			...row,
-			user: names.get(row.user_id) ?? row.user_id,
-			admin: names.get(row.admin_id) ?? row.admin_id
+			user: name(row.user_id),
+			admin: name(row.admin_id)
 		})),
-		bans: (bans ?? []).map((row) => ({
-			...row,
-			user: names.get(row.user_id) ?? row.user_id,
-			admin: names.get(row.admin_id) ?? row.admin_id
-		}))
+		bans: (bans ?? []).map((row) => ({ ...row, user: name(row.user_id), admin: name(row.admin_id) }))
 	}
 }
 
@@ -102,29 +110,21 @@ export const load = async ({ url, locals: { user, getProfile } }) => {
 const BAN_DURATION = "876000h"
 
 /** The database ban (profiles.set_banned) decides what the account can do; the Auth ban on top blocks sign-in and is reapplied on repeats to retry failures. */
-async function setBanned(banned: boolean, { request, locals: { user, getProfile } }: RequestEvent) {
-	if (!user) return fail(401, { message: "You need to login.", ban: true })
-	const profile = await getProfile()
-	if (profile?.role !== "administrator") return fail(403, { message: "Administrators only.", ban: true })
+async function setBanned(banned: boolean, { request, locals }: RequestEvent) {
+	const auth = await requireAdmin(locals)
+	if ("status" in auth) return fail(auth.status, { message: auth.message, ban: true })
+	const { user } = auth
 
 	const data = await request.formData()
-	const userId = String(data.get("user") ?? "").trim()
 	const reason = String(data.get("reason") ?? "").trim()
-
-	if (!UUID.test(userId)) return fail(400, { message: "Enter a valid user UUID.", ban: true })
 	if (!reason) return fail(400, { message: "A reason is required.", ban: true })
 	if (reason.length > 500) return fail(400, { message: "Keep the reason under 500 characters.", ban: true })
 
-	const admin = supabaseAdmin()
-	const { data: target, error: lookup } = await admin
-		.schema("profiles")
-		.from("profiles")
-		.select("id, username")
-		.eq("id", userId)
-		.maybeSingle()
-	if (lookup) return fail(500, { message: errorRef("Could not look up the user", lookup), ban: true })
-	if (!target) return fail(404, { message: `No user with the UUID ${userId}.`, ban: true })
+	const found = await findUser(String(data.get("user") ?? "").trim())
+	if ("status" in found) return fail(found.status, { message: found.message, ban: true })
+	const { target } = found
 
+	const admin = supabaseAdmin()
 	const { data: changed, error: err } = await admin.schema("profiles").rpc("set_banned", {
 		p_admin: user.id,
 		p_user: target.id,
@@ -157,11 +157,9 @@ async function setBanned(banned: boolean, { request, locals: { user, getProfile 
 
 export const actions = {
 	// Publishes a new version of a legal document; versions are immutable, and a new scripter_tos or community_tos version asks every creator to accept again.
-	publishDocument: async ({ request, locals: { user, getProfile, supabaseServer } }) => {
-		if (!user) return fail(401, { message: "You need to login.", document: true })
-		const profile = await getProfile()
-		if (profile?.role !== "administrator")
-			return fail(403, { message: "Administrators only.", document: true })
+	publishDocument: async ({ request, locals }) => {
+		const auth = await requireAdmin(locals)
+		if ("status" in auth) return fail(auth.status, { message: auth.message, document: true })
 
 		const data = await request.formData()
 		const kind = Constants.info.Enums.kind.find((k) => k === data.get("kind"))
@@ -172,48 +170,38 @@ export const actions = {
 			return fail(400, { message: "The document is too long.", document: true })
 
 		// The version number is assigned by a trigger, so the generated type's required `version` is cast away; row level security lets only administrators insert.
-		const { error: err } = await supabaseServer
+		const { error: err } = await locals.supabaseServer
 			.schema("info")
 			.from("documents")
 			.insert({ kind, content } as { kind: typeof kind; content: string; version: number })
 		if (err?.code === "42501") return fail(403, { message: "Administrators only.", document: true })
 		if (err) return fail(500, { message: errorRef("Could not publish the document", err), document: true })
 
-		console.log(`Admin ${user.id} published a new ${kind}`)
+		console.log(`Admin ${auth.user.id} published a new ${kind}`)
 		return { message: `Published a new version of ${kind}.`, ok: true, document: true }
 	},
 
 	ban: (event) => setBanned(true, event),
 	unban: (event) => setBanned(false, event),
 
-	adjust: async ({ request, locals: { user, getProfile } }) => {
-		if (!user) return fail(401, { message: "You need to login." })
-		const profile = await getProfile()
-		if (profile?.role !== "administrator") return fail(403, { message: "Administrators only." })
+	adjust: async ({ request, locals }) => {
+		const auth = await requireAdmin(locals)
+		if ("status" in auth) return fail(auth.status, { message: auth.message })
 
 		const data = await request.formData()
-		const userId = String(data.get("user") ?? "").trim()
 		const amount = Number(data.get("amount"))
 		const note = String(data.get("note") ?? "").trim()
-
-		if (!UUID.test(userId)) return fail(400, { message: "Enter a valid user UUID." })
 		if (!Number.isSafeInteger(amount) || amount === 0) {
 			return fail(400, { message: "The amount must be a whole number other than 0." })
 		}
 		if (!note) return fail(400, { message: "A note is required." })
 
-		const admin = supabaseAdmin()
-		const { data: target, error: lookup } = await admin
-			.schema("profiles")
-			.from("profiles")
-			.select("id, username")
-			.eq("id", userId)
-			.maybeSingle()
-		if (lookup) return fail(500, { message: errorRef("Could not look up the user", lookup) })
-		if (!target) return fail(404, { message: `No user with the UUID ${userId}.` })
+		const found = await findUser(String(data.get("user") ?? "").trim())
+		if ("status" in found) return fail(found.status, { message: found.message })
+		const { target } = found
 
-		const { data: balance, error: err } = await admin.schema("payments").rpc("adjust_credits", {
-			p_admin: user.id,
+		const { data: balance, error: err } = await supabaseAdmin().schema("payments").rpc("adjust_credits", {
+			p_admin: auth.user.id,
 			p_user: target.id,
 			p_amount: amount,
 			p_note: note
@@ -224,16 +212,16 @@ export const actions = {
 		if (err) return fail(500, { message: errorRef("Could not adjust the CREDIT", err) })
 
 		return {
-			message: `Done: ${target.username} now has ${formatCredits(balance, localeFrom(request.headers.get("accept-language")), true)}.`,
+			message: `Done: ${target.username} now has ${formatCredits(balance, localeFrom(request), true)}.`,
 			ok: true
 		}
 	},
 
 	// Signs this browser in as another user, replacing the admin's own session
-	impersonate: async ({ request, locals: { user, getProfile, supabaseServer, resetSession } }) => {
-		if (!user) return fail(401, { message: "You need to login." })
-		const profile = await getProfile()
-		if (profile?.role !== "administrator") return fail(403, { message: "Administrators only." })
+	impersonate: async ({ request, locals }) => {
+		const auth = await requireAdmin(locals)
+		if ("status" in auth) return fail(auth.status, { message: auth.message, login: true })
+		const { user } = auth
 
 		const data = await request.formData()
 		const userId = String(data.get("user") ?? "").trim()
@@ -261,14 +249,14 @@ export const actions = {
 		})
 		if (linkErr) return fail(500, { message: errorRef("Could not create the login", linkErr), login: true })
 
-		const { error: otpErr } = await supabaseServer.auth.verifyOtp({
+		const { error: otpErr } = await locals.supabaseServer.auth.verifyOtp({
 			token_hash: link.properties.hashed_token,
 			type: "magiclink"
 		})
 		if (otpErr) return fail(500, { message: errorRef("Could not log in as the user", otpErr), login: true })
 
 		console.log(`Admin ${user.id} logged in as ${userId}`)
-		resetSession()
+		locals.resetSession()
 		redirect(303, "/")
 	}
 }

@@ -1,8 +1,8 @@
-const MAX_SIDEBAR_SCRIPTS = 100
-
-import { localeFrom } from "#lib/format.svelte.js"
 import { roleAtLeast } from "#lib/scripts"
 import { getPublicScripts } from "#lib/server/scripts.cache"
+import { localeFrom } from "#lib/utils"
+
+const MAX_SIDEBAR_SCRIPTS = 100
 
 export const load = async ({
 	locals: { safeGetSession, getProfile, supabaseServer },
@@ -49,7 +49,7 @@ export const load = async ({
 		.map((url) => ({ url }))
 
 	return {
-		locale: localeFrom(request.headers.get("accept-language")),
+		locale: localeFrom(request),
 		user: user?.id ?? null,
 		expiresAt: session?.expires_at ?? null,
 		profile,

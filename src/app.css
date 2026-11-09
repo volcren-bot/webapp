@@ -29,21 +29,6 @@
 	--color-success-400: var(--tn-green);
 	--color-warning-400: var(--tn-yellow);
 	--color-error-400: var(--tn-red);
-	--color-error-500: var(--tn-red);
-}
-
-@custom-variant dark (&:where([data-mode=dark], [data-mode=dark] *));
-
-@layer utilities {
-	/* Hide scrollbar for Chrome, Safari and Opera */
-	.hide-scrollbar::-webkit-scrollbar {
-		display: none;
-	}
-	/* Hide scrollbar for IE, Edge and Firefox */
-	.hide-scrollbar {
-		-ms-overflow-style: none; /* IE and Edge */
-		scrollbar-width: none; /* Firefox */
-	}
 }
 
 /* Dialogs appear instantly, like a terminal popup */
@@ -542,7 +527,6 @@ dialog::backdrop {
 		cursor: pointer;
 	}
 
-	small.text-error-500::before,
 	small.text-error-400::before {
 		content: "✗ ";
 	}

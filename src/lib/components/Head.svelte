@@ -1,3 +1,16 @@
+<script lang="ts" module>
+	const LOGO = "/logo-bg.webp"
+
+	const IMAGE_TYPES: Record<string, string> = {
+		webp: "image/webp",
+		png: "image/png",
+		jpg: "image/jpeg",
+		jpeg: "image/jpeg",
+		gif: "image/gif",
+		svg: "image/svg+xml"
+	}
+</script>
+
 <script lang="ts">
 	import { page } from "$app/state"
 	import { SITE_NAME } from "#lib/utils"
@@ -22,28 +35,19 @@
 		description,
 		keywords = undefined,
 		author = undefined,
-		img = "/logo-bg.webp",
-		imgWidth = img === "/logo-bg.webp" ? 1024 : undefined,
-		imgHeight = img === "/logo-bg.webp" ? 1024 : undefined,
-		imgAlt = img === "/logo-bg.webp" ? `${SITE_NAME} logo` : undefined,
+		img = LOGO,
+		imgWidth = img === LOGO ? 1024 : undefined,
+		imgHeight = img === LOGO ? 1024 : undefined,
+		imgAlt = img === LOGO ? `${SITE_NAME} logo` : undefined,
 		card = "summary",
 		type = "website",
 		noindex = false,
 		jsonld = undefined
 	}: Props = $props()
 
-	const imageTypes: Record<string, string> = {
-		webp: "image/webp",
-		png: "image/png",
-		jpg: "image/jpeg",
-		jpeg: "image/jpeg",
-		gif: "image/gif",
-		svg: "image/svg+xml"
-	}
-
 	const fullTitle = $derived(title.includes(SITE_NAME) ? title : title + " - " + SITE_NAME)
 	const imgUrl = $derived(img.startsWith("/") ? page.url.origin + img : img)
-	const imgType = $derived(imageTypes[new URL(imgUrl).pathname.split(".").at(-1)?.toLowerCase() ?? ""])
+	const imgType = $derived(IMAGE_TYPES[new URL(imgUrl).pathname.split(".").at(-1)?.toLowerCase() ?? ""])
 
 	const canonical = $derived.by(() => {
 		const pageNumber = Number(page.url.searchParams.get("page"))

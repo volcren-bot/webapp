@@ -1,6 +1,7 @@
 import { deletionBlockers } from "#lib/server/account.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
+import { UUID } from "#lib/utils"
 import { fail, redirect } from "@sveltejs/kit"
 
 export const load = async ({ locals: { user, supabaseServer } }) => {
@@ -64,7 +65,7 @@ export const actions = {
 	stop: async ({ request, locals: { user, supabaseServer } }) => {
 		if (!user) return fail(401, { stopMessage: "You need to login.", stopError: true })
 		const id = String((await request.formData()).get("session") ?? "")
-		if (!/^[0-9a-f-]{36}$/i.test(id)) return fail(400, { stopMessage: "Pick a session.", stopError: true })
+		if (!UUID.test(id)) return fail(400, { stopMessage: "Pick a session.", stopError: true })
 
 		const { data, error: err } = await supabaseServer
 			.schema("payments")

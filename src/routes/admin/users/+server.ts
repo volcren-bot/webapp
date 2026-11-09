@@ -1,6 +1,7 @@
 import { error, json } from "@sveltejs/kit"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
-import { errorRef } from "#lib/server/supabase.server"
+import { errorRef, requireAdmin } from "#lib/server/supabase.server"
+import { likeEscape } from "#lib/utils"
 
 const MIN_CHARS = 2
 const MAX_CHARS = 32
@@ -8,16 +9,15 @@ const MAX_CHARS = 32
 const SUGGESTIONS = 5
 
 // Username suggestions for the admin page, returned only once the search narrows to SUGGESTIONS or fewer, otherwise `more` tells the page to keep typing.
-export const GET = async ({ url, locals: { user, getProfile } }) => {
-	if (!user) error(401, "You need to login.")
-	const profile = await getProfile()
-	if (profile?.role !== "administrator") error(403, "Administrators only.")
+export const GET = async ({ url, locals }) => {
+	const auth = await requireAdmin(locals)
+	if ("status" in auth) error(auth.status, auth.message)
 
 	const q = (url.searchParams.get("q") ?? "").trim().slice(0, MAX_CHARS)
 	if (q.length < MIN_CHARS) return json({ users: [], more: false })
 
 	// The pattern is a bound parameter, but % _ and \ still act as wildcards inside it
-	const pattern = `%${q.replace(/[\\%_]/g, "\\$&")}%`
+	const pattern = `%${likeEscape(q)}%`
 	const { data, error: err } = await supabaseAdmin()
 		.schema("profiles")
 		.from("profiles")

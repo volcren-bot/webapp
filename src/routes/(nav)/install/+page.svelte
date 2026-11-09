@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from "$app/state"
 	import Head from "#lib/components/Head.svelte"
+	import { clipboard } from "#lib/clipboard.svelte.js"
 	import { SITE_NAME } from "#lib/utils"
 	import Clipboard from "@lucide/svelte/icons/clipboard"
 	import ClipboardCheck from "@lucide/svelte/icons/clipboard-check"
@@ -39,18 +40,22 @@
 		].join("\n")
 	)
 
-	let copied = $state<string | null>(null)
-
-	async function copy(text: string) {
-		try {
-			await navigator.clipboard.writeText(text)
-			copied = text
-			setTimeout(() => (copied = null), 2000)
-		} catch {
-			// Clipboard access can be refused; the commands are selectable as well
-		}
-	}
+	// Clipboard access can be refused; the commands are selectable as well
+	const clip = clipboard()
 </script>
+
+{#snippet commands(text: string)}
+	<div class="relative">
+		<pre class="overflow-x-auto bg-(--tn-bg-dark) p-3 pr-24 text-sm"><code>{text}</code></pre>
+		<button class="btn absolute top-2 right-2 text-sm" type="button" onclick={() => clip.copy(text)}>
+			{#if clip.copied === text}
+				Copied <ClipboardCheck class="size-3.5 shrink-0" />
+			{:else}
+				Copy <Clipboard class="size-3.5 shrink-0" />
+			{/if}
+		</button>
+	</div>
+{/snippet}
 
 <Head
 	title="Install"
@@ -141,36 +146,12 @@
 					>~/.local/share/bolt-launcher/</code
 				>), so Wine has to be installed. Paste this into a terminal:
 			</p>
-			<div class="relative">
-				<pre class="overflow-x-auto bg-(--tn-bg-dark) p-3 pr-24 text-sm"><code>{linuxCommands}</code></pre>
-				<button class="btn absolute top-2 right-2 text-sm" type="button" onclick={() => copy(linuxCommands)}>
-					{copied === linuxCommands ? "Copied" : "Copy"}
-					{#if copied === linuxCommands}
-						<ClipboardCheck class="size-3.5 shrink-0" />
-					{:else}
-						<Clipboard class="size-3.5 shrink-0" />
-					{/if}
-				</button>
-			</div>
+			{@render commands(linuxCommands)}
 			<p>
 				Optionally, add a <em>VOLCREN</em> entry with the site logo to your application menu. Run this after the
 				commands above:
 			</p>
-			<div class="relative">
-				<pre class="overflow-x-auto bg-(--tn-bg-dark) p-3 pr-24 text-sm"><code>{shortcutCommands}</code></pre>
-				<button
-					class="btn absolute top-2 right-2 text-sm"
-					type="button"
-					onclick={() => copy(shortcutCommands)}
-				>
-					{copied === shortcutCommands ? "Copied" : "Copy"}
-					{#if copied === shortcutCommands}
-						<ClipboardCheck class="size-3.5 shrink-0" />
-					{:else}
-						<Clipboard class="size-3.5 shrink-0" />
-					{/if}
-				</button>
-			</div>
+			{@render commands(shortcutCommands)}
 			<ul class="flex list-disc flex-col gap-2 pl-6">
 				<li>
 					The archive holds <code>loader</code>, <code>injector</code>, <code>injector.exe</code> and

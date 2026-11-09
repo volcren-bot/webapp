@@ -1,15 +1,15 @@
 import { SUPABASE_URL } from "$app/env/public"
 
 /** The public `client` bucket that the release workflow in the client repo publishes to. */
-export const CLIENT_BUCKET_URL = `${SUPABASE_URL}/storage/v1/object/public/client`
+const CLIENT_BUCKET_URL = `${SUPABASE_URL}/storage/v1/object/public/client`
 
-export interface Download {
+interface Download {
 	name: string
 	url: string
 	sha256: string
 }
 
-export interface Release {
+interface Release {
 	version: string
 	windows: Download | null
 	linux: Download | null

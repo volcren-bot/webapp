@@ -1,5 +1,4 @@
-import { unlink } from "fs/promises"
-import { writeFile } from "fs/promises"
+import { unlink, writeFile } from "fs/promises"
 import { join } from "path"
 
 const url =

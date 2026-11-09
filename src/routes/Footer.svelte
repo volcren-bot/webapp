@@ -1,25 +1,14 @@
 <script lang="ts">
 	import { page } from "$app/state"
 	import MessageCircle from "@lucide/svelte/icons/message-circle"
+	import { clipboard } from "#lib/clipboard.svelte.js"
 	import { HELP, help } from "#lib/keys.svelte.js"
 
 	const { profile } = $derived(page.data)
 
 	let insert = $state(false)
 
-	let copied = $state(false)
-	let copiedTimer: ReturnType<typeof setTimeout>
-
-	async function copyUrl() {
-		try {
-			await navigator.clipboard.writeText(page.url.href)
-		} catch {
-			return
-		}
-		copied = true
-		clearTimeout(copiedTimer)
-		copiedTimer = setTimeout(() => (copied = false), 1500)
-	}
+	const clip = clipboard(1500)
 
 	function isField(el: EventTarget | null) {
 		return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement
@@ -36,9 +25,9 @@
 			type="button"
 			class="nv-seg min-w-0 cursor-pointer hover:text-(--tn-blue)"
 			title="Copy URL"
-			onclick={copyUrl}
+			onclick={() => clip.copy(page.url.href)}
 		>
-			<span class="truncate">{copied ? "copied!" : page.url.pathname}</span>
+			<span class="truncate">{clip.copied ? "copied!" : page.url.pathname}</span>
 		</button>
 	</span>
 	<span class="shrink-0">

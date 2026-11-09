@@ -23,11 +23,10 @@ import Anvil from "@lucide/svelte/icons/anvil"
 import Sailboat from "@lucide/svelte/icons/sailboat"
 import { CREDITS_PER_CENT, MINUTES_PER_MONTH } from "#lib/credits"
 import { formatCredits } from "#lib/utils"
-import { ENCRYPTION_OVERHEAD } from "#lib/encryption"
 import { Constants, type Database } from "#lib/types/supabase"
 
 export type ScriptCategory = Database["scripts"]["Enums"]["category"]
-export type ScriptStage = Database["scripts"]["Enums"]["stage"]
+type ScriptStage = Database["scripts"]["Enums"]["stage"]
 export type ScriptType = Database["scripts"]["Enums"]["type"]
 
 export type Role = Database["profiles"]["Enums"]["roles"]
@@ -88,32 +87,6 @@ export const STAGE_COLORS: Record<ScriptStage, string> = {
 
 /** Credits per minute. 22 is €95.04 for 30 days of nonstop use (metadata_price_max_check). */
 export const MAX_PRICE = 22
-export const MAX_FILES = 50
-/** The scripts bucket allows 5 MB per object, and the encrypted file is a little larger than the plain one. */
-export const MAX_FILE_BYTES = 5 * 1024 * 1024 - ENCRYPTION_OVERHEAD
-const UPLOAD_CONCURRENCY = 6
-
-/** Runs `upload` over a revision's files a few at a time; after the first error no new uploads start and it is thrown once those in flight settle. */
-export async function uploadAll(files: File[], upload: (file: File) => Promise<void>) {
-	const queue = [...files]
-	const errors: unknown[] = []
-	const worker = async () => {
-		for (let file = queue.shift(); file && !errors.length; file = queue.shift()) {
-			try {
-				await upload(file)
-			} catch (error) {
-				errors.push(error)
-			}
-		}
-	}
-	await Promise.all(Array.from({ length: Math.min(UPLOAD_CONCURRENCY, files.length) }, worker))
-	if (errors.length) throw errors[0]
-}
-
-/** A file path inside a revision: letters, digits, _ . - and / between segments, no "." or ".." segment, at most 200 characters (as in scripts.valid_files). */
-export const validFileName = (name: string) =>
-	name.length <= 200 &&
-	name.split("/").every((part) => /^[A-Za-z0-9_.-]+$/.test(part) && part !== "." && part !== "..")
 
 /** Prices are stored in credits per minute and read per hour: "0.06 CREDIT/h". */
 export const formatPrice = (credits: number, locale?: string) =>

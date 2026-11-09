@@ -7,8 +7,6 @@
 	import ShareCodes from "./ShareCodes.svelte"
 	import ScriptBadges from "#lib/components/ScriptBadges.svelte"
 	import Price from "#lib/components/Price.svelte"
-	import Lock from "@lucide/svelte/icons/lock"
-	import LockOpen from "@lucide/svelte/icons/lock-open"
 	import User from "@lucide/svelte/icons/user"
 	import Clock from "@lucide/svelte/icons/clock"
 	import Eye from "@lucide/svelte/icons/eye"
@@ -18,7 +16,6 @@
 	import Coins from "@lucide/svelte/icons/coins"
 	import { CATEGORY_ICONS, STAGE_COLORS } from "#lib/scripts"
 	import { metaDescription, withParam } from "#lib/utils"
-	import { CREDITS_PER_CENT } from "#lib/credits"
 	import { page } from "$app/state"
 
 	const { data, form: result } = $props()
@@ -108,17 +105,13 @@
 							? 'text-(--tn-yellow)'
 							: 'text-(--tn-green)'}"
 					>
-						{#if script.type === "premium"}<Lock class="size-4 shrink-0" />{:else}<LockOpen
-								class="size-4 shrink-0"
-							/>{/if}
 						<Price credits={script.price} />
 					</dd>
 					{#if data.extraSessionFee > 0}
-						<dd class="nv-dim text-xs">
-							per running script. Extra sessions are charged at {fmt.eur(
-								data.extraSessionFee / CREDITS_PER_CENT
-							)} per 30 days,
-							<a href="/information/faq/what-does-running-several-scripts-at-once-cost">see how</a>.
+						<dd class="my-2 text-xs">
+							<a href="/information/faq/what-does-running-several-scripts-at-once-cost"
+								>{fmt.credits(data.extraSessionFee)}/MONTH per extra session</a
+							>
 						</dd>
 					{/if}
 				</div>

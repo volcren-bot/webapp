@@ -40,27 +40,32 @@
 	{#if data.reports.length}
 		<ul class="flex flex-col gap-2">
 			{#each data.reports as report (report.id)}
-				<li class="nv-float mt-0 flex flex-col gap-1 py-3 text-sm">
-					<div class="flex flex-wrap items-baseline gap-x-3">
-						<a href="/reports/{report.id}" class="font-bold">{report.script_title}</a>
-						<span class="nv-dim">#{report.revision}</span>
-						<span style="color: {STATUS_COLORS[report.status]}">{STATUS_LABELS[report.status]}</span>
-						<span class="nv-dim">by {report.username}</span>
-						{#if report.assignee}<span class="nv-dim">→ {report.assignee}</span>{/if}
-						<span class="nv-dim ml-auto">{fmt.dateTime(report.created_at)}</span>
-					</div>
-					<p class="truncate">
-						{report.description || "No description."}
-					</p>
-					<p class="nv-dim">
-						{[
-							report.has_log && "log",
-							report.has_snapshot && "snapshot",
-							report.has_diagnostics && "diagnostics"
-						]
-							.filter(Boolean)
-							.join(", ") || "no attachments"}
-					</p>
+				<li>
+					<a
+						href="/reports/{report.id}"
+						class="flex flex-col gap-1 rounded-md border border-(--tn-bg-hl) bg-(--tn-bg-float) px-4 py-3 text-sm text-(--tn-fg) hover:border-(--tn-blue) hover:no-underline"
+					>
+						<div class="flex flex-wrap items-baseline gap-x-3">
+							<span class="font-bold text-(--tn-blue)">{report.script_title}</span>
+							<span class="nv-dim">#{report.revision}</span>
+							<span style="color: {STATUS_COLORS[report.status]}">{STATUS_LABELS[report.status]}</span>
+							<span class="nv-dim">by {report.username}</span>
+							{#if report.assignee}<span class="nv-dim">→ {report.assignee}</span>{/if}
+							<span class="nv-dim ml-auto">{fmt.dateTime(report.created_at)}</span>
+						</div>
+						<p class="truncate">
+							{report.description || "No description."}
+						</p>
+						<p class="nv-dim">
+							{[
+								report.has_log && "log",
+								report.has_snapshot && "snapshot",
+								report.has_diagnostics && "diagnostics"
+							]
+								.filter(Boolean)
+								.join(", ") || "no attachments"}
+						</p>
+					</a>
 				</li>
 			{/each}
 		</ul>

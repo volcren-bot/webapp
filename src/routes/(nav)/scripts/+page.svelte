@@ -7,8 +7,6 @@
 	import Gift from "@lucide/svelte/icons/gift"
 	import Plus from "@lucide/svelte/icons/plus"
 	import Search from "@lucide/svelte/icons/search"
-	import Lock from "@lucide/svelte/icons/lock"
-	import LockOpen from "@lucide/svelte/icons/lock-open"
 	import User from "@lucide/svelte/icons/user"
 	import Clock from "@lucide/svelte/icons/clock"
 	import FileCode from "@lucide/svelte/icons/file-code"
@@ -152,7 +150,7 @@
 	{:else}
 		<ul bind:this={list} class="flex flex-col gap-3">
 			{#each data.scripts as script, i (script.url)}
-				<li>
+				<li class="@container">
 					<a
 						href="/scripts/{script.url}"
 						aria-current={selected === i ? "true" : undefined}
@@ -161,12 +159,14 @@
 							? 'border-(--tn-blue)'
 							: 'border-(--tn-bg-hl)'}"
 					>
-						<div class="flex items-center justify-between gap-3">
+						<div class="flex flex-col gap-2 @2xl:flex-row @2xl:items-center @2xl:justify-between @2xl:gap-3">
 							<span class="flex items-center gap-2 font-bold text-(--tn-blue)">
 								<FileCode class="size-4 shrink-0" />
 								{script.title}
 							</span>
-							<span class="flex shrink-0 items-center gap-3 text-sm">
+							<span
+								class="flex flex-col items-start gap-1 text-sm @2xl:shrink-0 @2xl:flex-row @2xl:items-center @2xl:gap-3"
+							>
 								<ScriptBadges
 									community={script.community}
 									granted={script.granted}
@@ -181,9 +181,6 @@
 										? 'text-(--tn-yellow)'
 										: 'text-(--tn-green)'}"
 								>
-									{#if script.type === "premium"}<Lock class="size-4 shrink-0" />{:else}<LockOpen
-											class="size-4 shrink-0"
-										/>{/if}
 									<Price credits={script.price} />
 								</span>
 							</span>

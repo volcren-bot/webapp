@@ -1,4 +1,4 @@
-import { MICROCREDITS_PER_CREDIT } from "#lib/credits"
+import { MICROCREDITS_PER_CENT, MICROCREDITS_PER_CREDIT } from "#lib/credits"
 
 export const SITE_NAME = "VOLCREN"
 export const SITE_DESCRIPTION = "Most advanced memory reading bot"
@@ -67,6 +67,17 @@ export const formatCreditAmount = (microcredits: number, locale = DEFAULT_LOCALE
 		maximumFractionDigits: 6
 	})
 }
+
+export const formatRateAmount = (microcredits: number, locale = DEFAULT_LOCALE) => {
+	const amount = Math.round(microcredits / MICROCREDITS_PER_CENT) / 100
+	return amount.toLocaleString(locale, {
+		minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+		maximumFractionDigits: 2
+	})
+}
+
+export const formatRate = (microcredits: number, locale = DEFAULT_LOCALE) =>
+	`${formatRateAmount(microcredits, locale)}\u00a0CREDIT`
 
 /** "12.50 CREDIT": the unit is written like a currency code, never plural. */
 export const formatCredits = (microcredits: number, locale = DEFAULT_LOCALE, full = false) =>

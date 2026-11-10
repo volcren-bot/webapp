@@ -5,7 +5,9 @@ import {
 	formatCredits,
 	formatDate,
 	formatDateTime,
-	formatEur
+	formatEur,
+	formatRate,
+	formatRateAmount
 } from "#lib/utils"
 import { formatPrice, formatPriceInput, megabytes, parsePrice } from "#lib/scripts"
 
@@ -19,6 +21,8 @@ export const fmt = {
 	number: (n: number, options?: Intl.NumberFormatOptions) => n.toLocaleString(locale(), options),
 	credits: (microcredits: number, full = false) => formatCredits(microcredits, locale(), full),
 	creditAmount: (microcredits: number, full = false) => formatCreditAmount(microcredits, locale(), full),
+	rate: (microcredits: number) => formatRate(microcredits, locale()),
+	rateAmount: (microcredits: number) => formatRateAmount(microcredits, locale()),
 	price: (price: number) => formatPrice(price, locale()),
 	priceInput: (price: number) => formatPriceInput(price, locale()),
 	parsePrice: (raw: string) => parsePrice(raw, locale()),

@@ -84,7 +84,7 @@
 
 		<div class="nv-dim">
 			<p class="my-4">
-				paid script average costs {fmt.credits(data.averagePerMonth)} to run for 30 days
+				paid script average costs {fmt.rate(data.averagePerMonth)} to run for 30 days
 			</p>
 			{#if data.extraSessionFee > 0}
 				<p class="my-4">

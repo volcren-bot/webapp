@@ -75,7 +75,7 @@
 		if ("error" in parsed)
 			return `Type the price in CREDIT per hour (1 CREDIT = €1), at most ${fmt.creditAmount(MAX_PRICE)}.`
 		const { price } = parsed
-		const pays = `Buyers pay ${fmt.price(price)}: ${fmt.credits(pricePerDay(price))} a day, ${fmt.credits(pricePerMonth(price))} for 30 days of nonstop use.`
+		const pays = `Buyers pay ${fmt.price(price)}: ${fmt.credits(pricePerDay(price))} a day, ${fmt.rate(pricePerMonth(price))} for 30 days of nonstop use.`
 		if (authorShare === null) return pays
 		return `${pays}\nYou earn ${fmt.percent(authorShare)} of that, ${fmt.credits(price * authorShare)}/h, except on what buyers pay with bonus credits.`
 	}

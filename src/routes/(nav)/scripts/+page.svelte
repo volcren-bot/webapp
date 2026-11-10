@@ -181,7 +181,7 @@
 										? 'text-(--tn-yellow)'
 										: 'text-(--tn-green)'}"
 								>
-									<Price credits={script.price} />
+									<Price price={script.price} />
 								</span>
 							</span>
 						</div>

@@ -1,3 +1,5 @@
+import { MICROCREDITS_PER_CREDIT } from "#lib/credits"
+
 export const SITE_NAME = "VOLCREN"
 export const SITE_DESCRIPTION = "Most advanced memory reading bot"
 
@@ -57,21 +59,18 @@ export const creditSource = (entry: { kind: string; provider: string | null }) =
 	}
 }
 
-/** Credits are shown at 1 = 1 EUR, with as many decimals as the amount needs (a single internal credit is 0.0001). */
-const DISPLAY_CREDITS_PER_UNIT = 10_000
-
-/** "12", "12.50", "0.001"; `full` always shows every decimal, "12.5000", for account balances. */
-export const formatCreditAmount = (credits: number, locale = DEFAULT_LOCALE, full = false) => {
-	const amount = credits / DISPLAY_CREDITS_PER_UNIT
+/** Microcredits shown as CREDIT (1 = 1 EUR): "12", "12.50", "0.001167"; `full` always shows every decimal, "12.500000", for account balances. */
+export const formatCreditAmount = (microcredits: number, locale = DEFAULT_LOCALE, full = false) => {
+	const amount = microcredits / MICROCREDITS_PER_CREDIT
 	return amount.toLocaleString(locale, {
-		minimumFractionDigits: full ? 4 : Number.isInteger(amount) ? 0 : 2,
-		maximumFractionDigits: 4
+		minimumFractionDigits: full ? 6 : Number.isInteger(amount) ? 0 : 2,
+		maximumFractionDigits: 6
 	})
 }
 
 /** "12.50 CREDIT": the unit is written like a currency code, never plural. */
-export const formatCredits = (credits: number, locale = DEFAULT_LOCALE, full = false) =>
-	`${formatCreditAmount(credits, locale, full)}\u00a0CREDIT`
+export const formatCredits = (microcredits: number, locale = DEFAULT_LOCALE, full = false) =>
+	`${formatCreditAmount(microcredits, locale, full)}\u00a0CREDIT`
 
 /** "€12", "€12.50"; `code` writes "12.50 EUR", to sit beside "12.50 CREDIT". */
 export const formatEur = (cents: number, locale = DEFAULT_LOCALE, code = false) => {

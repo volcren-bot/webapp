@@ -67,7 +67,7 @@ export const load = async ({ params, depends, locals: { supabaseServer, user } }
 	const { data: payment } = await supabaseServer
 		.schema("payments")
 		.from("payments")
-		.select("id, provider_id, status, credits, amount, currency")
+		.select("id, provider_id, status, microcredits, amount, currency")
 		.eq("id", params.id)
 		.maybeSingle()
 

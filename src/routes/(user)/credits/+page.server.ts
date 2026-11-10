@@ -3,7 +3,8 @@ import { createInvoice, MAX_PENDING_PAYMENTS } from "#lib/server/bitcart.server"
 import { extraSessionFee, openPayments } from "#lib/server/payments.server"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
-import { creditsFor, MAX_TOPUP_CENTS, MIN_TOPUP_CENTS, MINUTES_PER_MONTH } from "#lib/credits"
+import { MAX_TOPUP_CENTS, microcreditsFor, MIN_TOPUP_CENTS } from "#lib/credits"
+import { pricePerMonth } from "#lib/scripts"
 import { formatEur, localeFrom } from "#lib/utils"
 
 export const load = async ({ locals: { supabaseServer, user } }) => {
@@ -12,23 +13,23 @@ export const load = async ({ locals: { supabaseServer, user } }) => {
 	const payments = supabaseServer.schema("payments")
 
 	const [account, history, average, fee] = await Promise.all([
-		payments.from("accounts").select("credits, earnings").eq("user_id", user.id).maybeSingle(),
+		payments.from("accounts").select("microcredits, earnings").eq("user_id", user.id).maybeSingle(),
 		payments
 			.from("payments")
-			.select("id, status, credits, bonus, amount, currency, created_at, paid_at")
+			.select("id, status, microcredits, bonus, amount, currency, created_at, paid_at")
 			.order("created_at", { ascending: false })
 			.limit(20),
-		// Per-minute average over the paid scripts users can run; null when there are none
+		// Hourly average over the paid scripts users can run; null when there are none
 		payments.rpc("average_price"),
 		extraSessionFee()
 	])
 
 	if (average.error) console.error("Could not load the average script price", average.error)
 
-	const averagePerMonth = Math.round((average.data ?? 0) * MINUTES_PER_MONTH)
+	const averagePerMonth = Math.round(pricePerMonth(average.data ?? 0))
 
 	return {
-		credits: account.data?.credits ?? 0,
+		microcredits: account.data?.microcredits ?? 0,
 		earnings: account.data?.earnings ?? 0,
 		payments: history.data ?? [],
 		averagePerMonth,
@@ -70,7 +71,7 @@ export const actions = {
 			})
 		}
 
-		const { total: credits, bonus } = creditsFor(cents)
+		const { total: microcredits, bonus } = microcreditsFor(cents)
 
 		// The row id doubles as Bitcart's order_id; provider_id is filled in once the invoice exists
 		const paymentId = crypto.randomUUID()
@@ -92,7 +93,7 @@ export const actions = {
 			user_id: user.id,
 			provider: "bitcart",
 			provider_id: invoice.id,
-			credits,
+			microcredits,
 			bonus,
 			amount: cents
 		})

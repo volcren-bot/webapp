@@ -3,7 +3,7 @@
 	import Head from "#lib/components/Head.svelte"
 	import { enhance } from "$app/forms"
 	import { untrack } from "svelte"
-	import { CREDITS_PER_EUR } from "#lib/credits"
+	import { MICROCREDITS_PER_CREDIT } from "#lib/credits"
 	import { Constants } from "#lib/types/supabase"
 
 	const { data, form } = $props()
@@ -111,7 +111,7 @@
 			<span><span class="nv-dim">email</span> {u.email ?? "none"}</span>
 			<span><span class="nv-dim">role</span> {u.role}</span>
 			<span><span class="nv-dim">joined</span> {fmt.dateTime(u.created_at)}</span>
-			<span><span class="nv-dim">balance</span> {fmt.credits(u.credits, true)}</span>
+			<span><span class="nv-dim">balance</span> {fmt.credits(u.microcredits, true)}</span>
 			<span><span class="nv-dim">earnings</span> {fmt.credits(u.earnings)}</span>
 			<span>
 				<span class="nv-dim">status</span>
@@ -145,7 +145,9 @@
 		<label class="label">
 			<span class="label-text"
 				>amount <span class="nv-dim"
-					>negative to remove, {fmt.number(CREDITS_PER_EUR)} = {fmt.credits(CREDITS_PER_EUR)}</span
+					>negative to remove, {fmt.number(MICROCREDITS_PER_CREDIT)} = {fmt.credits(
+						MICROCREDITS_PER_CREDIT
+					)}</span
 				></span
 			>
 			<input class="input" name="amount" type="number" step="1" required />

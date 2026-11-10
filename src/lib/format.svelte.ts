@@ -7,7 +7,7 @@ import {
 	formatDateTime,
 	formatEur
 } from "#lib/utils"
-import { formatPrice, megabytes } from "#lib/scripts"
+import { formatPrice, formatPriceInput, megabytes, parsePrice } from "#lib/scripts"
 
 const locale = () => page.data.locale ?? DEFAULT_LOCALE
 
@@ -17,9 +17,11 @@ export const fmt = {
 		return locale()
 	},
 	number: (n: number, options?: Intl.NumberFormatOptions) => n.toLocaleString(locale(), options),
-	credits: (credits: number, full = false) => formatCredits(credits, locale(), full),
-	creditAmount: (credits: number, full = false) => formatCreditAmount(credits, locale(), full),
-	price: (credits: number) => formatPrice(credits, locale()),
+	credits: (microcredits: number, full = false) => formatCredits(microcredits, locale(), full),
+	creditAmount: (microcredits: number, full = false) => formatCreditAmount(microcredits, locale(), full),
+	price: (price: number) => formatPrice(price, locale()),
+	priceInput: (price: number) => formatPriceInput(price, locale()),
+	parsePrice: (raw: string) => parsePrice(raw, locale()),
 	eur: (cents: number, code = false) => formatEur(cents, locale(), code),
 	megabytes: (bytes: number) => megabytes(bytes, locale()),
 	percent: (fraction: number, digits = 1) =>

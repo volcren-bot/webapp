@@ -2,7 +2,7 @@
 	import { fmt } from "#lib/format.svelte.js"
 	import Head from "#lib/components/Head.svelte"
 	import { enhance } from "$app/forms"
-	import { bonusRate, creditsFor, CREDITS_PER_CENT, CREDITS_PER_EUR } from "#lib/credits"
+	import { bonusRate, MICROCREDITS_PER_CENT, MICROCREDITS_PER_CREDIT, microcreditsFor } from "#lib/credits"
 
 	const { data, form } = $props()
 
@@ -11,7 +11,7 @@
 	let amount = $state(10)
 	// Same rounding as the server: the invoice is created for whole cents
 	const cents = $derived(Number.isFinite(amount) ? Math.round(amount * 100) : 0)
-	const purchase = $derived(creditsFor(cents))
+	const purchase = $derived(microcreditsFor(cents))
 	const valid = $derived(cents >= data.limits.min && cents <= data.limits.max)
 </script>
 
@@ -20,14 +20,14 @@
 <section class="mx-auto my-8 flex w-full max-w-3xl flex-col gap-6">
 	<header>
 		<h1 class="text-2xl font-bold">Balance</h1>
-		<p class="nv-dim">{fmt.credits(data.credits, true)}</p>
+		<p class="nv-dim">{fmt.credits(data.microcredits, true)}</p>
 	</header>
 
 	<form class="nv-float flex flex-col gap-3 text-center" method="POST" use:enhance>
 		<span class="nv-title">add funds</span>
 		<div class="my-6">
 			<p class="nv-dim">pay with crypto through bitcart.</p>
-			<p class="font-bold">{fmt.credits(CREDITS_PER_EUR)} = {fmt.eur(100, true)}</p>
+			<p class="font-bold">{fmt.credits(MICROCREDITS_PER_CREDIT)} = {fmt.eur(100, true)}</p>
 		</div>
 		{#if form?.message}
 			<small class="text-error-400">{form.message}</small>
@@ -36,7 +36,7 @@
 		<div class="mx-auto flex w-full max-w-md flex-col gap-2">
 			{#each presets as preset (preset)}
 				<button type="button" class="btn w-full" onclick={() => (amount = preset)}>
-					{fmt.credits(preset * CREDITS_PER_EUR)}
+					{fmt.credits(preset * MICROCREDITS_PER_CREDIT)}
 				</button>
 			{/each}
 		</div>
@@ -59,9 +59,9 @@
 			{#if !valid}
 				<small class="text-error-400">
 					{#if cents > data.limits.max}
-						maximum is {fmt.credits(data.limits.max * CREDITS_PER_CENT)}
+						maximum is {fmt.credits(data.limits.max * MICROCREDITS_PER_CENT)}
 					{:else}
-						minimum is {fmt.credits(data.limits.min * CREDITS_PER_CENT)}
+						minimum is {fmt.credits(data.limits.min * MICROCREDITS_PER_CENT)}
 					{/if}
 				</small>
 			{/if}
@@ -75,7 +75,7 @@
 				<dt class="nv-dim">bonus ({fmt.percent(bonusRate(cents))})</dt>
 				<dd class="text-right">
 					+{fmt.credits(purchase.bonus)}
-					<span class="nv-dim">≈ {fmt.eur(purchase.bonus / CREDITS_PER_CENT, true)}</span>
+					<span class="nv-dim">≈ {fmt.eur(purchase.bonus / MICROCREDITS_PER_CENT, true)}</span>
 				</dd>
 				<dt class="nv-dim">you get</dt>
 				<dd class="text-right font-bold text-success-400">{fmt.credits(purchase.total)}</dd>
@@ -112,7 +112,7 @@
 					>
 						<span class="nv-dim">{fmt.dateTime(payment.created_at)}</span>
 						<span>
-							{fmt.credits(payment.credits)}{#if payment.bonus}<span class="nv-dim">
+							{fmt.credits(payment.microcredits)}{#if payment.bonus}<span class="nv-dim">
 									incl. {fmt.creditAmount(payment.bonus)} bonus</span
 								>{/if}
 							<span class="nv-dim">·</span>

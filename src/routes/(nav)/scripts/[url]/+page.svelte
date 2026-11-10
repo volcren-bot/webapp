@@ -105,7 +105,7 @@
 							? 'text-(--tn-yellow)'
 							: 'text-(--tn-green)'}"
 					>
-						<Price credits={script.price} />
+						<Price price={script.price} />
 					</dd>
 					{#if data.extraSessionFee > 0}
 						<dd class="my-2 text-xs">

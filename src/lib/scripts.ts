@@ -21,8 +21,8 @@ import Zap from "@lucide/svelte/icons/zap"
 import Target from "@lucide/svelte/icons/target"
 import Anvil from "@lucide/svelte/icons/anvil"
 import Sailboat from "@lucide/svelte/icons/sailboat"
-import { CREDITS_PER_CENT, MINUTES_PER_MONTH } from "#lib/credits"
-import { formatCredits } from "#lib/utils"
+import { MICROCREDITS_PER_CREDIT, MINUTES_PER_MONTH } from "#lib/credits"
+import { DEFAULT_LOCALE, formatCredits } from "#lib/utils"
 import { Constants, type Database } from "#lib/types/supabase"
 
 export type ScriptCategory = Database["scripts"]["Enums"]["category"]
@@ -85,12 +85,39 @@ export const STAGE_COLORS: Record<ScriptStage, string> = {
 	archived: "var(--tn-comment)"
 }
 
-/** Credits per minute. 22 is €95.04 for 30 days of nonstop use (metadata_price_max_check). */
-export const MAX_PRICE = 22
+/** Microcredits per hour. 134,400 is €99.99 for 31 days of nonstop use (metadata_price_max_check). */
+export const MAX_PRICE = 134_400
+const PRICE_DECIMALS = 6
 
-/** Prices are stored in credits per minute and read per hour: "0.06 CREDIT/h". */
-export const formatPrice = (credits: number, locale?: string) =>
-	credits === 0 ? "free" : `${formatCredits(credits * 60, locale)}/h`
+/** Prices are stored in microcredits per hour: "0.07 CREDIT/h". */
+export const formatPrice = (price: number, locale?: string) =>
+	price === 0 ? "free" : `${formatCredits(price, locale)}/h`
 
-/** What a price costs over 30 days of nonstop use, in EUR cents. */
-export const monthlyCents = (credits: number) => (credits * MINUTES_PER_MONTH) / CREDITS_PER_CENT
+export const pricePerDay = (price: number) => price * 24
+
+/** What a price costs over 30 days of nonstop use, in microcredits. */
+export const pricePerMonth = (price: number) => (price * MINUTES_PER_MONTH) / 60
+
+const decimalSeparator = (locale: string) =>
+	new Intl.NumberFormat(locale).formatToParts(1.5).find((part) => part.type === "decimal")?.value ?? "."
+
+/** A price as an author types it: "0,07" in a comma locale, and "0," for no price yet. */
+export const formatPriceInput = (price: number, locale = DEFAULT_LOCALE) =>
+	price === 0
+		? `0${decimalSeparator(locale)}`
+		: (price / MICROCREDITS_PER_CREDIT).toLocaleString(locale, {
+				useGrouping: false,
+				maximumFractionDigits: PRICE_DECIMALS
+			})
+
+/** Reads a typed price in CREDIT per hour, with either decimal separator, into microcredits per hour. */
+export function parsePrice(raw: string, locale = DEFAULT_LOCALE): { price: number } | { error: string } {
+	const match = /^(\d{1,3})(?:[.,](\d*))?$/.exec(raw.trim())
+	if (!match) return { error: `Type the price in CREDIT per hour, like 0${decimalSeparator(locale)}05.` }
+	const [, whole, fraction = ""] = match
+	if (fraction.length > PRICE_DECIMALS) return { error: `Use at most ${PRICE_DECIMALS} decimals.` }
+	const price = Number(whole) * MICROCREDITS_PER_CREDIT + Number(fraction.padEnd(PRICE_DECIMALS, "0"))
+	if (price === 0) return { error: "A premium script needs a price above 0." }
+	if (price > MAX_PRICE) return { error: `The highest price is ${formatPrice(MAX_PRICE, locale)}.` }
+	return { price }
+}

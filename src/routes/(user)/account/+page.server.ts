@@ -9,7 +9,7 @@ export const load = async ({ locals: { user, supabaseServer } }) => {
 
 	const payments = supabaseServer.schema("payments")
 	const [account, ledger, blockers, running, ended] = await Promise.all([
-		payments.from("accounts").select("credits").eq("user_id", user.id).maybeSingle(),
+		payments.from("accounts").select("microcredits").eq("user_id", user.id).maybeSingle(),
 		payments
 			.from("credits_ledger")
 			.select("id, kind, amount, balance_after, note, fee, bonus, created_at, payments(provider, bonus)")
@@ -48,7 +48,7 @@ export const load = async ({ locals: { user, supabaseServer } }) => {
 	})
 
 	return {
-		credits: account.data?.credits ?? 0,
+		microcredits: account.data?.microcredits ?? 0,
 		ledger: (ledger.data ?? []).map(({ payments: payment, ...entry }) => ({
 			...entry,
 			provider: payment?.provider ?? null,

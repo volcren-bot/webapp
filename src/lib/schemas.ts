@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { CATEGORIES, MAX_PRICE, STAGES, TYPES } from "#lib/scripts"
+import { CATEGORIES, formatPrice, MAX_PRICE, STAGES, TYPES } from "#lib/scripts"
 
 // Kept out of #lib/scripts so pages that only list scripts don't ship zod.
 export const scriptSchema = z
@@ -22,9 +22,9 @@ export const scriptSchema = z
 		type: z.enum(TYPES),
 		price: z
 			.number("Must be a number.")
-			.int("Pick one of the listed prices.")
-			.min(0, "Pick one of the listed prices.")
-			.max(MAX_PRICE, "Pick one of the listed prices."),
+			.int("Use at most 6 decimals.")
+			.min(0, "A price can't be negative.")
+			.max(MAX_PRICE, `The highest price is ${formatPrice(MAX_PRICE)}.`),
 		stage: z.enum(STAGES),
 		categories: z.array(z.enum(CATEGORIES)).max(5, "Pick at most 5 categories.")
 	})

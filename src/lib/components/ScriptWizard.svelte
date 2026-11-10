@@ -3,7 +3,7 @@
 	import { tick, untrack } from "svelte"
 	import { superForm, type Infer, type SuperValidated } from "sveltekit-superforms"
 	import { zod4Client } from "sveltekit-superforms/adapters"
-	import { CATEGORIES, MAX_PRICE, monthlyCents, STAGES, TYPES } from "#lib/scripts"
+	import { CATEGORIES, MAX_PRICE, pricePerDay, pricePerMonth, STAGES, TYPES } from "#lib/scripts"
 	import { scriptSchema } from "#lib/schemas"
 
 	let {
@@ -66,19 +66,18 @@
 		label: string
 		kind: "text" | "single" | "multi" | "confirm"
 		options?: readonly string[]
-		/** How a list option is written, when it isn't the stored value itself. */
-		display?: (option: string) => string
 		hint?: string
 		skip?: () => boolean
 	}
 
-	const PRICES = Array.from({ length: MAX_PRICE }, (_, i) => String(i + 1))
-	const priceWidth = $derived(Math.max(...PRICES.map((p) => fmt.price(Number(p)).length)))
-
-	function priceSummary(price: number) {
-		const pays = `Buyers pay ${fmt.price(price)}, ${fmt.eur(monthlyCents(price))} for 30 days of nonstop use (1 CREDIT = €1).`
+	function priceSummary(raw: string) {
+		const parsed = fmt.parsePrice(raw)
+		if ("error" in parsed)
+			return `Type the price in CREDIT per hour (1 CREDIT = €1), at most ${fmt.creditAmount(MAX_PRICE)}.`
+		const { price } = parsed
+		const pays = `Buyers pay ${fmt.price(price)}: ${fmt.credits(pricePerDay(price))} a day, ${fmt.credits(pricePerMonth(price))} for 30 days of nonstop use.`
 		if (authorShare === null) return pays
-		return `${pays}\nYou earn ${fmt.percent(authorShare)} of that, ${fmt.credits(price * 60 * authorShare)}/h, except on what buyers pay with bonus credits.`
+		return `${pays}\nYou earn ${fmt.percent(authorShare)} of that, ${fmt.credits(price * authorShare)}/h, except on what buyers pay with bonus credits.`
 	}
 
 	const STEPS: Step[] = [
@@ -94,12 +93,9 @@
 		{
 			key: "price",
 			label: "Price per hour:",
-			kind: "single",
-			options: PRICES,
-			display: (p) =>
-				`${fmt.price(Number(p)).padEnd(priceWidth)}  ${fmt.eur(monthlyCents(Number(p)))} / 30 days`,
+			kind: "text",
 			get hint() {
-				return priceSummary(Number(PRICES[cursor] ?? PRICES[0]))
+				return priceSummary(draft)
 			},
 			skip: () => community || $form.type === "free"
 		},
@@ -172,7 +168,12 @@
 		marks[next] = lines.length
 		cursor = 0
 		const s = STEPS[next]
-		draft = s?.kind === "text" && revisiting ? String($form[s.key as Field]) : ""
+		draft =
+			s?.key === "price"
+				? fmt.priceInput($form.price)
+				: s?.kind === "text" && revisiting
+					? String($form[s.key as Field])
+					: ""
 		if (s?.kind === "confirm") preview()
 		else if (s?.kind === "single") {
 			const value = String($form[s.key as Field])
@@ -214,19 +215,32 @@
 		return result.success ? null : result.error.issues[0].message
 	}
 
-	function accept(answer: string | string[]) {
+	function accept(answer: string | string[] | number) {
 		const s = current
-		const value = s.key === "price" ? Number(answer) : answer
 		const shown =
-			s.key === "price" ? fmt.price(Number(value)) : Array.isArray(value) ? value.join(", ") || "none" : value
+			typeof answer === "number"
+				? fmt.price(answer)
+				: Array.isArray(answer)
+					? answer.join(", ") || "none"
+					: answer
 		say(`${s.label} ${shown}`)
-		;($form as Record<string, unknown>)[s.key] = value
-		if (s.key === "type") $form.price = value === "free" ? 0 : Math.max(1, $form.price)
+		;($form as Record<string, unknown>)[s.key] = answer
+		if (s.key === "type" && answer === "free") $form.price = 0
 		enter(step + 1)
+	}
+
+	function submitPrice() {
+		const parsed = fmt.parsePrice(draft)
+		if ("price" in parsed) return accept(parsed.price)
+		say(`${current.label} ${draft.trim()}`, "dim")
+		say(`error: ${parsed.error}`, "err")
+		draft = fmt.priceInput(0)
+		focusActive()
 	}
 
 	function submitText() {
 		const s = current
+		if (s.key === "price") return submitPrice()
 		const value = draft.trim()
 		const problem = check(s.key as Field, value)
 		if (problem) {
@@ -370,6 +384,7 @@
 									bind:this={input}
 									bind:value={draft}
 									onkeydown={onTextKey}
+									inputmode={current.key === "price" ? "decimal" : undefined}
 									rows="1"
 									spellcheck="false"
 									autocomplete="off"
@@ -410,9 +425,7 @@
 									aria-selected={selected.includes(option)}
 									onclick={() => clickOption(i)}
 								>
-									{i === cursor ? "›" : " "} [{selected.includes(option) ? "x" : " "}] {current.display?.(
-										option
-									) ?? option}
+									{i === cursor ? "›" : " "} [{selected.includes(option) ? "x" : " "}] {option}
 								</div>
 							{/each}
 						</div>

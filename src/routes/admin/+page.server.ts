@@ -75,14 +75,14 @@ export const load = async ({ url, locals }) => {
 				admin
 					.schema("payments")
 					.from("accounts")
-					.select("credits, earnings")
+					.select("microcredits, earnings")
 					.eq("user_id", found.id)
 					.maybeSingle(),
 				admin.auth.admin.getUserById(found.id)
 			])
 			inspected = {
 				...found,
-				credits: account?.credits ?? 0,
+				microcredits: account?.microcredits ?? 0,
 				earnings: account?.earnings ?? 0,
 				email: auth.user?.email ?? null
 			}
@@ -192,7 +192,7 @@ export const actions = {
 		const amount = Number(data.get("amount"))
 		const note = String(data.get("note") ?? "").trim()
 		if (!Number.isSafeInteger(amount) || amount === 0) {
-			return fail(400, { message: "The amount must be a whole number other than 0." })
+			return fail(400, { message: "The amount must be a whole number of microcredits other than 0." })
 		}
 		if (!note) return fail(400, { message: "A note is required." })
 

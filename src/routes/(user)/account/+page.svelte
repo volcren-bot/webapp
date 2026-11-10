@@ -34,7 +34,7 @@
 
 	<section class="nv-float flex flex-col items-start gap-3">
 		<span class="nv-title">balance</span>
-		<p class="text-lg font-bold">{fmt.credits(data.credits, true)}</p>
+		<p class="text-lg font-bold">{fmt.credits(data.microcredits, true)}</p>
 		<a class="btn" href="/credits">add funds</a>
 	</section>
 
@@ -55,7 +55,7 @@
 						{/if}
 						<span class="nv-dim">started {fmt.dateTime(session.started_at)}</span>
 						<span class="nv-dim">running {runningFor(session.started_at)}</span>
-						<Price credits={session.price} />
+						<Price price={session.price} />
 						{#if session.fee_charged}
 							<span class="nv-dim">fee so far {fmt.credits(session.fee_charged)}</span>
 						{/if}
@@ -135,7 +135,7 @@
 		<p>
 			this permanently deletes your profile, discord link and stats, and signs you out.
 			<strong>
-				your {fmt.credits(data.credits, true)} are lost.
+				your {fmt.credits(data.microcredits, true)} are lost.
 			</strong>
 			payment and usage records are kept, linked only to your account id (see the
 			<a href="/information/privacy">privacy policy</a>).

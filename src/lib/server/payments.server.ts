@@ -25,7 +25,7 @@ async function paymentsConfig() {
 	return value
 }
 
-/** payments.config.extra_session_fee: what every extra concurrent session costs per 30 days of running, in credits. */
+/** payments.config.extra_session_fee: what every extra concurrent session costs per 30 days of running, in microcredits. */
 export const extraSessionFee = async () => (await paymentsConfig())?.extraSessionFee ?? 0
 
 /** The author's fraction of a script's usage charge, from payments.config.platform_fee_bps; null if it can't be read. */

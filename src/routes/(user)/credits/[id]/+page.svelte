@@ -93,14 +93,16 @@
 <section class="mx-auto my-8 flex w-full max-w-3xl flex-col gap-6">
 	<header>
 		<a href="/credits" class="nv-dim">← balance</a>
-		<h1 class="text-2xl font-bold">Add {fmt.credits(payment.credits)}</h1>
+		<h1 class="text-2xl font-bold">Add {fmt.credits(payment.microcredits)}</h1>
 		<p class="nv-dim">{payment.currency}</p>
 	</header>
 
 	{#if payment.status === "paid"}
 		<section class="nv-float flex flex-col items-start gap-3">
 			<span class="nv-title">paid</span>
-			<p class="text-success-400">Your {fmt.credits(payment.credits)} have been added to your balance.</p>
+			<p class="text-success-400">
+				Your {fmt.credits(payment.microcredits)} have been added to your balance.
+			</p>
 			<a class="btn" href="/credits">back to balance</a>
 		</section>
 	{:else if confirming}
@@ -108,8 +110,8 @@
 			<span class="nv-title">confirming</span>
 			<p class="nv-dim">
 				Your payment was received and is waiting for network confirmations. Your
-				{fmt.credits(payment.credits)} are added once it's confirmed, which can take a while depending on the currency.
-				You can leave this page.
+				{fmt.credits(payment.microcredits)} are added once it's confirmed, which can take a while depending on the
+				currency. You can leave this page.
 			</p>
 			<a class="btn" href="/credits">back to balance</a>
 		</section>

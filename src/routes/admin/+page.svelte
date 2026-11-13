@@ -134,7 +134,7 @@
 	<form class="nv-float flex flex-col gap-3" method="POST" action="?/adjust" use:enhance>
 		<span class="nv-title">adjustment</span>
 
-		{#if form?.message && !("login" in form) && !("ban" in form) && !("document" in form)}
+		{#if form?.message && !("login" in form) && !("ban" in form) && !("document" in form) && !("application" in form)}
 			<small class={form.ok ? "text-success-400" : "text-error-400"}>{form.message}</small>
 		{/if}
 
@@ -244,6 +244,46 @@
 			{#if documentStatus}<small class="nv-dim">{documentStatus}</small>{/if}
 		</div>
 	</form>
+
+	<section class="nv-float flex flex-col gap-3">
+		<span class="nv-title">scripter applications</span>
+		<p class="nv-dim">
+			Approving makes the contributor a scripter and unpublishes their scripts. A rejection needs a reason,
+			which the applicant sees.
+		</p>
+
+		{#if form?.message && "application" in form}
+			<small class={"ok" in form ? "text-success-400" : "text-error-400"}>{form.message}</small>
+		{/if}
+
+		{#if data.applications.length}
+			<ul class="flex flex-col gap-4">
+				{#each data.applications as row (row.id)}
+					<li class="flex flex-col gap-2">
+						<span>
+							<span class="nv-dim">{fmt.dateTime(row.created_at)} ·</span>
+							<a class="underline" href="?user={row.user_id}">{row.user}</a>
+							<span class="nv-dim"
+								>· {row.qualifying} of {row.scripts} scripts qualify · {row.users} users across them</span
+							>
+						</span>
+						<p class="whitespace-pre-wrap">{row.message}</p>
+						<form class="flex flex-wrap items-end gap-2" method="POST" use:enhance>
+							<input type="hidden" name="application" value={row.id} />
+							<label class="label grow">
+								<span class="label-text">reason <span class="nv-dim">required to reject</span></span>
+								<input class="input" name="reason" maxlength="500" />
+							</label>
+							<button type="submit" class="btn" formaction="?/approve">approve</button>
+							<button type="submit" class="btn btn-danger" formaction="?/reject">reject</button>
+						</form>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="nv-dim">No applications waiting.</p>
+		{/if}
+	</section>
 
 	{#if data.bans.length}
 		<section class="nv-float">

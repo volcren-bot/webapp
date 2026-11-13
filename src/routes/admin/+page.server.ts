@@ -26,32 +26,42 @@ export const load = async ({ url, locals }) => {
 	if ("status" in auth) redirect(303, auth.status === 401 ? "/auth" : "/")
 
 	const admin = supabaseAdmin()
-	const [{ data: ledger }, { data: logins }, { data: bans }] = await Promise.all([
-		admin
-			.schema("payments")
-			.from("credits_ledger")
-			.select("id, user_id, amount, balance_after, note, granted_by, created_at")
-			.eq("kind", "adjustment")
-			.order("id", { ascending: false })
-			.limit(50),
-		admin
-			.schema("profiles")
-			.from("impersonations")
-			.select("id, admin_id, user_id, created_at")
-			.order("id", { ascending: false })
-			.limit(50),
-		admin
-			.schema("profiles")
-			.from("bans")
-			.select("id, admin_id, user_id, banned, reason, created_at")
-			.order("id", { ascending: false })
-			.limit(50)
-	])
+	const [{ data: ledger }, { data: logins }, { data: bans }, { data: pending }, { data: rules }] =
+		await Promise.all([
+			admin
+				.schema("payments")
+				.from("credits_ledger")
+				.select("id, user_id, amount, balance_after, note, granted_by, created_at")
+				.eq("kind", "adjustment")
+				.order("id", { ascending: false })
+				.limit(50),
+			admin
+				.schema("profiles")
+				.from("impersonations")
+				.select("id, admin_id, user_id, created_at")
+				.order("id", { ascending: false })
+				.limit(50),
+			admin
+				.schema("profiles")
+				.from("bans")
+				.select("id, admin_id, user_id, banned, reason, created_at")
+				.order("id", { ascending: false })
+				.limit(50),
+			admin
+				.schema("profiles")
+				.from("scripter_applications")
+				.select("id, user_id, message, created_at")
+				.eq("status", "pending")
+				.order("id")
+				.limit(50),
+			admin.schema("scripts").from("config").select("scripter_min_users").single()
+		])
 
 	const ids = [
 		...new Set([
 			...(ledger ?? []).flatMap((row) => [row.user_id, row.granted_by ?? []].flat()),
-			...[...(logins ?? []), ...(bans ?? [])].flatMap((row) => [row.admin_id, row.user_id])
+			...[...(logins ?? []), ...(bans ?? [])].flatMap((row) => [row.admin_id, row.user_id]),
+			...(pending ?? []).map((row) => row.user_id)
 		])
 	]
 	const { data: profiles } = ids.length
@@ -89,8 +99,26 @@ export const load = async ({ url, locals }) => {
 		}
 	}
 
+	const minUsers = rules?.scripter_min_users ?? 0
+	const applications = await Promise.all(
+		(pending ?? []).map(async (row) => {
+			const { data: progress } = await admin
+				.schema("profiles")
+				.rpc("scripter_progress", { p_user: row.user_id })
+			const scripts = progress ?? []
+			return {
+				...row,
+				user: name(row.user_id),
+				scripts: scripts.length,
+				qualifying: scripts.filter((p) => p.users >= minUsers).length,
+				users: scripts.reduce((sum, p) => sum + p.users, 0)
+			}
+		})
+	)
+
 	return {
 		search,
+		applications,
 		inspected,
 		adjustments: (ledger ?? []).map((row) => ({
 			...row,
@@ -155,7 +183,44 @@ async function setBanned(banned: boolean, { request, locals }: RequestEvent) {
 	}
 }
 
+async function decide(approve: boolean, { request, locals }: RequestEvent) {
+	const auth = await requireAdmin(locals)
+	if ("status" in auth) return fail(auth.status, { message: auth.message, application: true })
+
+	const data = await request.formData()
+	const id = Number(data.get("application"))
+	const reason = String(data.get("reason") ?? "").trim()
+	if (!Number.isSafeInteger(id) || id <= 0)
+		return fail(400, { message: "Pick an application.", application: true })
+	if (!approve && !reason) return fail(400, { message: "A reason is required to reject.", application: true })
+	if (reason.length > 500)
+		return fail(400, { message: "Keep the reason under 500 characters.", application: true })
+
+	const { error: err } = await supabaseAdmin().schema("profiles").rpc("decide_scripter_application", {
+		p_admin: auth.user.id,
+		p_application: id,
+		p_approve: approve,
+		p_reason: reason
+	})
+	if (err?.code === "P0002")
+		return fail(404, { message: "That application was already decided.", application: true })
+	if (err?.code === "55000")
+		return fail(409, { message: "The applicant is no longer an unbanned contributor.", application: true })
+	if (err) return fail(500, { message: errorRef("Could not decide the application", err), application: true })
+	if (approve) markStale()
+
+	console.log(`Admin ${auth.user.id} ${approve ? "approved" : "rejected"} scripter application ${id}`)
+	return {
+		message: approve ? "Approved: they are a scripter now." : "Rejected.",
+		ok: true,
+		application: true
+	}
+}
+
 export const actions = {
+	approve: (event) => decide(true, event),
+	reject: (event) => decide(false, event),
+
 	// Publishes a new version of a legal document; versions are immutable, and a new scripter_tos or community_tos version asks every creator to accept again.
 	publishDocument: async ({ request, locals }) => {
 		const auth = await requireAdmin(locals)

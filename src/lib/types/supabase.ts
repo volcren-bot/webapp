@@ -726,13 +726,65 @@ export type Database = {
 				}
 				Relationships: []
 			}
+			scripter_applications: {
+				Row: {
+					created_at: string
+					decided_at: string | null
+					decided_by: string | null
+					id: number
+					message: string
+					reason: string | null
+					status: Database["profiles"]["Enums"]["application_status"]
+					user_id: string
+				}
+				ComputedFields: never
+				Insert: {
+					created_at?: string
+					decided_at?: string | null
+					decided_by?: string | null
+					id?: never
+					message: string
+					reason?: string | null
+					status?: Database["profiles"]["Enums"]["application_status"]
+					user_id: string
+				}
+				Update: {
+					created_at?: string
+					decided_at?: string | null
+					decided_by?: string | null
+					id?: never
+					message?: string
+					reason?: string | null
+					status?: Database["profiles"]["Enums"]["application_status"]
+					user_id?: string
+				}
+				Relationships: [
+					{
+						foreignKeyName: "scripter_applications_user_id_fkey"
+						columns: ["user_id"]
+						isOneToOne: false
+						referencedRelation: "profiles"
+						referencedColumns: ["id"]
+					}
+				]
+			}
 		}
 		Views: {
 			[_ in never]: never
 		}
 		Functions: {
+			apply_for_scripter: { Args: { p_message: string }; Returns: number }
 			clean_avatar: { Args: { url: string }; Returns: string }
 			clean_username: { Args: { id: string; name: string }; Returns: string }
+			decide_scripter_application: {
+				Args: {
+					p_admin: string
+					p_application: number
+					p_approve: boolean
+					p_reason: string
+				}
+				Returns: undefined
+			}
 			get_provider_id: {
 				Args: { provider: string; user_id: string }
 				Returns: string
@@ -744,6 +796,7 @@ export type Database = {
 			}
 			has_accepted_terms: { Args: { user_id: string }; Returns: boolean }
 			is_banned: { Args: { user_id: string }; Returns: boolean }
+			is_scripter_eligible: { Args: { p_user: string }; Returns: boolean }
 			is_role:
 				| {
 						Args: { target_role: Database["profiles"]["Enums"]["roles"] }
@@ -776,9 +829,17 @@ export type Database = {
 				}
 				Returns: boolean
 			}
+			scripter_progress: {
+				Args: { p_user: string }
+				Returns: {
+					script_id: string
+					users: number
+				}[]
+			}
 			uid: { Args: Record<PropertyKey, never>; Returns: string }
 		}
 		Enums: {
+			application_status: "pending" | "approved" | "rejected"
 			roles: "user" | "contributor" | "tester" | "scripter" | "moderator" | "administrator"
 		}
 		CompositeTypes: {
@@ -838,6 +899,10 @@ export type Database = {
 					max_share_code_days: number
 					redeem_max_failures: number
 					redeem_window_minutes: number
+					scripter_min_minutes: number
+					scripter_min_scripts: number
+					scripter_min_users: number
+					scripter_reapply_days: number
 				}
 				ComputedFields: never
 				Insert: {
@@ -848,6 +913,10 @@ export type Database = {
 					max_share_code_days?: number
 					redeem_max_failures?: number
 					redeem_window_minutes?: number
+					scripter_min_minutes?: number
+					scripter_min_scripts?: number
+					scripter_min_users?: number
+					scripter_reapply_days?: number
 				}
 				Update: {
 					id?: boolean
@@ -857,6 +926,10 @@ export type Database = {
 					max_share_code_days?: number
 					redeem_max_failures?: number
 					redeem_window_minutes?: number
+					scripter_min_minutes?: number
+					scripter_min_scripts?: number
+					scripter_min_users?: number
+					scripter_reapply_days?: number
 				}
 				Relationships: []
 			}
@@ -2310,6 +2383,7 @@ export const Constants = {
 	},
 	profiles: {
 		Enums: {
+			application_status: ["pending", "approved", "rejected"],
 			roles: ["user", "contributor", "tester", "scripter", "moderator", "administrator"]
 		}
 	},

@@ -4,8 +4,61 @@ import { errorRef } from "#lib/server/supabase.server"
 import { UUID } from "#lib/utils"
 import { fail, redirect } from "@sveltejs/kit"
 
-export const load = async ({ locals: { user, supabaseServer } }) => {
+const MAX_APPLICATION_CHARS = 2000
+
+async function scripterStatus(userId: string, supabaseServer: App.Locals["supabaseServer"]) {
+	const [progress, config, application] = await Promise.all([
+		supabaseServer.schema("profiles").rpc("scripter_progress", { p_user: userId }),
+		supabaseServer
+			.schema("scripts")
+			.from("config")
+			.select("scripter_min_scripts, scripter_min_users, scripter_min_minutes, scripter_reapply_days")
+			.single(),
+		supabaseServer
+			.schema("profiles")
+			.from("scripter_applications")
+			.select("id, status, created_at, decided_at, reason")
+			.eq("user_id", userId)
+			.order("created_at", { ascending: false })
+			.limit(1)
+			.maybeSingle()
+	])
+	if (progress.error || config.error || application.error) return null
+
+	const ids = progress.data.map((p) => p.script_id)
+	const { data: scripts } = ids.length
+		? await supabaseServer.schema("scripts").from("scripts").select("id, title, url").in("id", ids)
+		: { data: [] }
+	const named = new Map((scripts ?? []).map((s) => [s.id, s]))
+	const rules = config.data
+	const scriptsProgress = progress.data
+		.map((p) => ({
+			...p,
+			title: named.get(p.script_id)?.title ?? "a script",
+			url: named.get(p.script_id)?.url ?? null
+		}))
+		.sort((a, b) => b.users - a.users)
+	const qualifying = scriptsProgress.filter((p) => p.users >= rules.scripter_min_users).length
+	const last = application.data
+	const reapplyAt =
+		last?.status === "rejected" && last.decided_at
+			? new Date(new Date(last.decided_at).getTime() + rules.scripter_reapply_days * 86_400_000).toISOString()
+			: null
+	const waiting = reapplyAt !== null && new Date(reapplyAt).getTime() > Date.now()
+
+	return {
+		rules,
+		scripts: scriptsProgress,
+		qualifying,
+		application: last,
+		reapplyAt: waiting ? reapplyAt : null,
+		canApply: qualifying >= rules.scripter_min_scripts && last?.status !== "pending" && !waiting
+	}
+}
+
+export const load = async ({ locals: { user, getProfile, supabaseServer } }) => {
 	if (!user) redirect(303, "/")
+	const profile = await getProfile()
 
 	const payments = supabaseServer.schema("payments")
 	const [account, ledger, blockers, running, ended] = await Promise.all([
@@ -56,11 +109,39 @@ export const load = async ({ locals: { user, supabaseServer } }) => {
 		})),
 		blockers,
 		running: (running.data ?? []).map(withScript),
-		ended: (ended.data ?? []).map(withScript)
+		ended: (ended.data ?? []).map(withScript),
+		scripter: profile?.role === "contributor" ? await scripterStatus(user.id, supabaseServer) : null
 	}
 }
 
 export const actions = {
+	apply: async ({ request, locals: { user, supabaseServer } }) => {
+		if (!user) return fail(401, { applyMessage: "You need to login.", applyError: true })
+		const message = String((await request.formData()).get("message") ?? "").trim()
+		if (!message)
+			return fail(400, { applyMessage: "Tell us about yourself and your scripts.", applyError: true })
+		if (message.length > MAX_APPLICATION_CHARS)
+			return fail(400, {
+				applyMessage: `Keep it under ${MAX_APPLICATION_CHARS} characters.`,
+				applyError: true
+			})
+
+		const { error: err } = await supabaseServer
+			.schema("profiles")
+			.rpc("apply_for_scripter", { p_message: message })
+		const refusals: Record<string, string> = {
+			"42501": "Only contributors can apply.",
+			"23514": "You don't have enough scripts with users yet.",
+			"23505": "You already have an application waiting for review.",
+			"55000": "Your last application was rejected recently. Try again later."
+		}
+		if (err?.code && err.code in refusals)
+			return fail(400, { applyMessage: refusals[err.code], applyError: true })
+		if (err)
+			return fail(500, { applyMessage: errorRef("Could not send your application", err), applyError: true })
+		return { applyMessage: "Sent. An administrator will review it.", applyError: false }
+	},
+
 	// The database checks the session is the user's; the loader stops the script at its next heartbeat
 	stop: async ({ request, locals: { user, supabaseServer } }) => {
 		if (!user) return fail(401, { stopMessage: "You need to login.", stopError: true })

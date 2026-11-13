@@ -32,6 +32,66 @@
 		</p>
 	</header>
 
+	{#if data.scripter}
+		{@const status = data.scripter}
+		<section class="nv-float flex flex-col gap-3">
+			<span class="nv-title">become a scripter</span>
+			<p class="nv-dim">
+				Scripters publish official scripts and can sell them. You can apply once {status.rules
+					.scripter_min_scripts}
+				of your scripts have each been run by {status.rules.scripter_min_users} other people for at least
+				{status.rules.scripter_min_minutes} minutes in one session. Approval unpublishes your scripts so you can
+				release them as official.
+			</p>
+			<p>
+				<b
+					>{Math.min(status.qualifying, status.rules.scripter_min_scripts)} / {status.rules
+						.scripter_min_scripts}</b
+				>
+				scripts qualify
+			</p>
+			<ul class="flex flex-col gap-1 text-sm">
+				{#each status.scripts as script (script.script_id)}
+					<li class="flex flex-wrap items-baseline gap-x-3">
+						{#if script.url}
+							<a href="/scripts/{script.url}">{script.title}</a>
+						{:else}
+							<span>{script.title}</span>
+						{/if}
+						<span class={script.users >= status.rules.scripter_min_users ? "text-success-400" : "nv-dim"}>
+							{script.users} / {status.rules.scripter_min_users} users
+						</span>
+					</li>
+				{/each}
+			</ul>
+
+			{#if status.application?.status === "pending"}
+				<p class="nv-dim">
+					Your application from {fmt.dateTime(status.application.created_at)} is waiting for review.
+				</p>
+			{:else if status.application?.status === "rejected"}
+				<p class="text-error-400">Your last application was rejected: {status.application.reason}</p>
+				{#if status.reapplyAt}
+					<p class="nv-dim">You can apply again from {fmt.dateTime(status.reapplyAt)}.</p>
+				{/if}
+			{/if}
+
+			{#if form && "applyMessage" in form}
+				<small class={form.applyError ? "text-error-400" : "text-success-400"}>{form.applyMessage}</small>
+			{/if}
+
+			{#if status.canApply}
+				<form class="flex flex-col gap-3" method="POST" action="?/apply" use:enhance>
+					<label class="label">
+						<span class="label-text">why you, and what you plan to publish</span>
+						<textarea class="input min-h-32" name="message" maxlength="2000" required></textarea>
+					</label>
+					<button type="submit" class="btn self-start">apply</button>
+				</form>
+			{/if}
+		</section>
+	{/if}
+
 	<section class="nv-float flex flex-col items-start gap-3">
 		<span class="nv-title">balance</span>
 		<p class="text-lg font-bold">{fmt.credits(data.microcredits, true)}</p>

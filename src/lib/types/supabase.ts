@@ -762,7 +762,6 @@ export type Database = {
 					{
 						foreignKeyName: "scripter_applications_user_id_fkey"
 						columns: ["user_id"]
-						isOneToOne: false
 						referencedRelation: "profiles"
 						referencedColumns: ["id"]
 					}
@@ -796,7 +795,6 @@ export type Database = {
 			}
 			has_accepted_terms: { Args: { user_id: string }; Returns: boolean }
 			is_banned: { Args: { user_id: string }; Returns: boolean }
-			is_scripter_eligible: { Args: { p_user: string }; Returns: boolean }
 			is_role:
 				| {
 						Args: { target_role: Database["profiles"]["Enums"]["roles"] }
@@ -809,6 +807,7 @@ export type Database = {
 						}
 						Returns: boolean
 				  }
+			is_scripter_eligible: { Args: { p_user: string }; Returns: boolean }
 			log_impersonation: {
 				Args: { p_admin: string; p_user: string }
 				Returns: undefined
@@ -820,6 +819,13 @@ export type Database = {
 				}
 				Returns: boolean
 			}
+			scripter_progress: {
+				Args: { p_user: string }
+				Returns: {
+					script_id: string
+					users: number
+				}[]
+			}
 			set_banned: {
 				Args: {
 					p_admin: string
@@ -828,13 +834,6 @@ export type Database = {
 					p_user: string
 				}
 				Returns: boolean
-			}
-			scripter_progress: {
-				Args: { p_user: string }
-				Returns: {
-					script_id: string
-					users: number
-				}[]
 			}
 			uid: { Args: Record<PropertyKey, never>; Returns: string }
 		}

@@ -8,6 +8,7 @@
 </script>
 
 <FaqAnswer {question}>
-	No. You just pick a script, press start and let it run. If you do like to code, you can write your own
-	scripts too.
+	No. You just pick a script, press start and let it run. If you want a script that doesn't exist yet, you can
+	write your own, or <a href="/tutorials/write-scripts-with-an-ai-agent">let an AI agent write and test it</a>
+	with you from the loader.
 </FaqAnswer>

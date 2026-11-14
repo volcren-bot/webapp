@@ -47,6 +47,7 @@
 				community={script.community}
 				granted={script.granted}
 				authorBanned={script.authorBanned}
+				queueable={script.queueable}
 			/>
 			<span class="nv-pill" style="color: {STAGE_COLORS[script.stage]}">{script.stage}</span>
 			{#each script.categories as category (category)}

@@ -101,6 +101,13 @@
 				{/each}
 			</select>
 		</label>
+		<label
+			class="flex h-[2.25em] cursor-pointer items-center gap-2"
+			title="Scripts the loader can run one after another in a queue"
+		>
+			<input type="checkbox" name="queueable" value="1" checked={filters.queueable} />
+			<span>queueable</span>
+		</label>
 		{#if profile}
 			<label class="flex h-[2.25em] cursor-pointer items-center gap-2">
 				<input type="checkbox" name="mine" value="1" checked={filters.mine} />
@@ -171,6 +178,7 @@
 									community={script.community}
 									granted={script.granted}
 									authorBanned={script.authorBanned}
+									queueable={script.queueable}
 								/>
 								{#if !script.community && (!script.published || !script.live)}
 									<span class="text-(--tn-orange)">{script.published ? "no revision" : "draft"}</span>

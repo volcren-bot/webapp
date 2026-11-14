@@ -10,7 +10,10 @@ export type CachedScript = Pick<
 	"id" | "url" | "title" | "description" | "content" | "published"
 > & {
 	metadata: Pick<ScriptTables["metadata"]["Row"], "type" | "categories" | "stage" | "price">
-	protected: Pick<ScriptTables["protected"]["Row"], "author" | "revision" | "created_at" | "updated_at">
+	protected: Pick<
+		ScriptTables["protected"]["Row"],
+		"author" | "revision" | "created_at" | "updated_at" | "queueable"
+	>
 	/** The author's username, so listing the scripts needs no get_authors call. */
 	author: string
 }
@@ -35,7 +38,7 @@ async function fetchPublic(id?: string): Promise<CachedScript[]> {
 		.select(
 			`id, url, title, description, content, published,
 			metadata!inner(type, categories, stage, price),
-			protected!inner(author, revision, created_at, updated_at)`
+			protected!inner(author, revision, created_at, updated_at, queueable)`
 		)
 		.eq("published", true)
 		.in("metadata.stage", ["beta", "stable"])

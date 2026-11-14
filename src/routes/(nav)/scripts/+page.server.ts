@@ -16,7 +16,7 @@ type ListedScript = Pick<
 	"id" | "url" | "title" | "description" | "published" | "is_community" | "is_granted" | "author_banned"
 > & {
 	metadata: Pick<ScriptTables["metadata"]["Row"], "type" | "categories" | "stage" | "price">
-	protected: Pick<ScriptTables["protected"]["Row"], "author" | "revision" | "updated_at">
+	protected: Pick<ScriptTables["protected"]["Row"], "author" | "revision" | "updated_at" | "queueable">
 }
 
 /** What the list shows of a cached script: the official ones anyone can see. */
@@ -46,6 +46,7 @@ export const load = async ({ url, locals: { supabaseServer, user, getProfile } }
 	const category = CATEGORIES.find((c) => c === url.searchParams.get("category"))
 	const type = TYPES.find((t) => t === url.searchParams.get("type"))
 	const mine = url.searchParams.get("mine") === "1" && user != null
+	const queueable = url.searchParams.get("queueable") === "1"
 	const profile = await getProfile()
 	// Testers see every community script, so they get their own filter instead of having the list flooded
 	const canBrowseCommunity = roleAtLeast(profile?.role, "tester")
@@ -57,7 +58,7 @@ export const load = async ({ url, locals: { supabaseServer, user, getProfile } }
 			.schema("scripts")
 			.from("scripts")
 			.select(
-				"id, url, title, description, published, is_community, is_granted, author_banned, metadata!inner(type, categories, stage, price), protected!inner(author, revision, updated_at)"
+				"id, url, title, description, published, is_community, is_granted, author_banned, metadata!inner(type, categories, stage, price), protected!inner(author, revision, updated_at, queueable)"
 			)
 		if (q) {
 			const pattern = `"%${likeEscape(q).replace(/["\\]/g, "\\$&")}%"`
@@ -66,6 +67,7 @@ export const load = async ({ url, locals: { supabaseServer, user, getProfile } }
 		if (category) query = query.contains("metadata.categories", [category])
 		if (type) query = query.eq("metadata.type", type)
 		if (mine) query = query.eq("protected.author", user.id)
+		if (queueable) query = query.eq("protected.queueable", true)
 		return query
 	}
 
@@ -104,6 +106,7 @@ export const load = async ({ url, locals: { supabaseServer, user, getProfile } }
 		if (category && !s.metadata.categories.includes(category)) continue
 		if (type && s.metadata.type !== type) continue
 		if (mine && s.protected.author !== user?.id) continue
+		if (queueable && !s.protected.queueable) continue
 		found.set(s.id, listed(s))
 		names.set(s.id, s.author)
 	}
@@ -132,6 +135,7 @@ export const load = async ({ url, locals: { supabaseServer, user, getProfile } }
 			stage: s.metadata.stage,
 			price: s.metadata.price,
 			live: s.protected.revision > 0,
+			queueable: s.protected.queueable,
 			updatedAt: s.protected.updated_at,
 			author: names.get(s.id) ?? "unknown",
 			own: s.protected.author === user?.id,
@@ -140,7 +144,12 @@ export const load = async ({ url, locals: { supabaseServer, user, getProfile } }
 			authorBanned: s.author_banned === true
 		}))
 
-	return { scripts, error: null, filters: { q, category, type, mine, community }, canBrowseCommunity }
+	return {
+		scripts,
+		error: null,
+		filters: { q, category, type, mine, community, queueable },
+		canBrowseCommunity
+	}
 }
 
 export const actions = {

@@ -1,12 +1,12 @@
 import { error, json } from "@sveltejs/kit"
-import { createRevision, filesProblem, storeRevision } from "#lib/revisions"
+import { createRevision, filesProblem, readManifest, storeRevision } from "#lib/revisions"
 import { hashDeployToken } from "#lib/server/deploy.server"
 import { refreshScript } from "#lib/server/scripts.cache"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
 import { errorRef } from "#lib/server/supabase.server"
 import { localeFrom, UUID } from "#lib/utils"
 
-/** CI uploads a revision with a deploy token: curl -H "Authorization: Bearer $TOKEN" -H "Origin: <site>" -F files=@main.luau -F entry=main.luau <site>/api/scripts/<id>/revisions (entry optional for one file; Origin passes the CSRF check). */
+/** CI uploads a revision with a deploy token: curl -H "Authorization: Bearer $TOKEN" -H "Origin: <site>" -F files=@main.luau -F files=@manifest.json -F entry=main.luau <site>/api/scripts/<id>/revisions (entry optional for one file; Origin passes the CSRF check). */
 export const POST = async ({ request, params }) => {
 	const token = request.headers.get("authorization")?.match(/^Bearer (\S+)$/)?.[1]
 	if (!token) error(401, "Missing deploy token")
@@ -23,10 +23,11 @@ export const POST = async ({ request, params }) => {
 	if (tokenErr) error(500, errorRef("Could not check the deploy token", tokenErr))
 
 	const form = await request.formData().catch(() => null)
-	const files = (form?.getAll("files") ?? []).filter((entry) => entry instanceof File)
+	const uploaded = (form?.getAll("files") ?? []).filter((entry) => entry instanceof File)
+	if (!uploaded.length) error(400, 'Send the revision\'s files as multipart "files" fields.')
+	const { modules: files, manifest, problem: manifestProblem } = await readManifest(uploaded)
+	if (manifestProblem) error(400, manifestProblem)
 	const names = files.map((file) => file.name)
-
-	if (!files.length) error(400, 'Send the revision\'s files as multipart "files" fields.')
 	const entryField = form?.get("entry")
 	const entry =
 		typeof entryField === "string" && entryField ? entryField : files.length === 1 ? names[0] : null
@@ -35,7 +36,7 @@ export const POST = async ({ request, params }) => {
 	const problem = filesProblem(files, localeFrom(request))
 	if (problem) error(400, problem)
 
-	const created = await createRevision(admin, params.id, files, entry)
+	const created = await createRevision(admin, params.id, files, entry, manifest)
 	if (created.error?.code === "23505") {
 		error(409, "Another revision of this script is still pending. Discard it before uploading a new one.")
 	}

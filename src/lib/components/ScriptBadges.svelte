@@ -1,12 +1,14 @@
 <script lang="ts">
 	import Ban from "@lucide/svelte/icons/ban"
 	import Gift from "@lucide/svelte/icons/gift"
+	import ListOrdered from "@lucide/svelte/icons/list-ordered"
 
 	let {
 		community,
 		granted = false,
-		authorBanned = false
-	}: { community: boolean; granted?: boolean; authorBanned?: boolean } = $props()
+		authorBanned = false,
+		queueable = false
+	}: { community: boolean; granted?: boolean; authorBanned?: boolean; queueable?: boolean } = $props()
 </script>
 
 <span
@@ -22,6 +24,14 @@
 		title="Added to your account with a share code"
 	>
 		<Gift class="size-4 shrink-0" /> shared with you
+	</span>
+{/if}
+{#if queueable}
+	<span
+		class="nv-pill flex items-center gap-1 text-(--tn-cyan)"
+		title="The loader can run it one after another with other scripts in a queue"
+	>
+		<ListOrdered class="size-4 shrink-0" /> queueable
 	</span>
 {/if}
 {#if authorBanned}

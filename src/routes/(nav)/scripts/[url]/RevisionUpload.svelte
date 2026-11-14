@@ -3,17 +3,40 @@
 	import Upload from "@lucide/svelte/icons/upload"
 	import { fmt } from "#lib/format.svelte.js"
 	import { getSupabaseBrowser } from "#lib/supabase.browser"
-	import { createRevision, filesProblem, storeRevision } from "#lib/revisions"
+	import { createRevision, filesProblem, MANIFEST_FILE, readManifest, storeRevision } from "#lib/revisions"
+	import type { Json } from "#lib/types/supabase"
 
 	let { id }: { id: string } = $props()
 
+	let chosenFiles = $state<File[]>([])
 	let files = $state<File[]>([])
+	let manifest = $state<Json | null>(null)
+	let manifestProblem = $state<string | null>(null)
 	let chosen = $state("")
 	let busy = $state(false)
 	let status = $state("")
 	let failed = $state(false)
 
-	const problem = $derived(filesProblem(files, fmt.locale))
+	const problem = $derived(manifestProblem ?? (chosenFiles.length ? filesProblem(files, fmt.locale) : null))
+	const queueable = $derived(
+		typeof manifest === "object" &&
+			manifest !== null &&
+			!Array.isArray(manifest) &&
+			manifest.queueable === true
+	)
+
+	let picks = 0
+
+	async function choose(list: File[]) {
+		const pick = ++picks
+		chosenFiles = list
+		const read = await readManifest(list)
+		if (pick !== picks) return
+		files = read.modules
+		manifest = read.manifest
+		manifestProblem = read.problem
+		chosen = files.find((f) => f.name === "main.luau")?.name ?? ""
+	}
 
 	// One file is the entry. With several, the author picks (main.luau is offered first if there is one).
 	const entry = $derived(
@@ -28,7 +51,7 @@
 		const supabase = await getSupabaseBrowser()
 		try {
 			status = "creating revision..."
-			const created = await createRevision(supabase, id, files, entry)
+			const created = await createRevision(supabase, id, files, entry, manifest)
 			if (created.error) throw created.error
 			const revision = created.data.revision
 
@@ -39,7 +62,7 @@
 			})
 
 			status = `Revision ${revision} is live.`
-			files = []
+			await choose([])
 		} catch (e) {
 			failed = true
 			status = `Upload failed: ${e instanceof Error ? e.message : "unknown error"}`
@@ -58,10 +81,7 @@
 			type="file"
 			multiple
 			disabled={busy}
-			onchange={(e) => {
-				files = [...(e.currentTarget.files ?? [])]
-				chosen = files.find((f) => f.name === "main.luau")?.name ?? ""
-			}}
+			onchange={(e) => choose([...(e.currentTarget.files ?? [])])}
 		/>
 	</label>
 	{#if files.length > 1}
@@ -72,6 +92,11 @@
 				{#each files as f (f.name)}<option value={f.name}>{f.name}</option>{/each}
 			</select>
 		</label>
+	{/if}
+	{#if manifest && !manifestProblem}
+		<small class="nv-dim"
+			>{MANIFEST_FILE} is stored with the revision{queueable ? ", which the loader can queue" : ""}.</small
+		>
 	{/if}
 	{#if problem}<small class="text-error-400">{problem}</small>{/if}
 	{#if status}

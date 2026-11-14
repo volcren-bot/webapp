@@ -38,7 +38,7 @@ type ScriptPage = Pick<
 	metadata: Pick<ScriptTables["metadata"]["Row"], "type" | "categories" | "stage" | "price"> | null
 	protected: Pick<
 		ScriptTables["protected"]["Row"],
-		"author" | "revision" | "created_at" | "updated_at"
+		"author" | "revision" | "created_at" | "updated_at" | "queueable"
 	> | null
 }
 
@@ -71,7 +71,7 @@ export const load = async ({ params, url, locals: { supabaseServer, user, getPro
 				.select(
 					`id, url, title, description, content, published, is_community, is_granted, author_banned,
 			metadata(type, categories, stage, price),
-			protected(author, revision, created_at, updated_at)`
+			protected(author, revision, created_at, updated_at, queueable)`
 				)
 				.eq("url", params.url)
 				.maybeSingle()
@@ -228,6 +228,7 @@ export const load = async ({ params, url, locals: { supabaseServer, user, getPro
 			published: script.published,
 			...metadata,
 			revision: info.revision,
+			queueable: info.queueable,
 			createdAt: info.created_at,
 			updatedAt: info.updated_at,
 			author: cached?.author ?? author?.data?.username ?? "unknown",

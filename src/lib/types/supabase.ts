@@ -1083,6 +1083,7 @@ export type Database = {
 			protected: {
 				Row: {
 					author: string
+					broken: boolean
 					created_at: string
 					id: string
 					last_revision: number
@@ -1093,6 +1094,7 @@ export type Database = {
 				ComputedFields: never
 				Insert: {
 					author?: string
+					broken?: boolean
 					created_at?: string
 					id: string
 					last_revision?: number
@@ -1102,6 +1104,7 @@ export type Database = {
 				}
 				Update: {
 					author?: string
+					broken?: boolean
 					created_at?: string
 					id?: string
 					last_revision?: number
@@ -1260,36 +1263,51 @@ export type Database = {
 			}
 			versions: {
 				Row: {
+					checked_at: string | null
+					checked_host: number | null
+					checked_lib: string | null
 					created_at: string
 					entry: string
 					files: string[]
 					id: string
 					manifest: Json | null
+					problems: Json | null
 					published_at: string | null
 					revision: number
+					requires_host: number | null
 					sizes: number[]
 					status: Database["scripts"]["Enums"]["version_status"]
 				}
 				ComputedFields: never
 				Insert: {
+					checked_at?: string | null
+					checked_host?: number | null
+					checked_lib?: string | null
 					created_at?: string
 					entry: string
 					files: string[]
 					id: string
 					manifest?: Json | null
+					problems?: Json | null
 					published_at?: string | null
 					revision: number
+					requires_host?: number | null
 					sizes?: number[]
 					status?: Database["scripts"]["Enums"]["version_status"]
 				}
 				Update: {
+					checked_at?: string | null
+					checked_host?: number | null
+					checked_lib?: string | null
 					created_at?: string
 					entry?: string
 					files?: string[]
 					id?: string
 					manifest?: Json | null
+					problems?: Json | null
 					published_at?: string | null
 					revision?: number
+					requires_host?: number | null
 					sizes?: number[]
 					status?: Database["scripts"]["Enums"]["version_status"]
 				}
@@ -1430,6 +1448,16 @@ export type Database = {
 			}
 			publish_version: {
 				Args: { revision: number; script_id: string }
+				Returns: undefined
+			}
+			record_check: {
+				Args: {
+					p_host: number
+					p_lib: string
+					p_problems: Json
+					p_revision: number
+					p_script: string
+				}
 				Returns: undefined
 			}
 			redeem_share_code: {

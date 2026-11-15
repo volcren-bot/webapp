@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { API_URL } from "$app/env/public"
 import { ENCRYPTION_OVERHEAD, encryptFile, encryptedSize, keyHex, newRevisionKey } from "#lib/encryption"
 import { megabytes } from "#lib/scripts"
 import type { Database, Json } from "#lib/types/supabase"
@@ -9,6 +10,32 @@ export const MAX_FILE_BYTES = 5 * 1024 * 1024 - ENCRYPTION_OVERHEAD
 const UPLOAD_CONCURRENCY = 6
 
 type Client = SupabaseClient<Database>
+
+export interface RevisionProblem {
+	file: string
+	line: number
+	column: number
+	message: string
+}
+
+export class RevisionCheckFailed extends Error {
+	constructor(
+		readonly lib: string,
+		readonly problems: RevisionProblem[]
+	) {
+		super(`The revision doesn't type-check against lib ${lib}.`)
+	}
+}
+
+async function checkRevision(id: string, revision: number, bearer: string) {
+	const response = await fetch(new URL(`/scripts/${id}/revisions/${revision}/check`, API_URL), {
+		method: "POST",
+		headers: { authorization: `Bearer ${bearer}` }
+	})
+	const body = await response.json().catch(() => null)
+	if (!response.ok) throw new Error(body?.error ?? `The script check answered ${response.status}.`)
+	if (!body.passed) throw new RevisionCheckFailed(body.lib, body.problems)
+}
 
 /** A file path inside a revision: letters, digits, _ . - and / between segments, no "." or ".." segment, at most 200 characters (as in scripts.valid_files). */
 const validFileName = (name: string) =>
@@ -137,12 +164,13 @@ export const createRevision = (
 		.select("revision")
 		.single()
 
-/** Stores the files encrypted under a fresh key, which the database keeps for the loader, and makes the revision live. A pending revision blocks the next one, so any failure discards it before rethrowing. */
+/** Stores the files encrypted under a fresh key, which the database keeps for the loader, has the API type-check them and makes the revision live. A pending revision blocks the next one, so any failure, a failed check too, discards it before rethrowing. */
 export async function storeRevision(
 	supabase: Client,
 	id: string,
 	revision: number,
 	files: File[],
+	bearer: string,
 	onUploaded?: (done: number) => void
 ) {
 	const scripts = supabase.schema("scripts")
@@ -160,6 +188,7 @@ export async function storeRevision(
 			onUploaded?.(++done)
 		})
 
+		await checkRevision(id, revision, bearer)
 		const published = await scripts.rpc("publish_version", { script_id: id, revision })
 		if (published.error) throw published.error
 	} catch (e) {

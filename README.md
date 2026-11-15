@@ -24,7 +24,7 @@ A SvelteKit starter with Supabase auth, Tailwind 4 UI, dark mode.
    (`Navigation.svelte` uses Discord by default, change the `provider` there to use another one).
    Add `http://localhost:5173/auth/callback/` to the allowed redirect URLs.
 
-3. Copy `.env.example` to `.env` and fill in your Supabase URL and anon key.
+3. Copy `.env.example` to `.env` and fill in your Supabase URL and anon key, and `API_URL`, the API that type-checks revisions on upload.
 
 4. Start the dev server:
 
@@ -54,6 +54,10 @@ Every script running at once on an account past the oldest pays `payments.config
 ## Revision manifests
 
 A `manifest.json` among a revision's files (browser upload or `POST /api/scripts/[id]/revisions`) is taken out before upload and stored unencrypted in `scripts.versions.manifest`, never as a module, so the loader can read a script's settings form, whether it is queueable and its queue goals without starting a billed session. `manifestProblem` in `#lib/revisions` mirrors the database's `scripts.valid_manifest` so an author sees the problem before anything is created; change both together. The store's queueable badge and filter read `protected.queueable`, which the database copies from the live revision.
+
+## Revision checks
+
+Both upload paths (`storeRevision` in `#lib/revisions`) call the API's `POST /scripts/:id/revisions/:revision/check` after the files are stored and before `publish_version`, which refuses a revision that hasn't passed. The browser sends the author's access token straight to `API_URL` (allowed in the CSP's `connect-src`); `POST /api/scripts/[id]/revisions` forwards the deploy token it was called with and answers 422 with the `problems` when the check fails. A failed check discards the revision like any other failure. When a newer lib breaks a live revision, the API marks the script broken: the public script cache leaves it out (`protected.broken`), and its page tells the author and moderators why, with each revision's problems in the revision history.
 
 ## Crypto checkout
 

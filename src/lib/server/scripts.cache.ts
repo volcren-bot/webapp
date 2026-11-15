@@ -4,7 +4,7 @@ import { supabaseAdmin } from "./supabase.admin"
 
 type ScriptTables = Database["scripts"]["Tables"]
 
-/** A script anyone may see: official, published, at stage beta or stable, with a live revision and an author in good standing. */
+/** A script anyone may see: official, published, at stage beta or stable, with a live revision that passed the script check and an author in good standing. */
 export type CachedScript = Pick<
 	ScriptTables["scripts"]["Row"],
 	"id" | "url" | "title" | "description" | "content" | "published"
@@ -12,7 +12,7 @@ export type CachedScript = Pick<
 	metadata: Pick<ScriptTables["metadata"]["Row"], "type" | "categories" | "stage" | "price">
 	protected: Pick<
 		ScriptTables["protected"]["Row"],
-		"author" | "revision" | "created_at" | "updated_at" | "queueable"
+		"author" | "revision" | "created_at" | "updated_at" | "queueable" | "broken"
 	>
 	/** The author's username, so listing the scripts needs no get_authors call. */
 	author: string
@@ -38,11 +38,12 @@ async function fetchPublic(id?: string): Promise<CachedScript[]> {
 		.select(
 			`id, url, title, description, content, published,
 			metadata!inner(type, categories, stage, price),
-			protected!inner(author, revision, created_at, updated_at, queueable)`
+			protected!inner(author, revision, created_at, updated_at, queueable, broken)`
 		)
 		.eq("published", true)
 		.in("metadata.stage", ["beta", "stable"])
 		.gt("protected.revision", 0)
+		.eq("protected.broken", false)
 	if (id) query = query.eq("id", id)
 
 	const { data: rows, error } = await query.overrideTypes<Row[], { merge: false }>()

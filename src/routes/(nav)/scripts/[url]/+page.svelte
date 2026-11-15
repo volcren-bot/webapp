@@ -4,6 +4,7 @@
 	import Head from "#lib/components/Head.svelte"
 	import UUID from "#lib/components/UUID.svelte"
 	import RevisionUpload from "./RevisionUpload.svelte"
+	import type { RevisionProblem } from "#lib/revisions"
 	import ShareCodes from "./ShareCodes.svelte"
 	import ScriptBadges from "#lib/components/ScriptBadges.svelte"
 	import Price from "#lib/components/Price.svelte"
@@ -180,6 +181,12 @@
 
 		<div class="nv-float flex flex-col gap-3">
 			<span class="nv-title">revisions</span>
+			{#if script.broken}
+				<p class="text-error-400">
+					Hidden from users: the live revision doesn't type-check against the newest lib. Only you and
+					moderators can see or run this script until a fixed revision is live. Its problems are listed below.
+				</p>
+			{/if}
 			<p class="nv-dim">Uploading creates a new revision and makes it live once every file is stored.</p>
 			{#await data.owner.revisions}
 				<p class="nv-dim">Loading revisions...</p>
@@ -210,6 +217,21 @@
 								<span class="nv-dim">{version.files.length} file{version.files.length === 1 ? "" : "s"}</span>
 								<span class="nv-dim">{version.files.join(", ")}</span>
 								<span class="nv-dim ml-auto">{fmt.dateTime(version.created_at)}</span>
+								{#if Array.isArray(version.problems) && version.problems.length}
+									<details class="w-full">
+										<summary class="text-error-400">
+											{version.problems.length} problem{version.problems.length === 1 ? "" : "s"} with lib {version.checked_lib}
+										</summary>
+										<ul class="flex flex-col gap-1">
+											{#each version.problems as unknown as RevisionProblem[] as p, i (i)}
+												<li>
+													<code class="nv-dim">{p.file}:{p.line}:{p.column}</code>
+													<pre class="whitespace-pre-wrap">{p.message}</pre>
+												</li>
+											{/each}
+										</ul>
+									</details>
+								{/if}
 							</li>
 						{/each}
 					</ul>

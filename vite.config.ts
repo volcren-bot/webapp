@@ -16,7 +16,8 @@ const sveltekitConfig: Config = {
 				"ws://localhost:*",
 				"http://localhost:*",
 				"https://db.volcren.com",
-				"wss://db.volcren.com"
+				"wss://db.volcren.com",
+				"https://api.volcren.com"
 			],
 			"script-src": ["self", "unsafe-inline", "wasm-unsafe-eval"],
 			"img-src": [

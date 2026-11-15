@@ -1,5 +1,11 @@
 import { error, json } from "@sveltejs/kit"
-import { createRevision, filesProblem, readManifest, storeRevision } from "#lib/revisions"
+import {
+	createRevision,
+	filesProblem,
+	readManifest,
+	RevisionCheckFailed,
+	storeRevision
+} from "#lib/revisions"
 import { hashDeployToken } from "#lib/server/deploy.server"
 import { refreshScript } from "#lib/server/scripts.cache"
 import { supabaseAdmin } from "#lib/server/supabase.admin"
@@ -46,8 +52,11 @@ export const POST = async ({ request, params }) => {
 
 	const revision = created.data.revision
 	try {
-		await storeRevision(admin, params.id, revision, files)
+		await storeRevision(admin, params.id, revision, files, token)
 	} catch (e) {
+		if (e instanceof RevisionCheckFailed) {
+			return json({ error: e.message, revision, lib: e.lib, problems: e.problems }, { status: 422 })
+		}
 		error(500, errorRef(`Could not publish revision ${revision}`, e))
 	}
 	await refreshScript(params.id)

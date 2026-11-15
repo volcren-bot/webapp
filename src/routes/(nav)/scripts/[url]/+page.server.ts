@@ -38,7 +38,7 @@ type ScriptPage = Pick<
 	metadata: Pick<ScriptTables["metadata"]["Row"], "type" | "categories" | "stage" | "price"> | null
 	protected: Pick<
 		ScriptTables["protected"]["Row"],
-		"author" | "revision" | "created_at" | "updated_at" | "queueable"
+		"author" | "revision" | "created_at" | "updated_at" | "queueable" | "broken"
 	> | null
 }
 
@@ -71,7 +71,7 @@ export const load = async ({ params, url, locals: { supabaseServer, user, getPro
 				.select(
 					`id, url, title, description, content, published, is_community, is_granted, author_banned,
 			metadata(type, categories, stage, price),
-			protected(author, revision, created_at, updated_at, queueable)`
+			protected(author, revision, created_at, updated_at, queueable, broken)`
 				)
 				.eq("url", params.url)
 				.maybeSingle()
@@ -114,7 +114,9 @@ export const load = async ({ params, url, locals: { supabaseServer, user, getPro
 				Promise.all([
 					scripts
 						.from("versions")
-						.select("revision, status, files, created_at, published_at", { count: "exact" })
+						.select("revision, status, files, created_at, published_at, checked_lib, problems", {
+							count: "exact"
+						})
 						.eq("id", script.id)
 						.order("revision", { ascending: false })
 						.range(from, from + REVISIONS_PER_PAGE - 1),
@@ -229,6 +231,7 @@ export const load = async ({ params, url, locals: { supabaseServer, user, getPro
 			...metadata,
 			revision: info.revision,
 			queueable: info.queueable,
+			broken: info.broken,
 			createdAt: info.created_at,
 			updatedAt: info.updated_at,
 			author: cached?.author ?? author?.data?.username ?? "unknown",

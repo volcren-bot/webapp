@@ -377,18 +377,20 @@
 
 		<!-- Loaded only for editors, so visitors don't download the form and validation code -->
 		{#await import("#lib/components/ScriptWizard.svelte") then { default: ScriptWizard }}
-			<ScriptWizard
-				data={data.form}
-				action="?/update"
-				boxed
-				label="Edit script"
-				heading="VOLCREN script editor"
-				confirm="Save these changes?"
-				progress="Saving changes..."
-				minStage={script.stage}
-				community={script.community}
-				authorShare={data.authorShare}
-			/>
+			{#key script.id}
+				<ScriptWizard
+					data={data.form}
+					action="?/update"
+					boxed
+					label="Edit script"
+					heading="VOLCREN script editor"
+					confirm="Save these changes?"
+					progress="Saving changes..."
+					minStage={script.stage}
+					community={script.community}
+					authorShare={data.authorShare}
+				/>
+			{/key}
 		{/await}
 	{/if}
 

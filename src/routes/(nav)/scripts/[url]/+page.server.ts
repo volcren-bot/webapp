@@ -114,9 +114,12 @@ export const load = async ({ params, url, locals: { supabaseServer, user, getPro
 				Promise.all([
 					scripts
 						.from("versions")
-						.select("revision, status, files, created_at, published_at, checked_lib, problems", {
-							count: "exact"
-						})
+						.select(
+							"revision, status, files, created_at, published_at, checked_injector, injector, auto_forward:manifest->auto_forward, problems",
+							{
+								count: "exact"
+							}
+						)
 						.eq("id", script.id)
 						.order("revision", { ascending: false })
 						.range(from, from + REVISIONS_PER_PAGE - 1),

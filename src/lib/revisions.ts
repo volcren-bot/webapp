@@ -20,10 +20,10 @@ export interface RevisionProblem {
 
 export class RevisionCheckFailed extends Error {
 	constructor(
-		readonly lib: string,
+		readonly injector: string,
 		readonly problems: RevisionProblem[]
 	) {
-		super(`The revision doesn't type-check against lib ${lib}.`)
+		super(`The revision doesn't type-check against the SDK of release ${injector}.`)
 	}
 }
 
@@ -34,7 +34,7 @@ async function checkRevision(id: string, revision: number, bearer: string) {
 	})
 	const body = await response.json().catch(() => null)
 	if (!response.ok) throw new Error(body?.error ?? `The script check answered ${response.status}.`)
-	if (!body.passed) throw new RevisionCheckFailed(body.lib, body.problems)
+	if (!body.passed) throw new RevisionCheckFailed(body.injector, body.problems)
 }
 
 /** A file path inside a revision: letters, digits, _ . - and / between segments, no "." or ".." segment, at most 200 characters (as in scripts.valid_files). */
@@ -55,7 +55,7 @@ export function filesProblem(files: { name: string; size: number }[], locale: st
 }
 
 export const MANIFEST_FILE = "manifest.json"
-const MANIFEST_KEYS = ["queueable", "goals", "settings", "finish_grace_minutes"]
+const MANIFEST_KEYS = ["queueable", "goals", "settings", "finish_grace_minutes", "auto_forward"]
 const MAX_MANIFEST_BYTES = 64 * 1024
 const MAX_GOALS = 16
 const MAX_FIELDS = 200
@@ -97,10 +97,12 @@ export function manifestProblem(manifest: unknown) {
 		? `unknown key "${unknown}".`
 		: "queueable" in manifest && typeof manifest.queueable !== "boolean"
 			? "queueable must be true or false."
-			: grace !== undefined && !(Number.isInteger(grace) && Number(grace) >= 1 && Number(grace) <= 120)
-				? "finish_grace_minutes must be a whole number from 1 to 120."
-				: (("goals" in manifest ? goalsProblem(manifest.goals) : null) ??
-					("settings" in manifest ? settingsProblem(manifest.settings) : null))
+			: "auto_forward" in manifest && typeof manifest.auto_forward !== "boolean"
+				? "auto_forward must be true or false."
+				: grace !== undefined && !(Number.isInteger(grace) && Number(grace) >= 1 && Number(grace) <= 120)
+					? "finish_grace_minutes must be a whole number from 1 to 120."
+					: (("goals" in manifest ? goalsProblem(manifest.goals) : null) ??
+						("settings" in manifest ? settingsProblem(manifest.settings) : null))
 	return problem && `${MANIFEST_FILE}: ${problem}`
 }
 

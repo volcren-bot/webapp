@@ -183,8 +183,8 @@
 			<span class="nv-title">revisions</span>
 			{#if script.broken}
 				<p class="text-error-400">
-					Hidden from users: the live revision doesn't type-check against the newest lib. Only you and
-					moderators can see or run this script until a fixed revision is live. Its problems are listed below.
+					Hidden from users: the live revision runs on an injector that is no longer supported. Only you and
+					moderators can see this script, and nobody can run it until a new revision is live.
 				</p>
 			{/if}
 			<p class="nv-dim">Uploading creates a new revision and makes it live once every file is stored.</p>
@@ -216,11 +216,21 @@
 								<span style="color: {statusColor[version.status]}">{version.status}</span>
 								<span class="nv-dim">{version.files.length} file{version.files.length === 1 ? "" : "s"}</span>
 								<span class="nv-dim">{version.files.join(", ")}</span>
+								{#if version.injector}
+									<span class="nv-dim"
+										>runs on {version.injector}{version.auto_forward === false
+											? ", pinned"
+											: ", moves to newer releases it passes"}</span
+									>
+								{/if}
 								<span class="nv-dim ml-auto">{fmt.dateTime(version.created_at)}</span>
 								{#if Array.isArray(version.problems) && version.problems.length}
 									<details class="w-full">
 										<summary class="text-error-400">
-											{version.problems.length} problem{version.problems.length === 1 ? "" : "s"} with lib {version.checked_lib}
+											{version.problems.length} problem{version.problems.length === 1 ? "" : "s"} against release
+											{version.checked_injector}{version.injector
+												? `, still runs on ${version.injector}`
+												: ""}
 										</summary>
 										<ul class="flex flex-col gap-1">
 											{#each version.problems as unknown as RevisionProblem[] as p, i (i)}

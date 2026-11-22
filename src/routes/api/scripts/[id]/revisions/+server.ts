@@ -55,7 +55,7 @@ export const POST = async ({ request, params }) => {
 		await storeRevision(admin, params.id, revision, files, token)
 	} catch (e) {
 		if (e instanceof RevisionCheckFailed) {
-			return json({ error: e.message, revision, lib: e.lib, problems: e.problems }, { status: 422 })
+			return json({ error: e.message, revision, injector: e.injector, problems: e.problems }, { status: 422 })
 		}
 		error(500, errorRef(`Could not publish revision ${revision}`, e))
 	}

@@ -59,6 +59,10 @@ A `manifest.json` among a revision's files (browser upload or `POST /api/scripts
 
 Both upload paths (`storeRevision` in `#lib/revisions`) call the API's `POST /scripts/:id/revisions/:revision/check` after the files are stored and before `publish_version`, which refuses a revision that hasn't passed. The browser sends the author's access token straight to `API_URL` (allowed in the CSP's `connect-src`); `POST /api/scripts/[id]/revisions` forwards the deploy token it was called with and answers 422 with the `injector` it checked against and the `problems` when the check fails. A failed check discards the revision like any other failure. Publishing pins the revision to that client release, and the revision history shows each revision's pin and the problems of its last check. When a live revision has no supported pin (its release was retired), the script is broken: the public script cache leaves it out (`protected.broken`), and its page tells the author and moderators that a new revision has to go live.
 
+## Webhooks
+
+`/account/webhooks` lets contributor+ accounts manage up to 5 webhooks for client releases and the checks of their live scripts. Everything is written through `webhooks.save_endpoint`, which owns the validation; the form checks only what it needs to show a useful message. Tokens and header values are write-only: the page shows that a token is set and the header names, an empty field keeps the stored value, and "remove the token" sends an empty one. The API sends the deliveries; the page lists each webhook's last 10 and queues tests with `webhooks.send_test`. The payload, headers and signature are documented in the API README.
+
 ## Crypto checkout
 
 Credits are bought in EUR through Bitcart (`src/lib/server/bitcart.server.ts`); the payment page (`/credits/[id]`) lists the invoice's methods except lightning and shows each amount in the method's `symbol`, since a token's `currency` is its chain ("eth" for DAI). DAI comes first and is selected on load (`DEFAULT_SYMBOL`), because a stablecoin doesn't move in value between invoice and payment. Which coins are offered is the store's wallets in the Bitcart admin.

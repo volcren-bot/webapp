@@ -92,6 +92,14 @@
 		</section>
 	{/if}
 
+	{#if profile.role !== "user" && !profile.banned_at}
+		<section class="nv-float flex flex-col items-start gap-3">
+			<span class="nv-title">webhooks</span>
+			<p class="nv-dim">Get a POST when the client updates or your live scripts are re-checked against it.</p>
+			<a class="btn" href="/account/webhooks">manage webhooks</a>
+		</section>
+	{/if}
+
 	<section class="nv-float flex flex-col items-start gap-3">
 		<span class="nv-title">balance</span>
 		<p class="text-lg font-bold">{fmt.credits(data.microcredits, true)}</p>

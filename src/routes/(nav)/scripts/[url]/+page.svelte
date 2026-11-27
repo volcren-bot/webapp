@@ -15,12 +15,16 @@
 	import FileCode from "@lucide/svelte/icons/file-code"
 	import Hash from "@lucide/svelte/icons/hash"
 	import Coins from "@lucide/svelte/icons/coins"
+	import Copy from "@lucide/svelte/icons/copy"
+	import Check from "@lucide/svelte/icons/check"
+	import { clipboard } from "#lib/clipboard.svelte.js"
 	import { CATEGORY_ICONS, STAGE_COLORS } from "#lib/scripts"
 	import { metaDescription, withParam } from "#lib/utils"
 	import { page } from "$app/state"
 
 	const { data, form: result } = $props()
 	const script = $derived(data.script)
+	const clip = clipboard()
 	const statusColor = { live: "var(--tn-green)", pending: "var(--tn-yellow)", discarded: "var(--tn-comment)" }
 
 	// Revision pages are a query parameter, so they work without JavaScript and can be linked
@@ -273,11 +277,21 @@
 			</p>
 
 			{#if result?.token}
+				{@const token = result.token}
 				<div class="flex flex-col gap-1">
 					<p class="text-success-400">
 						Token <b>{result.tokenName}</b> created. Copy it now, it won't be shown again:
 					</p>
-					<code class="break-all select-all">{result.token}</code>
+					<div class="flex flex-wrap items-center gap-2">
+						<code class="break-all select-all">{token}</code>
+						<button type="button" class="btn" onclick={() => clip.copy(token)}>
+							{#if clip.copied === token}
+								<Check class="size-4 shrink-0" /> copied
+							{:else}
+								<Copy class="size-4 shrink-0" /> copy
+							{/if}
+						</button>
+					</div>
 				</div>
 			{/if}
 

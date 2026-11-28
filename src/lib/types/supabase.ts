@@ -844,9 +844,9 @@ export type Database = {
 				Row: {
 					avatar: string
 					banned_at: string | null
-					referral_code: string
 					created_at: string
 					id: string
+					referral_code: string
 					role: Database["profiles"]["Enums"]["roles"]
 					username: string
 				}
@@ -854,18 +854,18 @@ export type Database = {
 				Insert: {
 					avatar?: string
 					banned_at?: string | null
-					referral_code?: string
 					created_at?: string
 					id: string
+					referral_code?: string
 					role?: Database["profiles"]["Enums"]["roles"]
 					username: string
 				}
 				Update: {
 					avatar?: string
 					banned_at?: string | null
-					referral_code?: string
 					created_at?: string
 					id?: string
+					referral_code?: string
 					role?: Database["profiles"]["Enums"]["roles"]
 					username?: string
 				}
@@ -1562,6 +1562,13 @@ export type Database = {
 				Args: { script_id: string }
 				Returns: {
 					manifest: Json
+					revision: number
+				}[]
+			}
+			live_revisions_to_check: {
+				Args: { p_injector: string; p_limit: number }
+				Returns: {
+					id: string
 					revision: number
 				}[]
 			}

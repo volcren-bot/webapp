@@ -21,6 +21,9 @@ import Zap from "@lucide/svelte/icons/zap"
 import Target from "@lucide/svelte/icons/target"
 import Anvil from "@lucide/svelte/icons/anvil"
 import Sailboat from "@lucide/svelte/icons/sailboat"
+import Backpack from "@lucide/svelte/icons/backpack"
+import Scroll from "@lucide/svelte/icons/scroll"
+import Compass from "@lucide/svelte/icons/compass"
 import { MICROCREDITS_PER_CREDIT, MINUTES_PER_MONTH } from "#lib/credits"
 import { DEFAULT_LOCALE, formatCredits } from "#lib/utils"
 import { Constants, type Database } from "#lib/types/supabase"
@@ -55,6 +58,9 @@ export const CATEGORY_ICONS: Record<ScriptCategory, Component> = {
 	boss: Skull,
 	minigame: Gamepad2,
 	moneymaker: Coins,
+	collecting: Backpack,
+	quests: Scroll,
+	clues: Compass,
 	tool: Wrench,
 	magic: WandSparkles,
 	prayer: Sparkles,

@@ -1634,6 +1634,9 @@ export type Database = {
 				| "boss"
 				| "minigame"
 				| "moneymaker"
+				| "collecting"
+				| "quests"
+				| "clues"
 				| "tool"
 				| "magic"
 				| "prayer"
@@ -2809,6 +2812,9 @@ export const Constants = {
 				"boss",
 				"minigame",
 				"moneymaker",
+				"collecting",
+				"quests",
+				"clues",
 				"tool",
 				"magic",
 				"prayer",

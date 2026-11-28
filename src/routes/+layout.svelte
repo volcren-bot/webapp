@@ -10,7 +10,7 @@
 	import KeyPanel from "./KeyPanel.svelte"
 	import { handleKey, setRouteTree } from "#lib/keys.svelte.js"
 	import { routeTree } from "#lib/routes"
-	import { getSupabaseBrowser } from "#lib/supabase.browser"
+	import { getSupabaseBrowser } from "#lib/supabase"
 
 	let { data, children } = $props()
 	const { user, expiresAt } = $derived(data)

@@ -55,6 +55,9 @@ export function filesProblem(files: { name: string; size: number }[], locale: st
 }
 
 export const MANIFEST_FILE = "manifest.json"
+
+export const revisionFolder = (scriptId: string, revision: number) =>
+	`${scriptId}/${String(revision).padStart(9, "0")}`
 const MANIFEST_KEYS = ["queueable", "goals", "settings", "finish_grace_minutes", "auto_forward"]
 const MAX_MANIFEST_BYTES = 64 * 1024
 const MAX_GOALS = 16
@@ -181,7 +184,7 @@ export async function storeRevision(
 		const keyed = await scripts.rpc("set_version_key", { script_id: id, revision, key: keyHex(key) })
 		if (keyed.error) throw keyed.error
 
-		const folder = `${id}/${String(revision).padStart(9, "0")}`
+		const folder = revisionFolder(id, revision)
 		let done = 0
 		await uploadAll(files, async (file) => {
 			const sealed = await encryptFile(file, key, id, revision, file.name)

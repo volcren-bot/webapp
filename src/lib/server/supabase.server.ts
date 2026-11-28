@@ -1,8 +1,17 @@
 import { SUPABASE_URL } from "$app/env/public"
-import type { SupabaseClient, Provider } from "@supabase/supabase-js"
+import { SUPABASE_SERVICE_KEY } from "$app/env/private"
+import { createClient, type SupabaseClient, type Provider } from "@supabase/supabase-js"
+import type { Database } from "#lib/types/supabase"
 import { error, redirect } from "@sveltejs/kit"
 
 export const LOGIN_REDIRECT_COOKIE = "login_redirect"
+
+let adminClient: SupabaseClient<Database> | null = null
+
+export const supabaseAdmin = () =>
+	(adminClient ??= createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+		auth: { persistSession: false, autoRefreshToken: false }
+	}))
 
 // Routes that require a logged in user
 const PROTECTED_PATHS = ["/account", "/credits", "/reports"]

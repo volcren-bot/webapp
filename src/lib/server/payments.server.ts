@@ -1,5 +1,5 @@
 import { getInvoice, type BitcartInvoice } from "#lib/server/bitcart.server"
-import { supabaseAdmin } from "#lib/server/supabase.admin"
+import { supabaseAdmin } from "#lib/server/supabase.server"
 
 const CONFIG_CACHE_MS = 60_000
 type PaymentsConfig = { extraSessionFee: number; authorShare: number }

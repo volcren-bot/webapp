@@ -57,7 +57,11 @@ A `manifest.json` among a revision's files (browser upload or `POST /api/scripts
 
 ## Revision checks
 
-Both upload paths (`storeRevision` in `#lib/revisions`) call the API's `POST /scripts/:id/revisions/:revision/check` after the files are stored and before `publish_version`, which refuses a revision that hasn't passed. The browser sends the author's access token straight to `API_URL` (allowed in the CSP's `connect-src`); `POST /api/scripts/[id]/revisions` forwards the deploy token it was called with and answers 422 with the `injector` it checked against and the `problems` when the check fails. A failed check discards the revision like any other failure. Publishing pins the revision to that client release, and the revision history shows each revision's pin and the problems of its last check. When a live revision has no supported pin (its release was retired), the script is broken: the public script cache leaves it out (`protected.broken`), and its page tells the author and moderators that a new revision has to go live.
+Both upload paths (`storeRevision` in `#lib/revisions`) call the API's `POST /scripts/:id/revisions/:revision/check` after the files are stored and before `publish_version`, which refuses a revision that hasn't passed. The browser sends the author's access token straight to `API_URL` (allowed in the CSP's `connect-src`); `POST /api/scripts/[id]/revisions` forwards the deploy token it was called with and answers 422 with the `injector` it checked against and the `problems` when the check fails. A failed check discards the revision like any other failure. Publishing pins the revision to that client release. The API re-checks only the revision sessions run, so the revision history shows, for that one and a pending one, its pin and then the newest release (`latest.json`) with the problems of the check against each; older revisions show as published. When a live revision has no supported pin (its release was retired), the script is broken: the public script cache leaves it out (`protected.broken`), and its page tells the author and moderators that a new revision has to go live.
+
+## Revision downloads
+
+The author and moderators download any revision from its history row as a zip of its decrypted files and its `manifest.json` (`GET /api/scripts/[id]/revisions/[revision]/files`). The files are read under their own row level security, and only the revision key needs `service_role`, read in `#lib/server/encryption.server`. Discarded revisions get the link only while all their files are still stored.
 
 ## Webhooks
 

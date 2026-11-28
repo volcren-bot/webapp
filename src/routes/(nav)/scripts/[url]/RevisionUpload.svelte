@@ -2,7 +2,7 @@
 	import { invalidateAll } from "$app/navigation"
 	import Upload from "@lucide/svelte/icons/upload"
 	import { fmt } from "#lib/format.svelte.js"
-	import { getSupabaseBrowser } from "#lib/supabase.browser"
+	import { getSupabaseBrowser } from "#lib/supabase"
 	import {
 		createRevision,
 		filesProblem,

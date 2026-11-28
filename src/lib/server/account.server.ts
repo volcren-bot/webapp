@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { openPayments } from "#lib/server/payments.server"
-import { supabaseAdmin } from "#lib/server/supabase.admin"
 import type { Database } from "#lib/types/supabase"
+import { supabaseAdmin } from "#lib/server/supabase.server"
 
 /** Why the account can't be deleted yet, as messages for the account page; the database enforces the first two, these checks only explain why. */
 export async function deletionBlockers(userId: string) {

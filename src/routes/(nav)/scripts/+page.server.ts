@@ -1,6 +1,6 @@
 import { fail, redirect } from "@sveltejs/kit"
 import { CATEGORIES, TYPES, roleAtLeast, type ScriptCategory, type ScriptType } from "#lib/scripts"
-import { getPublicScripts, type CachedScript } from "#lib/server/scripts.cache"
+import { getPublicScripts, type CachedScript } from "#lib/server/scripts.server"
 import { createLimiter } from "#lib/server/ratelimit.server"
 import { errorRef } from "#lib/server/supabase.server"
 import type { Database } from "#lib/types/supabase"

@@ -1,6 +1,6 @@
 import { roleAtLeast } from "#lib/scripts"
 import type { Database } from "#lib/types/supabase"
-import { supabaseAdmin } from "./supabase.admin"
+import { supabaseAdmin } from "./supabase.server"
 
 type ScriptTables = Database["scripts"]["Tables"]
 

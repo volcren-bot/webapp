@@ -1,6 +1,5 @@
 import { error, json } from "@sveltejs/kit"
-import { supabaseAdmin } from "#lib/server/supabase.admin"
-import { errorRef, requireAdmin } from "#lib/server/supabase.server"
+import { errorRef, requireAdmin, supabaseAdmin } from "#lib/server/supabase.server"
 import { likeEscape } from "#lib/utils"
 
 const MIN_CHARS = 2

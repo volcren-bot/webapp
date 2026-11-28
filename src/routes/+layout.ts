@@ -1,5 +1,5 @@
 import { browser } from "$app/env"
-import { getSupabaseBrowser } from "#lib/supabase.browser"
+import { getSupabaseBrowser } from "#lib/supabase"
 import { SESSION_PROFILE_COLUMNS } from "#lib/types/profile"
 
 // The server data is already in sync on first load, so the client is only needed once the auth state changes and the layout invalidates

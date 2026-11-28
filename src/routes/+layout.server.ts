@@ -1,5 +1,5 @@
 import { roleAtLeast } from "#lib/scripts"
-import { getPublicScripts } from "#lib/server/scripts.cache"
+import { getPublicScripts } from "#lib/server/scripts.server"
 import { localeFrom } from "#lib/utils"
 
 const MAX_SIDEBAR_SCRIPTS = 100

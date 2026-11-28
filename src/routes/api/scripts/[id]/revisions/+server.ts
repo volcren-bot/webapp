@@ -7,9 +7,8 @@ import {
 	storeRevision
 } from "#lib/revisions"
 import { hashDeployToken } from "#lib/server/deploy.server"
-import { refreshScript } from "#lib/server/scripts.cache"
-import { supabaseAdmin } from "#lib/server/supabase.admin"
-import { errorRef } from "#lib/server/supabase.server"
+import { refreshScript } from "#lib/server/scripts.server"
+import { errorRef, supabaseAdmin } from "#lib/server/supabase.server"
 import { localeFrom, UUID } from "#lib/utils"
 
 /** CI uploads a revision with a deploy token: curl -H "Authorization: Bearer $TOKEN" -H "Origin: <site>" -F files=@main.luau -F files=@manifest.json -F entry=main.luau <site>/api/scripts/<id>/revisions (entry optional for one file; Origin passes the CSRF check). */

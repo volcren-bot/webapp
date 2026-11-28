@@ -4,12 +4,13 @@ import { zod4 } from "sveltekit-superforms/adapters"
 import { scriptSchema } from "#lib/schemas"
 import { roleAtLeast } from "#lib/scripts"
 import { newDeployToken } from "#lib/server/deploy.server"
-import { getPublicScript, refreshScript } from "#lib/server/scripts.cache"
+import { getPublicScript, refreshScript } from "#lib/server/scripts.server"
 import { communityUsage } from "#lib/server/account.server"
-import { supabaseAdmin } from "#lib/server/supabase.admin"
-import { errorRef } from "#lib/server/supabase.server"
+import { errorRef, supabaseAdmin } from "#lib/server/supabase.server"
 import { hasAcceptedTerms } from "#lib/server/terms.server"
 import { authorShare, extraSessionFee } from "#lib/server/payments.server"
+import { getRelease } from "#lib/server/release.server"
+import { revisionFolder } from "#lib/revisions"
 import type { Database } from "#lib/types/supabase"
 import { UUID } from "#lib/utils"
 
@@ -40,6 +41,25 @@ type ScriptPage = Pick<
 		ScriptTables["protected"]["Row"],
 		"author" | "revision" | "created_at" | "updated_at" | "queueable" | "broken"
 	> | null
+}
+
+async function filesStored(
+	supabase: App.Locals["supabaseServer"],
+	scriptId: string,
+	revision: number,
+	files: string[]
+) {
+	const storage = supabase.storage.from("scripts")
+	const folder = revisionFolder(scriptId, revision)
+	const found = await Promise.all(
+		files.map((name) =>
+			storage.exists(`${folder}/${name}`).then(
+				({ data }) => data,
+				() => false
+			)
+		)
+	)
+	return found.every(Boolean)
 }
 
 /** The id of the script at this url, if the user can see it. */
@@ -125,9 +145,18 @@ export const load = async ({ params, url, locals: { supabaseServer, user, getPro
 						.range(from, from + REVISIONS_PER_PAGE - 1),
 					// The author's use of the community limits, shown next to the uploader
 					own && community ? communityUsage(supabaseServer) : null,
-					termsAccepted
-				]).then(([versions, usage, accepted]) => ({
-					versions: versions.data ?? [],
+					termsAccepted,
+					getRelease()
+				]).then(async ([versions, usage, accepted, release]) => ({
+					versions: await Promise.all(
+						(versions.data ?? []).map(async (version) => ({
+							...version,
+							downloadable:
+								version.status !== "discarded" ||
+								(await filesStored(supabaseServer, script.id, version.revision, version.files))
+						}))
+					),
+					latest: release?.version ?? null,
 					total: versions.count ?? 0,
 					page: revisionPage,
 					perPage: REVISIONS_PER_PAGE,
@@ -136,6 +165,7 @@ export const load = async ({ params, url, locals: { supabaseServer, user, getPro
 				})),
 				{
 					versions: [],
+					latest: null,
 					total: 0,
 					page: revisionPage,
 					perPage: REVISIONS_PER_PAGE,

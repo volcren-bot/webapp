@@ -25,7 +25,12 @@
 	const { data, form: result } = $props()
 	const script = $derived(data.script)
 	const clip = clipboard()
-	const statusColor = { live: "var(--tn-green)", pending: "var(--tn-yellow)", discarded: "var(--tn-comment)" }
+	const statusColor = {
+		live: "var(--tn-green)",
+		published: "var(--tn-comment)",
+		pending: "var(--tn-yellow)",
+		discarded: "var(--tn-comment)"
+	}
 
 	// Revision pages are a query parameter, so they work without JavaScript and can be linked
 	const revisionsHref = (n: number) => withParam(page.url, "revisions", n > 1 ? String(n) : null)
@@ -39,6 +44,20 @@
   ${page.url.origin}/api/scripts/${script.id}/revisions`
 	)
 </script>
+
+{#snippet problemList(problems: RevisionProblem[])}
+	<details>
+		<summary class="text-error-400">{problems.length} problem{problems.length === 1 ? "" : "s"}</summary>
+		<ul class="flex flex-col gap-1">
+			{#each problems as p, i (i)}
+				<li>
+					<code class="nv-dim">{p.file}:{p.line}:{p.column}</code>
+					<pre class="whitespace-pre-wrap">{p.message}</pre>
+				</li>
+			{/each}
+		</ul>
+	</details>
+{/snippet}
 
 <Head title={script.title} description={metaDescription(script.description)} noindex={!script.published} />
 
@@ -215,36 +234,51 @@
 				{#if revisions.versions.length}
 					<ul class="mt-1 flex flex-col gap-1 border-t border-(--tn-bg-hl) pt-3 text-sm">
 						{#each revisions.versions as version (version.revision)}
+							{@const current = version.status === "live" && version.revision === script.revision}
+							{@const label = current ? "live" : version.status === "live" ? "published" : version.status}
+							{@const problems = (Array.isArray(version.problems)
+								? version.problems
+								: []) as unknown as RevisionProblem[]}
 							<li class="flex flex-wrap items-baseline gap-x-3">
 								<span class="font-bold">#{version.revision}</span>
-								<span style="color: {statusColor[version.status]}">{version.status}</span>
+								<span style="color: {statusColor[label]}">{label}</span>
 								<span class="nv-dim">{version.files.length} file{version.files.length === 1 ? "" : "s"}</span>
 								<span class="nv-dim">{version.files.join(", ")}</span>
-								{#if version.injector}
-									<span class="nv-dim"
-										>runs on {version.injector}{version.auto_forward === false
-											? ", pinned"
-											: ", moves to newer releases it passes"}</span
+								{#if version.downloadable}
+									<a href="/api/scripts/{script.id}/revisions/{version.revision}/files" data-sveltekit-reload
+										>download</a
 									>
 								{/if}
 								<span class="nv-dim ml-auto">{fmt.dateTime(version.created_at)}</span>
-								{#if Array.isArray(version.problems) && version.problems.length}
-									<details class="w-full">
-										<summary class="text-error-400">
-											{version.problems.length} problem{version.problems.length === 1 ? "" : "s"} against release
-											{version.checked_injector}{version.injector
-												? `, still runs on ${version.injector}`
-												: ""}
-										</summary>
-										<ul class="flex flex-col gap-1">
-											{#each version.problems as unknown as RevisionProblem[] as p, i (i)}
-												<li>
-													<code class="nv-dim">{p.file}:{p.line}:{p.column}</code>
-													<pre class="whitespace-pre-wrap">{p.message}</pre>
-												</li>
-											{/each}
-										</ul>
-									</details>
+								{#if current || version.status === "pending"}
+									<div class="w-full">
+										{#if version.injector}
+											<span class="nv-dim"
+												>pinned to {version.injector}{script.broken
+													? " (retired)"
+													: ""}{version.auto_forward === false ? ", stays pinned" : ""}</span
+											>
+											{#if version.checked_injector === version.injector && problems.length}
+												{@render problemList(problems)}
+											{/if}
+										{:else}
+											<span class="nv-dim"
+												>not pinned{version.status === "pending" ? " until it goes live" : ""}</span
+											>
+										{/if}
+									</div>
+									{#if revisions.latest}
+										<div class="w-full">
+											<span class="nv-dim">latest release {revisions.latest}:</span>
+											{#if version.checked_injector !== revisions.latest}
+												<span class="nv-dim">not checked yet</span>
+											{:else if problems.length}
+												{@render problemList(problems)}
+											{:else}
+												<span class="text-success-400">passes</span>
+											{/if}
+										</div>
+									{/if}
 								{/if}
 							</li>
 						{/each}

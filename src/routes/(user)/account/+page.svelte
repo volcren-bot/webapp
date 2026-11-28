@@ -177,7 +177,7 @@
 							{#if entry.fee}
 								<span class="nv-dim">(incl. {fmt.credits(entry.fee)} extra-session fee)</span>
 							{/if}
-							{#if entry.kind !== "topup" && entry.bonus}
+							{#if entry.kind !== "topup" && entry.kind !== "referral" && entry.bonus}
 								<span class="nv-dim">({fmt.credits(-entry.bonus)} of it bonus CREDIT)</span>
 							{/if}
 							{#if entry.note}<span class="nv-dim">({entry.note})</span>{/if}

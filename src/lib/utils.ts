@@ -54,6 +54,8 @@ export const creditSource = (entry: { kind: string; provider: string | null }) =
 			return "Refund"
 		case "adjustment":
 			return "Adjusted by staff"
+		case "referral":
+			return "Referral bonus"
 		default:
 			return entry.kind
 	}

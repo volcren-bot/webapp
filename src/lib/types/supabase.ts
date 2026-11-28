@@ -357,6 +357,15 @@ export type Database = {
 					max_agent_sessions: number
 					min_balance_minutes: number
 					platform_fee_bps: number
+					referral_gift: number
+					referral_invite_reward: number
+					referral_invites: number
+					referral_min_discord_days: number
+					referral_runtime_days: number
+					referral_runtime_minutes: number
+					referral_runtime_reward: number
+					referral_runtime_scripts: number
+					referral_topup_reward: number
 					session_timeout_minutes: number
 				}
 				ComputedFields: never
@@ -366,6 +375,15 @@ export type Database = {
 					max_agent_sessions?: number
 					min_balance_minutes?: number
 					platform_fee_bps?: number
+					referral_gift?: number
+					referral_invite_reward?: number
+					referral_invites?: number
+					referral_min_discord_days?: number
+					referral_runtime_days?: number
+					referral_runtime_minutes?: number
+					referral_runtime_reward?: number
+					referral_runtime_scripts?: number
+					referral_topup_reward?: number
 					session_timeout_minutes?: number
 				}
 				Update: {
@@ -374,6 +392,15 @@ export type Database = {
 					max_agent_sessions?: number
 					min_balance_minutes?: number
 					platform_fee_bps?: number
+					referral_gift?: number
+					referral_invite_reward?: number
+					referral_invites?: number
+					referral_min_discord_days?: number
+					referral_runtime_days?: number
+					referral_runtime_minutes?: number
+					referral_runtime_reward?: number
+					referral_runtime_scripts?: number
+					referral_topup_reward?: number
 					session_timeout_minutes?: number
 				}
 				Relationships: []
@@ -523,6 +550,49 @@ export type Database = {
 				}
 				Relationships: []
 			}
+			referrals: {
+				Row: {
+					created_at: string
+					discord_hash: string
+					earned: number
+					eligible: boolean
+					gift_at: string | null
+					id: string
+					invitee: string
+					invites: number
+					referrer: string
+					runtime_scripts: string[]
+					topped_up: boolean
+				}
+				ComputedFields: never
+				Insert: {
+					created_at?: string
+					discord_hash: string
+					earned?: number
+					eligible: boolean
+					gift_at?: string | null
+					id?: string
+					invitee: string
+					invites?: number
+					referrer: string
+					runtime_scripts?: string[]
+					topped_up?: boolean
+				}
+				Update: {
+					created_at?: string
+					discord_hash?: string
+					earned?: number
+					eligible?: boolean
+					gift_at?: string | null
+					id?: string
+					invitee?: string
+					invites?: number
+					referrer?: string
+					runtime_scripts?: string[]
+					topped_up?: boolean
+				}
+				Relationships: []
+			}
 			sessions: {
 				Row: {
 					author_id: string
@@ -600,6 +670,7 @@ export type Database = {
 				Args: { p_minutes: number; p_session: string }
 				Returns: number
 			}
+			claim_referral: { Args: { p_code: string }; Returns: string }
 			end_agent_session: {
 				Args: { p_max_gap: number; p_session: string; p_user: string }
 				Returns: boolean
@@ -613,12 +684,38 @@ export type Database = {
 			}
 			end_stale_sessions: { Args: Record<PropertyKey, never>; Returns: number }
 			end_user_sessions: { Args: { p_user: string }; Returns: number }
+			grant_referral_gift: { Args: { p_user: string }; Returns: number }
 			heartbeat_agent_session: {
 				Args: { p_max_gap: number; p_session: string; p_user: string }
 				Returns: boolean
 			}
 			heartbeat_session: { Args: { p_session: string }; Returns: boolean }
+			list_referrals: {
+				Args: Record<PropertyKey, never>
+				Returns: {
+					banned: boolean
+					created_at: string
+					earned: number
+					eligible: boolean
+					id: string
+					invites: number
+					runtime_scripts: number
+					topped_up: boolean
+				}[]
+			}
 			minutes_per_month: { Args: Record<PropertyKey, never>; Returns: number }
+			own_referral: {
+				Args: Record<PropertyKey, never>
+				Returns: {
+					created_at: string
+					eligible: boolean
+					gift_at: string
+				}[]
+			}
+			pay_referral: {
+				Args: { p_amount: number; p_note: string; p_user: string }
+				Returns: number
+			}
 			post_credits: {
 				Args: {
 					p_actor?: string
@@ -651,6 +748,7 @@ export type Database = {
 			required_balance:
 				| { Args: { p_price: number }; Returns: number }
 				| { Args: { p_fee: number; p_price: number }; Returns: number }
+			reward_referral: { Args: { p_invitee: string }; Returns: undefined }
 			session_fee: { Args: { p_rank: number; p_user: string }; Returns: number }
 			session_quote: {
 				Args: { p_script: string; p_user: string }
@@ -680,7 +778,7 @@ export type Database = {
 			transfer_earnings: { Args: { p_amount: number }; Returns: number }
 		}
 		Enums: {
-			credit_kind: "topup" | "usage" | "transfer" | "refund" | "adjustment"
+			credit_kind: "topup" | "usage" | "transfer" | "refund" | "adjustment" | "referral"
 			earning_kind: "sale" | "transfer" | "withdrawal" | "adjustment"
 			payment_status: "pending" | "paid" | "expired" | "invalid"
 			provider: "bitcart" | "stripe" | "molly"
@@ -746,6 +844,7 @@ export type Database = {
 				Row: {
 					avatar: string
 					banned_at: string | null
+					referral_code: string
 					created_at: string
 					id: string
 					role: Database["profiles"]["Enums"]["roles"]
@@ -755,6 +854,7 @@ export type Database = {
 				Insert: {
 					avatar?: string
 					banned_at?: string | null
+					referral_code?: string
 					created_at?: string
 					id: string
 					role?: Database["profiles"]["Enums"]["roles"]
@@ -763,6 +863,7 @@ export type Database = {
 				Update: {
 					avatar?: string
 					banned_at?: string | null
+					referral_code?: string
 					created_at?: string
 					id?: string
 					role?: Database["profiles"]["Enums"]["roles"]
@@ -2678,7 +2779,7 @@ export const Constants = {
 	},
 	payments: {
 		Enums: {
-			credit_kind: ["topup", "usage", "transfer", "refund", "adjustment"],
+			credit_kind: ["topup", "usage", "transfer", "refund", "adjustment", "referral"],
 			earning_kind: ["sale", "transfer", "withdrawal", "adjustment"],
 			payment_status: ["pending", "paid", "expired", "invalid"],
 			provider: ["bitcart", "stripe", "molly"],

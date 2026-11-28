@@ -2,7 +2,18 @@ import { getInvoice, type BitcartInvoice } from "#lib/server/bitcart.server"
 import { supabaseAdmin } from "#lib/server/supabase.server"
 
 const CONFIG_CACHE_MS = 60_000
-type PaymentsConfig = { extraSessionFee: number; authorShare: number }
+export type ReferralRules = {
+	gift: number
+	runtimeReward: number
+	runtimeScripts: number
+	runtimeMinutes: number
+	runtimeDays: number
+	inviteReward: number
+	invites: number
+	topupReward: number
+	minDiscordDays: number
+}
+type PaymentsConfig = { extraSessionFee: number; authorShare: number; referrals: ReferralRules }
 let configCache: { value: PaymentsConfig; until: number } | null = null
 
 /** payments.config, cached for a minute; on a failed read the last value, or null if there is none. */
@@ -11,7 +22,9 @@ async function paymentsConfig() {
 	const { data, error } = await supabaseAdmin()
 		.schema("payments")
 		.from("config")
-		.select("extra_session_fee, platform_fee_bps")
+		.select(
+			"extra_session_fee, platform_fee_bps, referral_gift, referral_runtime_reward, referral_runtime_scripts, referral_runtime_minutes, referral_runtime_days, referral_invite_reward, referral_invites, referral_topup_reward, referral_min_discord_days"
+		)
 		.single()
 	if (error) {
 		console.error("Could not load payments.config", error)
@@ -19,7 +32,18 @@ async function paymentsConfig() {
 	}
 	const value = {
 		extraSessionFee: data.extra_session_fee,
-		authorShare: (10_000 - data.platform_fee_bps) / 10_000
+		authorShare: (10_000 - data.platform_fee_bps) / 10_000,
+		referrals: {
+			gift: data.referral_gift,
+			runtimeReward: data.referral_runtime_reward,
+			runtimeScripts: data.referral_runtime_scripts,
+			runtimeMinutes: data.referral_runtime_minutes,
+			runtimeDays: data.referral_runtime_days,
+			inviteReward: data.referral_invite_reward,
+			invites: data.referral_invites,
+			topupReward: data.referral_topup_reward,
+			minDiscordDays: data.referral_min_discord_days
+		}
 	}
 	configCache = { value, until: Date.now() + CONFIG_CACHE_MS }
 	return value
@@ -30,6 +54,9 @@ export const extraSessionFee = async () => (await paymentsConfig())?.extraSessio
 
 /** The author's fraction of a script's usage charge, from payments.config.platform_fee_bps; null if it can't be read. */
 export const authorShare = async () => (await paymentsConfig())?.authorShare ?? null
+
+/** The referral program's amounts and limits from payments.config; null if they can't be read. */
+export const referralRules = async () => (await paymentsConfig())?.referrals ?? null
 
 /** Asks Bitcart for the invoice's real status and applies it to our payment row, crediting once complete (settle_payment is idempotent); shared by webhook and checkout. */
 export async function syncPayment(paymentId: string, invoiceId: string): Promise<BitcartInvoice> {

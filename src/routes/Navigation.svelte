@@ -82,6 +82,9 @@
 				<a href="/account" aria-label="Open account page" onclick={() => (showProfile = false)}>
 					account settings
 				</a>
+				<a href="/referrals" aria-label="Open referrals page" onclick={() => (showProfile = false)}>
+					referrals
+				</a>
 				<button
 					name="Logout"
 					aria-label="Logout"
